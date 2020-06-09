@@ -1,7 +1,5 @@
+#include <opencv2/highgui.hpp>
 #include "ControlWindow.h"
-#include <opencv2\highgui.hpp>
-
-using namespace cv;
 
 namespace GesturesToInputs {
     ControlWindow::ControlWindow(std::string name, int lowHue, int highHue, int lowSaturation, int highSaturation, int lowValue, int highValue) {
@@ -12,21 +10,23 @@ namespace GesturesToInputs {
         this->lowValue = lowValue;
         this->highValue = highValue;
 
-        namedWindow(name, WINDOW_AUTOSIZE);
+        cv::namedWindow(name, cv::WINDOW_AUTOSIZE);
 
-        createTrackbar("Low Hue", name, &this->lowHue, 179);
-        createTrackbar("High Hue", name, &this->highHue, 179);
+        cv::createTrackbar("Low Hue", name, &this->lowHue, 179);
+        cv::createTrackbar("High Hue", name, &this->highHue, 179);
 
-        createTrackbar("Low Saturation", name, &this->lowSaturation, 255);
-        createTrackbar("High Saturation", name, &this->highSaturation, 255);
+        cv::createTrackbar("Low Saturation", name, &this->lowSaturation, 255);
+        cv::createTrackbar("High Saturation", name, &this->highSaturation, 255);
 
-        createTrackbar("Low Value", name, &this->lowValue, 255);
-        createTrackbar("High Value", name, &this->highValue, 255);
+        cv::createTrackbar("Low Value", name, &this->lowValue, 255);
+        cv::createTrackbar("High Value", name, &this->highValue, 255);
     }
-    Scalar ControlWindow::lowScalar() {
-        return Scalar(lowHue, lowSaturation, lowValue);
+    
+    cv::Scalar ControlWindow::lowScalar() {
+        return cv::Scalar(lowHue, lowSaturation, lowValue);
     }
-    Scalar ControlWindow::highScalar() {
-        return Scalar(highHue, highSaturation, highValue);
+    
+    cv::Scalar ControlWindow::highScalar() {
+        return cv::Scalar(highHue, highSaturation, highValue);
     }
 }

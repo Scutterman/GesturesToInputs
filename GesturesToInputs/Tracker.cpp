@@ -1,11 +1,7 @@
 #include "Tracker.h"
-#include <opencv2\core\types.hpp>
-#include <opencv2\imgproc.hpp>
-
-using namespace cv;
 
 namespace GesturesToInputs {
-    Tracker::Tracker(Scalar colour, Size size, bool drawTrackingLine) {
+    Tracker::Tracker(cv::Scalar colour, cv::Size size, bool drawTrackingLine) {
         // Origin is top left so higher y value is actually lower down in the image.
         topThird = size.height / 3;
         bottomThird = topThird * 2;
@@ -17,10 +13,11 @@ namespace GesturesToInputs {
 
         this->colour = colour;
         this->drawTrackingLine = drawTrackingLine;
-        lines = Mat::zeros(size, CV_8UC3);
+        lines = cv::Mat::zeros(size, CV_8UC3);
     }
-    void Tracker::track(Mat threshold) {
-        Moments imageMoments = moments(threshold);
+
+    void Tracker::track(cv::Mat threshold) {
+        cv::Moments imageMoments = moments(threshold);
         double area = imageMoments.m00;
 
         if (area > 200000) {
@@ -39,13 +36,14 @@ namespace GesturesToInputs {
             else { lastHorizontalPosition = HORIZONTAL_POSITION::FAR_RIGHT; }
 
             if (drawTrackingLine && lastX >= 0 && lastY >= 0 && centreX >= 0 && centreY >= 0) {
-                line(lines, Point(centreX, centreY), Point(lastX, lastY), colour, 2);
+                line(lines, cv::Point(centreX, centreY), cv::Point(lastX, lastY), colour, 2);
             }
 
             lastX = centreX;
             lastY = centreY;
         }
     }
+    
     VERTICAL_POSITION Tracker::getVerticalPosition() { return lastVerticalPosition; }
     HORIZONTAL_POSITION Tracker::getHorizontalPosition() { return lastHorizontalPosition; }
     int Tracker::getXPosition() { return lastX; }
