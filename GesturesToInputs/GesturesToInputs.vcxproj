@@ -83,6 +83,7 @@
   <ItemGroup>
     <ClInclude Include="ControlWindow.h" />
     <ClInclude Include="Gesture.h" />
+    <ClInclude Include="PerformanceTimer.h" />
     <ClInclude Include="Tracker.h" />
     <ClInclude Include="Webcam.h" />
     <ClInclude Include="WebcamFrame.h" />
@@ -93,6 +94,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ControlWindow.cpp" />
+    <ClCompile Include="PerformanceTimer.cpp" />
     <ClCompile Include="WebcamFrame.cpp" />
     <ClCompile Include="Gesture.cpp" />
     <ClCompile Include="GesturesToInputs.cpp" />

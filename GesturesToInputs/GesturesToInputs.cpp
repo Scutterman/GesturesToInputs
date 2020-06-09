@@ -6,6 +6,7 @@
 
 #include "ControlWindow.h"
 #include "Gesture.h"
+#include "PerformanceTimer.h"
 #include "Tracker.h"
 #include "Webcam.h"
 #include "WebcamFrame.h"
@@ -29,11 +30,9 @@ int main(int argc, char** argv)
         Tracker greenTracker = Tracker(cv::Scalar(0, 255, 0), cam.next().source.size());
 
         Gesture gesture;
-
-        cv::Mat frameTime = cv::Mat(100, 300, CV_8UC1);
-        // namedWindow("Frame Time", WINDOW_AUTOSIZE);
+        PerformanceTimer perf;
         for (;;) {
-            auto t1 = std::chrono::high_resolution_clock::now();
+            perf.Start();
             WebcamFrame frame = cam.next();
             
             cv::Mat redThreshold = frame.isolateColour(redUpperControls.lowScalar(), redUpperControls.highScalar()) + frame.isolateColour(redLowerControls.lowScalar(), redLowerControls.highScalar());
@@ -47,13 +46,8 @@ int main(int argc, char** argv)
             frame.drawGrid();
             //imshow("Threshold", redThreshold + greenThreshold); // Show our image inside it.
             cv::imshow("Original", frame.source + redTracker.lines + greenTracker.lines);
+            perf.End();
             
-            auto t2 = std::chrono::high_resolution_clock::now();
-            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1).count();
-            frameTime.setTo(0);
-            putText(frameTime, to_string(duration) + "ms", cv::Point(10, 40), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(128));
-            //imshow("Frame Time", frameTime);
-
             if (cv::waitKey(10) == 27) {
                 break;
             }
