@@ -1,6 +1,6 @@
 #pragma once
-#include <opencv2\core\types.hpp>
-#include <opencv2\imgproc.hpp>
+
+#include <opencv2/core/mat.hpp>
 
 namespace GesturesToInputs {
     enum class VERTICAL_POSITION { BOTTOM, MIDDLE, TOP };
@@ -22,7 +22,7 @@ namespace GesturesToInputs {
 
         bool drawTrackingLine = false;
     public:
-        cv::Mat lines;
+        cv::Mat lines = cv::Mat::zeros(cv::Size(0, 0), CV_8UC3);
         Tracker(cv::Scalar colour, cv::Size size, bool drawTrackingLine = false);
 
         void track(cv::Mat threshold);

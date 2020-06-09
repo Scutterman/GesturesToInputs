@@ -1,5 +1,5 @@
 #pragma once
-#include <opencv2\videoio.hpp>
+#include <opencv2/videoio.hpp>
 
 namespace GesturesToInputs {
     class WebcamFrame {

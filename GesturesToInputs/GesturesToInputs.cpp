@@ -1,15 +1,15 @@
+#include <iostream>
+
+#include <opencv2/core/types.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
+
 #include "ControlWindow.h"
-#include "WebcamFrame.h"
+#include "Gesture.h"
 #include "Tracker.h"
 #include "Webcam.h"
-#include "Gesture.h"
-#include <iostream>
-#include <chrono>
+#include "WebcamFrame.h"
 
-#include <opencv2\highgui.hpp>
-#include <opencv2\core\types.hpp>
-
-using namespace std;
 using namespace GesturesToInputs;
 
 int main(int argc, char** argv)
@@ -60,7 +60,7 @@ int main(int argc, char** argv)
         }
     }
     catch (int e) {
-        cout << "An exception occurred. Exception Nr. " << e << '\n';
+        std::cout << "An exception occurred. Exception Nr. " << e << '\n';
     }
     return 0;
 }

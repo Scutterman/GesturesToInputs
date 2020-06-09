@@ -1,8 +1,11 @@
 #pragma once
 #include <windows.h>
-#include <map>
-#include "Tracker.h"
 #include <dinput.h>
+#include <map>
+
+#include <opencv2/core/types.hpp>
+
+#include "Tracker.h"
 
 namespace GesturesToInputs {
     class Gesture {

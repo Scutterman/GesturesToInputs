@@ -1,6 +1,7 @@
 #pragma once
-#include "WebcamFrame.h"
 #include <opencv2/core/types.hpp>
+
+#include "WebcamFrame.h"
 
 namespace GesturesToInputs {
     class Webcam {

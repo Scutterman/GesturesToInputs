@@ -1,3 +1,5 @@
+#include <opencv2/imgproc.hpp>
+
 #include "WebcamFrame.h"
 
 namespace GesturesToInputs {

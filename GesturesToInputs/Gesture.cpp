@@ -1,10 +1,13 @@
-#include "Gesture.h"
 #include <windows.h>
 #include <tchar.h>
 #include <dinput.h>
 #include <map>
+
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
+
+#include "Gesture.h"
 #include "Tracker.h"
-#include <opencv2\highgui.hpp>
 
 namespace GesturesToInputs {
     Gesture::Gesture() {
@@ -22,7 +25,7 @@ namespace GesturesToInputs {
         }
     }
     void Gesture::log(std::string textToAdd) {
-        putText(text, textToAdd, cv::Point(10, textLine), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(128));
+        cv::putText(text, textToAdd, cv::Point(10, textLine), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(128));
         textLine += 40;
     }
     void Gesture::_SendInput(int dikKeyCode) {
