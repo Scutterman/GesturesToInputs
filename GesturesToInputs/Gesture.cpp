@@ -1,3 +1,4 @@
+#include "Gesture.h"
 #include <windows.h>
 #include <tchar.h>
 #include <dinput.h>
@@ -6,7 +7,6 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 
-#include "Gesture.h"
 #include "Tracker.h"
 
 namespace GesturesToInputs {

@@ -1,3 +1,5 @@
+#include "GesturesToInputs.h"
+
 #include <iostream>
 
 #include <opencv2/core/types.hpp>

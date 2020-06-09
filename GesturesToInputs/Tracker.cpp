@@ -1,7 +1,7 @@
+#include "Tracker.h"
+
 #include <opencv2/core/types.hpp>
 #include <opencv2/imgproc.hpp>
-
-#include "Tracker.h"
 
 namespace GesturesToInputs {
     Tracker::Tracker(cv::Scalar colour, cv::Size size, bool drawTrackingLine) {

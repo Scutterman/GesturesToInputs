@@ -1,7 +1,7 @@
+#include "PerformanceTimer.h"
+
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
-
-#include "PerformanceTimer.h"
 
 namespace GesturesToInputs {
     PerformanceTimer::PerformanceTimer() {

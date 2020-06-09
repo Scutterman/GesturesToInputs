@@ -1,6 +1,6 @@
-#include <opencv2/imgproc.hpp>
-
 #include "WebcamFrame.h"
+
+#include <opencv2/imgproc.hpp>
 
 namespace GesturesToInputs {
     WebcamFrame::WebcamFrame(cv::VideoCapture cap, bool mirroredCapture) {

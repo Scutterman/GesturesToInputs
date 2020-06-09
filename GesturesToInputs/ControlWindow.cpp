@@ -1,5 +1,5 @@
-#include <opencv2/highgui.hpp>
 #include "ControlWindow.h"
+#include <opencv2/highgui.hpp>
 
 namespace GesturesToInputs {
     ControlWindow::ControlWindow(std::string name, int lowHue, int highHue, int lowSaturation, int highSaturation, int lowValue, int highValue) {
