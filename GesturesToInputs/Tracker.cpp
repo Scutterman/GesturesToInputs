@@ -49,13 +49,13 @@ namespace GesturesToInputs {
             setupGrid(frame.size());
             gridInitialised = true;
         }
-        cv::Moments imageMoments = moments(isolateColours(frame));
+
+        cv::Moments imageMoments = cv::moments(isolateColours(frame));
         double area = imageMoments.m00;
 
         if (area > 200000) {
             int centreX = imageMoments.m10 / area;
             int centreY = imageMoments.m01 / area;
-
 
             if (centreY <= topThird) { lastVerticalPosition = VERTICAL_POSITION::TOP; }
             else if (centreY >= bottomThird) { lastVerticalPosition = VERTICAL_POSITION::BOTTOM; }
@@ -78,7 +78,7 @@ namespace GesturesToInputs {
 
     cv::Mat Tracker::isolateColours(cv::Mat frame) {
         cv::Mat imageAsHSV;
-        cvtColor(frame, imageAsHSV, cv::COLOR_BGR2HSV);
+        cv::cvtColor(frame, imageAsHSV, cv::COLOR_BGR2HSV);
         cv::Mat threshold = cv::Mat::zeros(frame.size(), CV_8U);
 
         for (auto& values : trackedColours) {
