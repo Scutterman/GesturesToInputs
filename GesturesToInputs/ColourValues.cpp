@@ -1,7 +1,7 @@
 #include "ColourValues.h"
 
 namespace GesturesToInputs {
-    ColourValues::ColourValues(int hue = 0, int saturation = 0, int value = 0)
+    ColourValues::ColourValues(int hue, int saturation, int value)
     {
         this->hue = hue;
         this->saturation = saturation;
