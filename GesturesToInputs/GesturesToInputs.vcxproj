@@ -81,10 +81,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="ControlWindow.h" />
+    <ClInclude Include="ColourValues.h" />
     <ClInclude Include="Gesture.h" />
     <ClInclude Include="PerformanceTimer.h" />
     <ClInclude Include="Tracker.h" />
+    <ClInclude Include="TrackerValues.h" />
     <ClInclude Include="Webcam.h" />
     <ClInclude Include="WebcamFrame.h" />
     <ClInclude Include="GesturesToInputs.h" />
@@ -93,8 +94,9 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ControlWindow.cpp" />
+    <ClCompile Include="ColourValues.cpp" />
     <ClCompile Include="PerformanceTimer.cpp" />
+    <ClCompile Include="TrackerValues.cpp" />
     <ClCompile Include="WebcamFrame.cpp" />
     <ClCompile Include="Gesture.cpp" />
     <ClCompile Include="GesturesToInputs.cpp" />

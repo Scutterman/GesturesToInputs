@@ -24,10 +24,12 @@ namespace GesturesToInputs {
             calculateInstructions(tracker2, tracker1);
         }
     }
+    
     void Gesture::log(std::string textToAdd) {
         cv::putText(text, textToAdd, cv::Point(10, textLine), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(128));
         textLine += 40;
     }
+    
     void Gesture::_SendInput(int dikKeyCode) {
         if (pressed[dikKeyCode] == false) {
             pressed[dikKeyCode] = true;
@@ -36,6 +38,7 @@ namespace GesturesToInputs {
             SendInput(1, &ip, sizeof(INPUT));
         }
     }
+    
     void Gesture::CancelInput(int dikKeyCode) {
         if (pressed[dikKeyCode] == true) {
             ip.ki.dwFlags = KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP;
@@ -44,6 +47,7 @@ namespace GesturesToInputs {
             pressed[dikKeyCode] = false;
         }
     }
+    
     void Gesture::calculateInstructions(Tracker left, Tracker right) {
         text.setTo(0);
         textLine = 40;
