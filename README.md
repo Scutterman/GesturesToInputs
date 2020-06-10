@@ -28,6 +28,7 @@
 ## Miscellaneous
 - A "no marker detected" state that resets the output keys and takes no action until a marker is detected again
 - Automatically create two ColourValues if any of the "low" sliders are higher than the "high" slider - one for "low" to "max" and one for "min" to "high"
+- Split the program into "generic library" (get frame, track markers, process gestures) and "specific configuration" (number of markers, initial marker values, game-specific gestures)
 - Allow saving the current marker positions so they can be used next time the program is run
 - Shape tracking to augment or replace colour tracking
 
@@ -35,7 +36,7 @@
 A window that allows better control of the program
 - Adjusting the size of the erode / dilate, and the minimum area allowed for  tracking
 - Choosing a webcam from a list
-- Selecting a target window & subwindow so input is not sent if it is not in focus
+- Selecting a target window & subwindow so input is not sent if it is not in focus ([see here](https://docs.microsoft.com/en-gb/windows/win32/api/winuser/nf-winuser-getforegroundwindow))
 - Adding an arbritary number of markers (with distinct names) and chosing one or more colour ranges per marker, with inline threshold box
 - Auto-configuring a marker by prompting it to be positioned inside outlines placed at each corner and the centre and then auto-adjusting the inputs until just before the outline is not filled with white. Determine whether the inputs overlap sufficiently to allow a single range or whether several ranges are required
 - Allow custom gesture inputs to be added with one or more rules, including position of named marker and relation between two named markers (horizontally or vertically less than, equal, more than)
