@@ -16,16 +16,17 @@ namespace GesturesToInputs {
         ip.ki.time = 0;
         ip.ki.dwExtraInfo = 0;
     }
-    void Gesture::calculateInstructionsWithUnknownOrder(std::list<Tracker> trackers) {
-        std::list<Tracker>::iterator it = trackers.begin();
+    
+    void Gesture::calculateInstructionsWithUnknownOrder(std::map<std::string, Tracker> trackers) {
+        std::map<std::string, Tracker>::iterator it = trackers.begin();
         auto tracker1 = *it;
         std::advance(it, 1);
         auto tracker2 = *it;
-        if (tracker1.getXPosition() < tracker2.getXPosition()) {
-            calculateInstructions(tracker1, tracker2);
+        if (tracker1.second.getXPosition() < tracker2.second.getXPosition()) {
+            calculateInstructions(tracker1.second, tracker2.second);
         }
         else {
-            calculateInstructions(tracker2, tracker1);
+            calculateInstructions(tracker2.second, tracker1.second);
         }
     }
     

@@ -10,12 +10,12 @@ namespace GesturesToInputs {
         Webcam cam;
         Gesture gesture;
         PerformanceTimer perf;
-        std::list<Tracker> trackers;
+        std::map<std::string, Tracker> trackers;
     public:
         const int ERROR_NO_WEBCAM = 200;
         int webcamIndex;
         bool webcamMirrored = true;
-        GesturesToInputsProcessor(std::list<Tracker> trackers);
+        GesturesToInputsProcessor(std::map<std::string, Tracker> trackers);
         void run();
     };
 }

@@ -12,18 +12,18 @@ namespace GesturesToInputs {
     public:
         Gesture();
 
-        void calculateInstructionsWithUnknownOrder(std::list<Tracker> trackers);
+        void calculateInstructionsWithUnknownOrder(std::map<std::string, Tracker> trackers);
     private:
         cv::Mat text = cv::Mat(100, 500, CV_8UC1);
         int textLine = 40;
         INPUT ip;
         std::map<int, bool> pressed = {
             { DIK_W, false },
-            { DIK_W, false },
-            { DIK_W, false },
-            { DIK_W, false },
-            { DIK_W, false },
-            { DIK_W, false },
+            { DIK_A, false },
+            { DIK_S, false },
+            { DIK_D, false },
+            { DIK_F, false },
+            { DIK_SPACE, false },
         };
 
         void log(std::string textToAdd);
