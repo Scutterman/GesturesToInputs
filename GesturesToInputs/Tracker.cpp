@@ -88,6 +88,7 @@ namespace GesturesToInputs {
             threshold += imageWithThreshold;
         }
 
+        cv::imshow(name + " threshold value", threshold);
         return threshold;
     }
     
