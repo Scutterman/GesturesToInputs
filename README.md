@@ -59,3 +59,4 @@ A window that allows better control of the program
 - Auto-configuring a marker by prompting it to be positioned inside outlines placed at each corner and the centre and then auto-adjusting the inputs until just before the outline is not filled with white. Determine whether the inputs overlap sufficiently to allow a single range or whether several ranges are required
 - Allow custom gesture inputs to be added with one or more rules, including position of named marker and relation between two named markers (horizontally or vertically less than, equal, more than)
 - Allow for "gesture profiles" to be saved so different games can have their own set of inputs and can be chosen from a dropdown list
+- Switching between a DirectInput / DirectX target and a normal keyboard target
