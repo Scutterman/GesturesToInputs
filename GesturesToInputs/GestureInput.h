@@ -8,9 +8,9 @@ namespace GesturesToInputs {
     private:
         std::list<GestureRule> rules;
         int scanCode;
-        bool keyPressed = false;
         std::string debugMessage;
     public:
+        bool keyPressed = false;
         GestureInput(std::list<GestureRule> rules, int keyScanCode, std::string debugMessageIfPressed = "");
         std::string getDebugMessage();
     };
