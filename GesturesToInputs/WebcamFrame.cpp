@@ -14,22 +14,7 @@ namespace GesturesToInputs {
             flip(source, source, 1);
         }
     }
-    cv::Mat WebcamFrame::isolateColour(cv::Scalar low, cv::Scalar high) {
-        cv::Mat imageAsHSV;
-        cvtColor(source, imageAsHSV, cv::COLOR_BGR2HSV);
 
-        cv::Mat imageWithThreshold;
-        inRange(imageAsHSV, low, high, imageWithThreshold);
-
-        //morphological opening (removes small objects from the foreground)
-        erode(imageWithThreshold, imageWithThreshold, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5)));
-        dilate(imageWithThreshold, imageWithThreshold, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5)));
-
-        //morphological closing (removes small holes from the foreground)
-        dilate(imageWithThreshold, imageWithThreshold, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5)));
-        erode(imageWithThreshold, imageWithThreshold, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5)));
-        return imageWithThreshold;
-    }
     void WebcamFrame::drawGrid() {
         cv::Size size = source.size();
         int oneThird = size.height / 3;

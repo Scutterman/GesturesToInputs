@@ -9,8 +9,6 @@ namespace GesturesToInputs {
 
         WebcamFrame(cv::VideoCapture cap, bool mirroredCapture);
 
-        cv::Mat isolateColour(cv::Scalar low, cv::Scalar high);
-
         void drawGrid();
     };
 }
