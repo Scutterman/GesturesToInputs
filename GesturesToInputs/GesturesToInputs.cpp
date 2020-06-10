@@ -14,6 +14,13 @@
 
 using namespace GesturesToInputs;
 
+// TODO:: Move main() to main.cpp
+// TODO:: create a GesturesToInputs class that can have values set:
+// - Webcam index
+// - trackers
+// - gestures
+// GesturesToInputs will have a "run" method that contains the infinite loop
+// Configuration loading will happen in main() by looking for a file in the user profile directory and supplying defaults if it is not found
 int main(int argc, char** argv)
 {
     try {
