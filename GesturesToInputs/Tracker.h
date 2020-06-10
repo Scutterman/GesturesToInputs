@@ -1,6 +1,7 @@
 #pragma once
-
+#include <list>
 #include <opencv2/core/mat.hpp>
+#include "TrackerValues.h"
 
 namespace GesturesToInputs {
     enum class VERTICAL_POSITION { BOTTOM, MIDDLE, TOP };
@@ -8,10 +9,12 @@ namespace GesturesToInputs {
 
     class Tracker {
     private:
+        std::list<TrackerValues> trackedColours;
         int lastX = -1, lastY = -1;
         VERTICAL_POSITION lastVerticalPosition;
         HORIZONTAL_POSITION lastHorizontalPosition;
-        cv::Scalar colour;
+        cv::Scalar lineColour;
+        std::string name;
 
         int topThird;
         int bottomThird;
@@ -21,11 +24,13 @@ namespace GesturesToInputs {
         int farRight;
 
         bool drawTrackingLine = false;
+        void addControlWindows();
+        cv::Mat isolateColours(cv::Mat frame);
     public:
-        cv::Mat lines = cv::Mat::zeros(cv::Size(0, 0), CV_8UC3);
-        Tracker(cv::Scalar colour, cv::Size size, bool drawTrackingLine = false);
+        cv::Mat lines;
+        Tracker(std::string trackerName, std::list<TrackerValues> trackedColours,  cv::Scalar lineColour, cv::Size size, bool drawTrackingLine = false);
 
-        void track(cv::Mat threshold);
+        void track(cv::Mat frame);
 
         VERTICAL_POSITION getVerticalPosition();
         HORIZONTAL_POSITION getHorizontalPosition();
