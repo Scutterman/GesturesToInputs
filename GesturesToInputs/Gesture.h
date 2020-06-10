@@ -12,7 +12,7 @@ namespace GesturesToInputs {
     public:
         Gesture();
 
-        void calculateInstructionsWithUnknownOrder(Tracker tracker1, Tracker tracker2);
+        void calculateInstructionsWithUnknownOrder(std::list<Tracker> trackers);
     private:
         cv::Mat text = cv::Mat(100, 500, CV_8UC1);
         int textLine = 40;

@@ -83,6 +83,7 @@
   <ItemGroup>
     <ClInclude Include="ColourValues.h" />
     <ClInclude Include="Gesture.h" />
+    <ClInclude Include="main.h" />
     <ClInclude Include="PerformanceTimer.h" />
     <ClInclude Include="Tracker.h" />
     <ClInclude Include="TrackerValues.h" />
@@ -95,6 +96,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ColourValues.cpp" />
+    <ClCompile Include="main.cpp" />
     <ClCompile Include="PerformanceTimer.cpp" />
     <ClCompile Include="TrackerValues.cpp" />
     <ClCompile Include="WebcamFrame.cpp" />

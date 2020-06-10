@@ -5,21 +5,12 @@
 #include <opencv2/imgproc.hpp>
 
 namespace GesturesToInputs {
-    Tracker::Tracker(std::string trackerName, std::list<TrackerValues> trackedColours, cv::Scalar lineColour, cv::Size size, bool drawTrackingLine) {
-        // Origin is top left so higher y value is actually lower down in the image.
-        topThird = size.height / 3;
-        bottomThird = topThird * 2;
-
-        farLeft = size.width / 5;
-        middleLeft = farLeft * 2;
-        middleRight = farLeft * 3;
-        farRight = farLeft * 4;
-
+    Tracker::Tracker(std::string trackerName, std::list<TrackerValues> trackedColours, cv::Scalar lineColour, bool drawTrackingLine) {
         this->trackedColours = trackedColours;
         this->lineColour = lineColour;
         this->drawTrackingLine = drawTrackingLine;
         name = trackerName;
-        lines = cv::Mat::zeros(size, CV_8UC3);
+        
         addControlWindows();
     }
 
@@ -41,7 +32,23 @@ namespace GesturesToInputs {
         }
     }
 
+    void Tracker::setupGrid(cv::Size size) {
+        // Origin is top left so higher y value is actually lower down in the image.
+        topThird = size.height / 3;
+        bottomThird = topThird * 2;
+
+        farLeft = size.width / 5;
+        middleLeft = farLeft * 2;
+        middleRight = farLeft * 3;
+        farRight = farLeft * 4;
+        lines = cv::Mat::zeros(size, CV_8UC3);
+    }
+
     void Tracker::track(cv::Mat frame) {
+        if (!gridInitialised) {
+            setupGrid(frame.size());
+            gridInitialised = true;
+        }
         cv::Moments imageMoments = moments(isolateColours(frame));
         double area = imageMoments.m00;
 

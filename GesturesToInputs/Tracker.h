@@ -16,6 +16,7 @@ namespace GesturesToInputs {
         cv::Scalar lineColour;
         std::string name;
 
+        bool gridInitialised = false;
         int topThird;
         int bottomThird;
         int farLeft;
@@ -26,9 +27,10 @@ namespace GesturesToInputs {
         bool drawTrackingLine = false;
         void addControlWindows();
         cv::Mat isolateColours(cv::Mat frame);
+        void setupGrid(cv::Size size);
     public:
         cv::Mat lines;
-        Tracker(std::string trackerName, std::list<TrackerValues> trackedColours,  cv::Scalar lineColour, cv::Size size, bool drawTrackingLine = false);
+        Tracker(std::string trackerName, std::list<TrackerValues> trackedColours,  cv::Scalar lineColour, bool drawTrackingLine = false);
 
         void track(cv::Mat frame);
 

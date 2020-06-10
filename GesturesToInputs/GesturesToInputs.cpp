@@ -1,64 +1,43 @@
 #include "GesturesToInputs.h"
 
-#include <iostream>
-
-#include <opencv2/core/types.hpp>
 #include <opencv2/highgui.hpp>
-#include <opencv2/imgproc.hpp>
 
-#include "Gesture.h"
-#include "PerformanceTimer.h"
-#include "Tracker.h"
-#include "Webcam.h"
-#include "WebcamFrame.h"
-
-using namespace GesturesToInputs;
-
-// TODO:: Move main() to main.cpp
-// TODO:: create a GesturesToInputs class that can have values set:
-// - Webcam index
-// - trackers
-// - gestures
-// GesturesToInputs will have a "run" method that contains the infinite loop
-// Configuration loading will happen in main() by looking for a file in the user profile directory and supplying defaults if it is not found
-int main(int argc, char** argv)
-{
-    try {
-        Webcam cam = Webcam();
+namespace GesturesToInputs {
+    GesturesToInputsProcessor::GesturesToInputsProcessor(std::list<Tracker> trackers)
+    {
+        this->trackers = trackers;
+    }
+    // TODO:: GesturesToInputs class should have a list of gestures passed into it
+    // Configuration will be supplied by main()
+    
+    // TODO:: Every tracker currently needs to calculate its own grid
+    // This should probably be handled by Gestures.
+    void GesturesToInputsProcessor::run() {
         if (!cam.initialised) {
-            return 0;
+            throw ERROR_NO_WEBCAM;
         }
-        cam.mirroredCapture = true;
-
-        Tracker trackers[] = {
-            Tracker("Red", std::list<TrackerValues>{
-                TrackerValues(0, 10, 113, 255, 58, 255),
-                TrackerValues(169, 179, 104, 255, 151, 255),
-            }, cv::Scalar(0, 0, 255), cam.next().source.size()),
-            Tracker("Green", std::list<TrackerValues> { TrackerValues(80, 95, 111, 255, 110, 255) }, cv::Scalar(0, 255, 0), cam.next().source.size())
-        };
-
-        Gesture gesture;
-        PerformanceTimer perf;
         
+        cam.mirroredCapture = webcamMirrored;
+
         for (;;) {
             perf.Start();
-            WebcamFrame frame = cam.next();
+            auto frame = cam.next();
             for (auto& tracker : trackers) { tracker.track(frame.source); }
 
-            gesture.calculateInstructionsWithUnknownOrder(trackers[0], trackers[1]);
+            gesture.calculateInstructionsWithUnknownOrder(trackers);
 
             frame.drawGrid();
-            cv::imshow("Original", frame.source + trackers[0].lines + trackers[1].lines);
-            perf.End();
             
+            cv::Mat output = cv::Mat::zeros(frame.source.size(), CV_8UC3);
+            output += frame.source;
+            for (auto& tracker : trackers) { output += tracker.lines; }
+            cv::imshow("Original", output);
+
+            perf.End();
+
             if (cv::waitKey(10) == 27) {
                 break;
             }
         }
     }
-    catch (int e) {
-        std::cout << "An exception occurred. Exception Nr. " << e << '\n';
-    }
-    return 0;
 }
