@@ -83,6 +83,8 @@
   <ItemGroup>
     <ClInclude Include="ColourValues.h" />
     <ClInclude Include="Gesture.h" />
+    <ClInclude Include="GestureInput.h" />
+    <ClInclude Include="GestureRule.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="PerformanceTimer.h" />
     <ClInclude Include="Tracker.h" />
@@ -96,6 +98,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ColourValues.cpp" />
+    <ClCompile Include="GestureInput.cpp" />
+    <ClCompile Include="GestureRule.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PerformanceTimer.cpp" />
     <ClCompile Include="TrackerValues.cpp" />
