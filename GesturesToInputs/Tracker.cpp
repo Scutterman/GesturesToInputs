@@ -102,4 +102,8 @@ namespace GesturesToInputs {
     VERTICAL_POSITION Tracker::getVerticalPosition() { return lastVerticalPosition; }
     HORIZONTAL_POSITION Tracker::getHorizontalPosition() { return lastHorizontalPosition; }
     int Tracker::getXPosition() { return lastX; }
+    std::string Tracker::getName()
+    {
+        return name;
+    }
 }

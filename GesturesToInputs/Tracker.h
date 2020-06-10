@@ -37,5 +37,6 @@ namespace GesturesToInputs {
         VERTICAL_POSITION getVerticalPosition();
         HORIZONTAL_POSITION getHorizontalPosition();
         int getXPosition();
+        std::string getName();
     };
 }
