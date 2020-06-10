@@ -26,16 +26,17 @@ namespace GesturesToInputs {
     void Tracker::addControlWindows() {
         int i = 1;
         for (auto &initialValues : trackedColours) {
-            cv::namedWindow(name + " colour #" + std::to_string(i), cv::WINDOW_AUTOSIZE);
+            auto windowName = name + " colour #" + std::to_string(i);
+            cv::namedWindow(windowName, cv::WINDOW_AUTOSIZE);
 
-            cv::createTrackbar("Low Hue", name, &initialValues.low.hue, 179);
-            cv::createTrackbar("High Hue", name, &initialValues.high.hue, 179);
+            cv::createTrackbar("Low Hue", windowName, &initialValues.low.hue, 179);
+            cv::createTrackbar("High Hue", windowName, &initialValues.high.hue, 179);
 
-            cv::createTrackbar("Low Saturation", name, &initialValues.low.saturation, 255);
-            cv::createTrackbar("High Saturation", name, &initialValues.high.saturation, 255);
+            cv::createTrackbar("Low Saturation", windowName, &initialValues.low.saturation, 255);
+            cv::createTrackbar("High Saturation", windowName, &initialValues.high.saturation, 255);
 
-            cv::createTrackbar("Low Value", name, &initialValues.low.value, 255);
-            cv::createTrackbar("High Value", name, &initialValues.high.value, 255);
+            cv::createTrackbar("Low Value", windowName, &initialValues.low.value, 255);
+            cv::createTrackbar("High Value", windowName, &initialValues.high.value, 255);
             i++;
         }
     }
