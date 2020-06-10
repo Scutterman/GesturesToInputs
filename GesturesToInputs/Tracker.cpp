@@ -71,7 +71,7 @@ namespace GesturesToInputs {
     cv::Mat Tracker::isolateColours(cv::Mat frame) {
         cv::Mat imageAsHSV;
         cvtColor(frame, imageAsHSV, cv::COLOR_BGR2HSV);
-        cv::Mat threshold = cv::Mat::zeros(lines.size(), CV_8UC3);
+        cv::Mat threshold = cv::Mat::zeros(frame.size(), CV_8U);
 
         for (auto& values : trackedColours) {
             cv::Mat imageWithThreshold;
