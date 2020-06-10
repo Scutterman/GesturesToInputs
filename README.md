@@ -24,7 +24,25 @@
 1. Ensure the area seen by the webcam is well lit and evenly lit.
 1. Ensure you're not wearing any colours too close to the marker colours, and nothing in the background is too similar similar to the marker colours.
 
-# Planned Features
+# How this works
+Each instance of the "Tracker" class represents one marker you want to track.
+It has min and max thresholds for Hue, Saturation, and Value that represent what the colour range of the marker should be.
+An OpenCV webcam instance, controlled by the "Webcam" class, provides a frame of video that is fed to the Tracker.track() method.
+This then calls Tracker.isolateColours(), which uses OpenCV methods to:
+- Convert the frame to HSV format
+- Turn all pixels whose values are inside the colour range white, and everything else black
+- erode, dialate, dilate, erode to clean up any unwanted noise and small objects
+- return the black and white frame back to the track() method
+
+The track method can now use the OpenCV "moments" function to work out the x and y co-ordinates of the centre of the (hopefully only) white area that represents the marker.
+These co-ordinates are then reduced down into whether the marker is at the top, middle, or bottom of the screen and whether it is on the far left, middle left, centre, middle right, or far right (placing it in any one of fifteen different grid squares).
+
+The process is repeated for all markers and then the individual position of a marker, or its relative position to another marker, can be used by the "Gesture" class to work out whether the markers are positioned such that they form a gesture that is linked to a keyboard input.
+
+The Windows Development Kit "SendInput" method is used by Gesture._SendInput to send a direct input to whatever window has the focus.
+If this happens to be a game, the result is that a gesture controls the game just like a direct keyboard input would.
+
+# Roadmap
 ## Miscellaneous
 - A "no marker detected" state that resets the output keys and takes no action until a marker is detected again
 - Automatically create two ColourValues if any of the "low" sliders are higher than the "high" slider - one for "low" to "max" and one for "min" to "high"
