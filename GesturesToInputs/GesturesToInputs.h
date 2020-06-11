@@ -15,7 +15,7 @@ namespace GesturesToInputs {
         const int ERROR_NO_WEBCAM = 200;
         int webcamIndex;
         bool webcamMirrored = true;
-        GesturesToInputsProcessor(std::map<std::string, Tracker> trackers);
+        GesturesToInputsProcessor(std::map<std::string, Tracker> trackers, std::list<GestureInput> gestures);
         void run();
     };
 }
