@@ -24,7 +24,7 @@ namespace GesturesToInputs {
             auto frame = cam.next();
             for (auto& tracker : trackers) { tracker.second.track(frame.source); }
 
-            gesture.calculateInstructionsWithUnknownOrder(trackers);
+            gesture.calculateInstructions(trackers);
 
             frame.drawGrid();
             
