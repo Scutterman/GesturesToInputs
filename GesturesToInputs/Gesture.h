@@ -6,32 +6,21 @@
 #include <opencv2/core/types.hpp>
 
 #include "Tracker.h"
+#include "GestureInput.h"
 
 namespace GesturesToInputs {
     class Gesture {
     public:
-        Gesture();
-
-        void calculateInstructionsWithUnknownOrder(std::map<std::string, Tracker> trackers);
+        Gesture(std::list<GestureInput> gestures = std::list<GestureInput>());
+        void calculateInstructions(std::map<std::string, Tracker> trackers);
     private:
+        std::list<GestureInput> gestures;
         cv::Mat text = cv::Mat(100, 500, CV_8UC1);
         int textLine = 40;
         INPUT ip;
-        std::map<int, bool> pressed = {
-            { DIK_W, false },
-            { DIK_A, false },
-            { DIK_S, false },
-            { DIK_D, false },
-            { DIK_F, false },
-            { DIK_SPACE, false },
-        };
 
         void log(std::string textToAdd);
-
         void sendInput(int dikKeyCode);
-
         void cancelInput(int dikKeyCode);
-
-        void calculateInstructions(Tracker left, Tracker right);
     };
 }
