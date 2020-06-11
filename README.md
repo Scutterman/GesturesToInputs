@@ -46,8 +46,11 @@ If this happens to be a game, the result is that a gesture controls the game jus
 ## Miscellaneous
 - A "no marker detected" state that resets the output keys and takes no action until a marker is detected again
 - Automatically create two ColourValues if any of the "low" sliders are higher than the "high" slider - one for "low" to "max" and one for "min" to "high"
-- Split the program into "generic library" (get frame, track markers, process gestures) and "specific configuration" (number of markers, initial marker values, game-specific gestures)
-- Allow saving the current marker positions so they can be used next time the program is run
+- Check width of marker against height to see if marker orientation "landscape" or "portrait" can be used to increase the number of gestures
+- Look into whether Tensorflow can run on the gpu, consider using that for marker tracking or gesture processing
+    - If Tensorflow is not suitable, see whether gpu can be used for gesture processing. A shader could be generated when the gestures are first loaded so only tracker positions would need to be sent to the gpu every frame - maybe as little as an array index to identify the tracker and then a vec3 with 0-2 for vertical position, 0-4 for horizontal position, and 0-1 for orientation.
+- Allow saving the current marker colour values to disk so they can be used next time the program is run
+- Allow saving gesture profiles to disk so different games can have different profiles
 - Shape tracking to augment or replace colour tracking
     - An equilateral triangle in one hand and two equilateral triangles at right-angles for the other hand should allow each hand to detect four distinct rotations. These can be combined with position on screen to vastly increase the number of gestures, and can be easily printed out and taped to a pen for easy holding.
     - Perhaps a square can be stuck to one side of a hat and a set of four triangles pointing in different directions can be stuck to the other side. The position of the shapes can be tracked and rotation of the head can be calculated because one shape will not be visible to the webcam when the head turns far enough.
