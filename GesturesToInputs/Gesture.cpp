@@ -52,12 +52,14 @@ namespace GesturesToInputs {
                 }
             }
 
-            if (gestureDetected && !input.keyPressed) {
-                sendInput(input.getKeyCode());
-                input.keyPressed = true;
+            if (gestureDetected) {
+                if (!input.keyPressed) {
+                    sendInput(input.getKeyCode());
+                    input.keyPressed = true;
+                }
                 log(input.getDebugMessage());
             }
-            else if (!gestureDetected && input.keyPressed) {
+            else if (input.keyPressed) {
                 cancelInput(input.getKeyCode());
                 input.keyPressed = false;
             }
