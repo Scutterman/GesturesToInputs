@@ -10,6 +10,8 @@ namespace GesturesToInputs {
         int scanCode;
         std::string debugMessage;
     public:
+        std::list<GestureRule> getRules();
+        int getKeyCode();
         bool keyPressed = false;
         GestureInput(std::list<GestureRule> rules, int keyScanCode, std::string debugMessageIfPressed = "");
         std::string getDebugMessage();
