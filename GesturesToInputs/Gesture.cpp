@@ -34,7 +34,7 @@ namespace GesturesToInputs {
         textLine = 40;
 
         for (auto& input : gestures) {
-            bool gestureDetected = false;
+            bool gestureDetected = true;
             for (auto& rule : input.getRules()) {
                 bool rulePassed = false;
                 if (rule.isComparingTwoTrackers()) {
