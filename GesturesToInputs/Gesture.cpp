@@ -35,7 +35,7 @@ namespace GesturesToInputs {
         textLine += 40;
     }
     
-    void Gesture::_SendInput(int dikKeyCode) {
+    void Gesture::sendInput(int dikKeyCode) {
         if (pressed[dikKeyCode] == false) {
             pressed[dikKeyCode] = true;
             ip.ki.dwFlags = KEYEVENTF_SCANCODE;
@@ -44,7 +44,7 @@ namespace GesturesToInputs {
         }
     }
     
-    void Gesture::CancelInput(int dikKeyCode) {
+    void Gesture::cancelInput(int dikKeyCode) {
         if (pressed[dikKeyCode] == true) {
             ip.ki.dwFlags = KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP;
             ip.ki.wScan = dikKeyCode;
@@ -59,49 +59,49 @@ namespace GesturesToInputs {
 
         if (left.getHorizontalPosition() == HORIZONTAL_POSITION::CENTRE && right.getHorizontalPosition() == HORIZONTAL_POSITION::CENTRE) {
             log("FAST");
-            _SendInput(DIK_F);
+            sendInput(DIK_F);
             Sleep(100);
-            CancelInput(DIK_F);
+            cancelInput(DIK_F);
         }
 
         if (left.getHorizontalPosition() == HORIZONTAL_POSITION::FAR_LEFT && right.getHorizontalPosition() == HORIZONTAL_POSITION::FAR_RIGHT) {
             log("SLOW");
-            _SendInput(DIK_SPACE);
+            sendInput(DIK_SPACE);
         }
         else {
-            CancelInput(DIK_SPACE);
+            cancelInput(DIK_SPACE);
         }
 
         if (left.getVerticalPosition() < right.getVerticalPosition()) {
             log("TILT LEFT");
-            _SendInput(DIK_A);
+            sendInput(DIK_A);
         }
         else {
-            CancelInput(DIK_A);
+            cancelInput(DIK_A);
         }
 
         if (right.getVerticalPosition() < left.getVerticalPosition()) {
             log("TILT RIGHT");
-            _SendInput(DIK_D);
+            sendInput(DIK_D);
         }
         else {
-            CancelInput(DIK_D);
+            cancelInput(DIK_D);
         }
 
         if (left.getVerticalPosition() == VERTICAL_POSITION::TOP && right.getVerticalPosition() == VERTICAL_POSITION::TOP) {
             log("FLY UP");
-            _SendInput(DIK_W);
+            sendInput(DIK_W);
         }
         else {
-            CancelInput(DIK_W);
+            cancelInput(DIK_W);
         }
 
         if (left.getVerticalPosition() == VERTICAL_POSITION::BOTTOM && right.getVerticalPosition() == VERTICAL_POSITION::BOTTOM) {
             log("FLY DOWN");
-            _SendInput(DIK_S);
+            sendInput(DIK_S);
         }
         else {
-            CancelInput(DIK_S);
+            cancelInput(DIK_S);
         }
 
         cv::imshow("Text", text);
