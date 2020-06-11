@@ -50,6 +50,7 @@ If this happens to be a game, the result is that a gesture controls the game jus
 - Allow saving the current marker positions so they can be used next time the program is run
 - Shape tracking to augment or replace colour tracking
     - An equilateral triangle in one hand and two equilateral triangles at right-angles for the other hand should allow each hand to detect four distinct rotations. These can be combined with position on screen to vastly increase the number of gestures, and can be easily printed out and taped to a pen for easy holding.
+    - Perhaps a square can be stuck to one side of a hat and a set of four triangles pointing in different directions can be stuck to the other side. The position of the shapes can be tracked and rotation of the head can be calculated because one shape will not be visible to the webcam when the head turns far enough.
 
 ## Configuration Window
 A window that allows better control of the program
