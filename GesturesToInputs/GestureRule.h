@@ -12,7 +12,7 @@ namespace GesturesToInputs {
         GESTURE_RULE_COMPARISON_OPERATION operation;
         int expectedValue;
         bool compare(int trackerValue);
-        bool _isComparingTwoTrackers;
+        bool _isComparingTwoTrackers = false;
     public:
         std::string trackerName;
         std::string comparisonTrackerName;

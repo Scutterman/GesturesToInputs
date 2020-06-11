@@ -15,6 +15,7 @@ namespace GesturesToInputs {
         this->trackerName = trackerName;
         this->operation = operation;
         this->comparisonTrackerName = comparisonTrackerName;
+        this->_isComparingTwoTrackers = true;
     }
 
     bool GestureRule::compare(Tracker tracker)
