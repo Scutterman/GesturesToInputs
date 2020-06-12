@@ -15,7 +15,7 @@ namespace GesturesToInputs {
         void calculateInstructions(std::map<std::string, Tracker> trackers);
     private:
         std::list<GestureInput> gestures;
-        cv::Mat text = cv::Mat(100, 500, CV_8UC1);
+        cv::Mat text = cv::Mat(500, 500, CV_8UC1);
         int textLine = 40;
         INPUT ip;
 

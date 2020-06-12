@@ -4,6 +4,7 @@
 #include "TrackerValues.h"
 
 namespace GesturesToInputs {
+    enum class MARKER_ORIENTATION { PORTRAIT, LANDSCAPE };
     enum class VERTICAL_POSITION { BOTTOM, MIDDLE, TOP };
     enum class HORIZONTAL_POSITION { FAR_LEFT, MIDDLE_LEFT, CENTRE, MIDDLE_RIGHT, FAR_RIGHT };
 
@@ -15,6 +16,7 @@ namespace GesturesToInputs {
 
         std::list<TrackerValues> trackedColours;
         int lastX = -1, lastY = -1;
+        MARKER_ORIENTATION orientation;
         VERTICAL_POSITION lastVerticalPosition;
         HORIZONTAL_POSITION lastHorizontalPosition;
         cv::Scalar lineColour;
@@ -34,12 +36,13 @@ namespace GesturesToInputs {
         void addControlWindows();
         cv::Mat isolateColours(cv::Mat frame);
         void setupGrid(cv::Size size);
+        void setOrientation(std::vector<cv::Point>& contour, cv::Size size);
     public:
         cv::Mat lines;
         Tracker(std::string trackerName, std::list<TrackerValues> trackedColours,  cv::Scalar lineColour, bool drawTrackingLine = false);
 
         void track(cv::Mat frame);
-
+        MARKER_ORIENTATION getOrientation();
         VERTICAL_POSITION getVerticalPosition();
         HORIZONTAL_POSITION getHorizontalPosition();
         int getXPosition();

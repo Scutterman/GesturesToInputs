@@ -56,19 +56,46 @@ namespace GesturesToInputs {
         lines = cv::Mat::zeros(size, CV_8UC3);
     }
 
+    void Tracker::setOrientation(std::vector<cv::Point>& contour, cv::Size size)
+    {
+        int minX = size.width;
+        int maxX = -1;
+        int minY = size.height;
+        int maxY = -1;
+
+        for (auto point : contour) {
+            if (point.x < minX) { minX = point.x; }
+            if (point.x > maxX) { maxX = point.x; }
+            if (point.y < minY) { minY = point.y; }
+            if (point.y > maxY) { maxY = point.y; }
+        }
+
+        int width = maxX - minX;
+        int height = maxY - minY;
+        orientation = width <= height ? MARKER_ORIENTATION::PORTRAIT : MARKER_ORIENTATION::LANDSCAPE;
+    }
+
     void Tracker::track(cv::Mat frame) {
         if (!gridInitialised) {
             setupGrid(frame.size());
             gridInitialised = true;
         }
 
-        cv::Moments imageMoments = cv::moments(isolateColours(frame));
-        double area = imageMoments.m00;
+        std::vector<std::vector<cv::Point>> contours;
+        cv::findContours(isolateColours(frame), contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
-        detected = area > 200000;
-        if (detected) {
+        detected = false;
+        for (auto& contour :contours) {
+            if (cv::contourArea(contour) < 350) { continue; }
+            
+            detected = true;
+            
+            cv::Moments imageMoments = cv::moments(contour);
+            double area = imageMoments.m00;
+
             int centreX = imageMoments.m10 / area;
             int centreY = imageMoments.m01 / area;
+            setOrientation(contour, frame.size());
 
             if (centreY <= topThird) { lastVerticalPosition = VERTICAL_POSITION::TOP; }
             else if (centreY >= bottomThird) { lastVerticalPosition = VERTICAL_POSITION::BOTTOM; }
@@ -86,6 +113,8 @@ namespace GesturesToInputs {
 
             lastX = centreX;
             lastY = centreY;
+
+            break;
         }
     }
 
@@ -112,6 +141,11 @@ namespace GesturesToInputs {
         return threshold;
     }
     
+    MARKER_ORIENTATION Tracker::getOrientation()
+    {
+        return orientation;
+    }
+
     VERTICAL_POSITION Tracker::getVerticalPosition() { return lastVerticalPosition; }
     HORIZONTAL_POSITION Tracker::getHorizontalPosition() { return lastHorizontalPosition; }
     int Tracker::getXPosition() { return lastX; }
