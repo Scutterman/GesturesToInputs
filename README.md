@@ -44,7 +44,6 @@ If this happens to be a game, the result is that a gesture controls the game jus
 
 # Roadmap
 ## Miscellaneous
-- Automatically create two ColourValues if any of the "low" sliders are higher than the "high" slider - one for "low" to "max" and one for "min" to "high"
 - Check width of marker against height to see if marker orientation "landscape" or "portrait" can be used to increase the number of gestures
 - Look into whether Tensorflow can run on the gpu, consider using that for marker tracking or gesture processing
     - If Tensorflow is not suitable, see whether gpu can be used for gesture processing. A shader could be generated when the gestures are first loaded so only tracker positions would need to be sent to the gpu every frame - maybe as little as an array index to identify the tracker and then a vec3 with 0-2 for vertical position, 0-4 for horizontal position, and 0-1 for orientation.
