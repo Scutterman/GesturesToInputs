@@ -42,18 +42,43 @@ namespace GesturesToInputs {
             }
 
             if (gestureDetected) {
-                if (!input.keyPressed) {
-                    sendInput(input.getKeyCode());
-                    input.keyPressed = true;
+                switch (input.getInputType()) {
+                case GESTURE_INPUT_TYPE::KEYBOARD:
+                    if (!input.active) {
+                        sendInput(input.getValue());
+                    }
+                    break;
+                case GESTURE_INPUT_TYPE::MOUSE_MOVE:
+                    sendMouseMove(input.getValue());
+                    break;
+                case GESTURE_INPUT_TYPE::MOUSE_BUTTON:
+                    if (!input.active) {
+                        sendMouseButton(input.getValue());
+                    }
+                    break;
                 }
+
+                input.active = true;
                 log(input.getDebugMessage());
             }
-            else if (input.keyPressed) {
-                cancelInput(input.getKeyCode());
-                input.keyPressed = false;
+            else {
+                switch (input.getInputType()) {
+                case GESTURE_INPUT_TYPE::KEYBOARD:
+                    if (input.active) {
+                        cancelInput(input.getValue());
+                    }
+                    break;
+                case GESTURE_INPUT_TYPE::MOUSE_BUTTON:
+                    if (input.active) {
+                        cancelMouseButton(input.getValue());
+                    }
+                    break;
+                }
+
+                input.active = false;
             }
         }
-        
+
         cv::imshow("Text", text);
     }
     
@@ -63,14 +88,66 @@ namespace GesturesToInputs {
     }
     
     void Gesture::sendInput(int dikKeyCode) {
+        ip.type = INPUT_KEYBOARD;
         ip.ki.dwFlags = KEYEVENTF_SCANCODE;
         ip.ki.wScan = dikKeyCode;
         SendInput(1, &ip, sizeof(INPUT));
     }
     
     void Gesture::cancelInput(int dikKeyCode) {
+        ip.type = INPUT_KEYBOARD;
         ip.ki.dwFlags = KEYEVENTF_SCANCODE | KEYEVENTF_KEYUP;
         ip.ki.wScan = dikKeyCode;
+        SendInput(1, &ip, sizeof(INPUT));
+    }
+
+    void Gesture::sendMouseButton(int button)
+    {
+        ip.type = INPUT_MOUSE;
+        ip.mi.time = 0;
+        ip.mi.mouseData = 0;
+        ip.mi.dwExtraInfo = 0;
+        ip.mi.dx = 0;
+        ip.mi.dy = 0;
+        ip.mi.dwFlags = button;
+        SendInput(1, &ip, sizeof(INPUT));
+    }
+
+    void Gesture::cancelMouseButton(int button)
+    {
+        int release = 0;
+        switch (button) {
+        case MOUSEEVENTF_LEFTDOWN:
+            release = MOUSEEVENTF_LEFTUP;
+            break;
+        case MOUSEEVENTF_RIGHTDOWN:
+            release = MOUSEEVENTF_RIGHTUP;
+            break;
+        default:
+            return;
+        }
+
+        ip.type = INPUT_MOUSE;
+        ip.mi.time = 0;
+        ip.mi.mouseData = 0;
+        ip.mi.dwExtraInfo = 0;
+        ip.mi.dx = 0;
+        ip.mi.dy = 0;
+        ip.mi.dwFlags = release;
+        SendInput(1, &ip, sizeof(INPUT));
+    }
+
+    void Gesture::sendMouseMove(int direction)
+    {
+        int x = direction % 2;
+        int y = direction / 2;
+        ip.type = INPUT_MOUSE;
+        ip.mi.time = 0;
+        ip.mi.mouseData = 0;
+        ip.mi.dwExtraInfo = 0;
+        ip.mi.dx = x * 12;
+        ip.mi.dy = y * 12;
+        ip.mi.dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_MOVE_NOCOALESCE;
         SendInput(1, &ip, sizeof(INPUT));
     }
 }

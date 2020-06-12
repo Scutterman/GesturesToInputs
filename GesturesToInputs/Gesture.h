@@ -22,5 +22,8 @@ namespace GesturesToInputs {
         void log(std::string textToAdd);
         void sendInput(int dikKeyCode);
         void cancelInput(int dikKeyCode);
+        void sendMouseButton(int button);
+        void cancelMouseButton(int button);
+        void sendMouseMove(int direction, long long duration);
     };
 }

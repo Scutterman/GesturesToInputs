@@ -1,11 +1,12 @@
 #include "GestureInput.h"
 
 namespace GesturesToInputs {
-    GestureInput::GestureInput(std::list<GestureRule> rules, int keyScanCode, std::string debugMessageIfPressed)
+    GestureInput::GestureInput(std::list<GestureRule> rules, int keyScanCode, std::string debugMessageIfPressed, GESTURE_INPUT_TYPE inputType)
     {
         this->rules = rules;
-        scanCode = keyScanCode;
+        value = keyScanCode;
         debugMessage = debugMessageIfPressed;
+        this->inputType = inputType;
     }
 
     std::list<GestureRule> GestureInput::getRules()
@@ -13,13 +14,18 @@ namespace GesturesToInputs {
         return rules;
     }
 
-    int GestureInput::getKeyCode()
+    int GestureInput::getValue()
     {
-        return scanCode;
+        return value;
     }
 
     std::string GestureInput::getDebugMessage()
     {
         return debugMessage;
+    }
+    
+    GESTURE_INPUT_TYPE GestureInput::getInputType()
+    {
+        return inputType;
     }
 }
