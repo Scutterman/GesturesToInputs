@@ -9,6 +9,10 @@ namespace GesturesToInputs {
 
     class Tracker {
     private:
+        const int maxHue = 179;
+        const int maxSaturation = 255;
+        const int maxValue = 255;
+
         std::list<TrackerValues> trackedColours;
         int lastX = -1, lastY = -1;
         VERTICAL_POSITION lastVerticalPosition;
@@ -26,6 +30,7 @@ namespace GesturesToInputs {
         int farRight;
 
         bool drawTrackingLine = false;
+        void normaliseColourRanges();
         void addControlWindows();
         cv::Mat isolateColours(cv::Mat frame);
         void setupGrid(cv::Size size);

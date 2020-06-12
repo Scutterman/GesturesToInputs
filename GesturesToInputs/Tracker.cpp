@@ -6,12 +6,24 @@
 
 namespace GesturesToInputs {
     Tracker::Tracker(std::string trackerName, std::list<TrackerValues> trackedColours, cv::Scalar lineColour, bool drawTrackingLine) {
-        this->trackedColours = trackedColours;
         this->lineColour = lineColour;
         this->drawTrackingLine = drawTrackingLine;
         name = trackerName;
         
+        this->trackedColours = trackedColours;
+        normaliseColourRanges();
         addControlWindows();
+    }
+
+    void Tracker::normaliseColourRanges()
+    {
+        for (auto& values : trackedColours) {
+            if (values.low.hue > values.high.hue) {
+                int newTrackerHighHue = values.high.hue;
+                values.high.hue = maxHue;
+                trackedColours.push_back(TrackerValues(0, newTrackerHighHue, values.low.saturation, values.high.saturation, values.low.value, values.high.value));
+            }
+        }
     }
 
     void Tracker::addControlWindows() {
@@ -20,14 +32,14 @@ namespace GesturesToInputs {
             auto windowName = name + " colour #" + std::to_string(i);
             cv::namedWindow(windowName, cv::WINDOW_AUTOSIZE);
 
-            cv::createTrackbar("Low Hue", windowName, &initialValues.low.hue, 179);
-            cv::createTrackbar("High Hue", windowName, &initialValues.high.hue, 179);
+            cv::createTrackbar("Low Hue", windowName, &initialValues.low.hue, maxHue);
+            cv::createTrackbar("High Hue", windowName, &initialValues.high.hue, maxHue);
 
-            cv::createTrackbar("Low Saturation", windowName, &initialValues.low.saturation, 255);
-            cv::createTrackbar("High Saturation", windowName, &initialValues.high.saturation, 255);
+            cv::createTrackbar("Low Saturation", windowName, &initialValues.low.saturation, maxSaturation);
+            cv::createTrackbar("High Saturation", windowName, &initialValues.high.saturation, maxSaturation);
 
-            cv::createTrackbar("Low Value", windowName, &initialValues.low.value, 255);
-            cv::createTrackbar("High Value", windowName, &initialValues.high.value, 255);
+            cv::createTrackbar("Low Value", windowName, &initialValues.low.value, maxValue);
+            cv::createTrackbar("High Value", windowName, &initialValues.high.value, maxValue);
             i++;
         }
     }
