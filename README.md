@@ -44,7 +44,6 @@ If this happens to be a game, the result is that a gesture controls the game jus
 
 # Roadmap
 ## Miscellaneous
-- A "no marker detected" state that resets the output keys and takes no action until a marker is detected again
 - Automatically create two ColourValues if any of the "low" sliders are higher than the "high" slider - one for "low" to "max" and one for "min" to "high"
 - Check width of marker against height to see if marker orientation "landscape" or "portrait" can be used to increase the number of gestures
 - Look into whether Tensorflow can run on the gpu, consider using that for marker tracking or gesture processing

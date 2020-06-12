@@ -53,7 +53,8 @@ namespace GesturesToInputs {
         cv::Moments imageMoments = cv::moments(isolateColours(frame));
         double area = imageMoments.m00;
 
-        if (area > 200000) {
+        detected = area > 200000;
+        if (detected) {
             int centreX = imageMoments.m10 / area;
             int centreY = imageMoments.m01 / area;
 
@@ -105,5 +106,10 @@ namespace GesturesToInputs {
     std::string Tracker::getName()
     {
         return name;
+    }
+
+    bool Tracker::isDetected()
+    {
+        return detected;
     }
 }

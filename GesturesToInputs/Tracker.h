@@ -16,6 +16,7 @@ namespace GesturesToInputs {
         cv::Scalar lineColour;
         std::string name;
 
+        bool detected = false;
         bool gridInitialised = false;
         int topThird;
         int bottomThird;
@@ -38,5 +39,6 @@ namespace GesturesToInputs {
         HORIZONTAL_POSITION getHorizontalPosition();
         int getXPosition();
         std::string getName();
+        bool isDetected();
     };
 }

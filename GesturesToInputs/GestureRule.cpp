@@ -24,6 +24,10 @@ namespace GesturesToInputs {
         if (tracker.getName() != trackerName) {
             return false;
         }
+        
+        if (!tracker.isDetected()) {
+            return false;
+        }
 
         switch (type) {
         case GESTURE_RULE_TYPE::HORIZONTAL_COMPARE:
@@ -45,6 +49,10 @@ namespace GesturesToInputs {
     
         // TODO:: throw exception
         if (trackerToCompare.getName() != comparisonTrackerName) {
+            return false;
+        }
+
+        if (!tracker.isDetected() || !trackerToCompare.isDetected()) {
             return false;
         }
 
