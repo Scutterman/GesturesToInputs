@@ -23,7 +23,7 @@ std::list<GestureInput> dragonGameGestures() {
     };
 
     auto tiltLeftRules = std::list<GestureRule>{
-        GestureRule(GESTURE_RULE_TYPE::RELATIVE_VERTICAL_COMPARE, "Red", GESTURE_RULE_COMPARISON_OPERATION::LESS_THAN, "Green")
+        GestureRule(GESTURE_RULE_TYPE::VERTICAL_COMPARE, "Red", GESTURE_RULE_COMPARISON_OPERATION::LESS_THAN, "Green")
     };
 
     auto downRules = std::list<GestureRule>{
@@ -32,7 +32,7 @@ std::list<GestureInput> dragonGameGestures() {
     };
 
     auto tiltRightRules = std::list<GestureRule>{
-        GestureRule(GESTURE_RULE_TYPE::RELATIVE_VERTICAL_COMPARE, "Red", GESTURE_RULE_COMPARISON_OPERATION::MORE_THAN, "Green")
+        GestureRule(GESTURE_RULE_TYPE::VERTICAL_COMPARE, "Red", GESTURE_RULE_COMPARISON_OPERATION::MORE_THAN, "Green")
     };
 
     return std::list<GestureInput>{
@@ -47,26 +47,32 @@ std::list<GestureInput> dragonGameGestures() {
 
 std::list<GestureInput> justCause2Gestures() {
     auto grappleRules = std::list<GestureRule>{
+        GestureRule(GESTURE_RULE_TYPE::ORIENTATION, "Green", (int)MARKER_ORIENTATION::LANDSCAPE),
         GestureRule(GESTURE_RULE_TYPE::HORIZONTAL_COMPARE, "Green", (int)HORIZONTAL_POSITION::CENTRE)
     };
 
     auto jumpRules = std::list<GestureRule>{
+        GestureRule(GESTURE_RULE_TYPE::ORIENTATION, "Green", (int)MARKER_ORIENTATION::LANDSCAPE),
         GestureRule(GESTURE_RULE_TYPE::VERTICAL_COMPARE, "Green", (int)VERTICAL_POSITION::TOP)
     };
 
     auto forwardRules = std::list<GestureRule>{
+        GestureRule(GESTURE_RULE_TYPE::ORIENTATION, "Red", (int)MARKER_ORIENTATION::PORTRAIT),
         GestureRule(GESTURE_RULE_TYPE::VERTICAL_COMPARE, "Red", (int)VERTICAL_POSITION::TOP)
     };
 
     auto leftRules = std::list<GestureRule>{
+        GestureRule(GESTURE_RULE_TYPE::ORIENTATION, "Red", (int)MARKER_ORIENTATION::PORTRAIT),
         GestureRule(GESTURE_RULE_TYPE::HORIZONTAL_COMPARE, "Red", (int)HORIZONTAL_POSITION::FAR_LEFT)
     };
 
     auto backwardRules = std::list<GestureRule>{
+        GestureRule(GESTURE_RULE_TYPE::ORIENTATION, "Red", (int)MARKER_ORIENTATION::PORTRAIT),
         GestureRule(GESTURE_RULE_TYPE::VERTICAL_COMPARE, "Red", (int)VERTICAL_POSITION::BOTTOM),
     };
 
     auto rightRules = std::list<GestureRule>{
+        GestureRule(GESTURE_RULE_TYPE::ORIENTATION, "Red", (int)MARKER_ORIENTATION::PORTRAIT),
         GestureRule(GESTURE_RULE_TYPE::HORIZONTAL_COMPARE, "Red", (int)HORIZONTAL_POSITION::CENTRE)
     };
 

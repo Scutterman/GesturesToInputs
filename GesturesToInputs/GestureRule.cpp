@@ -30,6 +30,8 @@ namespace GesturesToInputs {
         }
 
         switch (type) {
+        case GESTURE_RULE_TYPE::ORIENTATION:
+            return compare((int)tracker.getOrientation());
         case GESTURE_RULE_TYPE::HORIZONTAL_COMPARE:
             return compare((int)tracker.getHorizontalPosition());
         case GESTURE_RULE_TYPE::VERTICAL_COMPARE:
@@ -57,10 +59,13 @@ namespace GesturesToInputs {
         }
 
         switch (type) {
-        case GESTURE_RULE_TYPE::RELATIVE_HORIZONTAL_COMPARE:
+        case GESTURE_RULE_TYPE::ORIENTATION:
+            expectedValue = (int)trackerToCompare.getOrientation();
+            return compare((int)tracker.getOrientation());
+        case GESTURE_RULE_TYPE::HORIZONTAL_COMPARE:
             expectedValue = (int)trackerToCompare.getHorizontalPosition();
             return compare((int)tracker.getHorizontalPosition());
-        case GESTURE_RULE_TYPE::RELATIVE_VERTICAL_COMPARE:
+        case GESTURE_RULE_TYPE::VERTICAL_COMPARE:
             expectedValue = (int)trackerToCompare.getVerticalPosition();
             return compare((int)tracker.getVerticalPosition());
         default:
