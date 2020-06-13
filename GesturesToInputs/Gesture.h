@@ -11,7 +11,8 @@
 namespace GesturesToInputs {
     class Gesture {
     public:
-        Gesture(std::list<GestureInput> gestures = std::list<GestureInput>());
+        Gesture();
+        void setGestures(std::list<GestureInput> gestures);
         void calculateInstructions(std::map<std::string, Tracker> trackers);
     private:
         std::list<GestureInput> gestures;

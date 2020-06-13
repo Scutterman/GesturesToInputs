@@ -10,7 +10,7 @@
 #include "Tracker.h"
 
 namespace GesturesToInputs {
-    Gesture::Gesture(std::list<GestureInput> gestures) {
+    Gesture::Gesture() {
         this->gestures = gestures;
         ip.type = INPUT_KEYBOARD;
         ip.ki.wScan = 0;
@@ -18,6 +18,11 @@ namespace GesturesToInputs {
         ip.ki.dwExtraInfo = 0;
     }
     
+
+    void Gesture::setGestures(std::list<GestureInput> gestures)
+    {
+        this->gestures = gestures;
+    }
     void Gesture::calculateInstructions(std::map<std::string, Tracker> trackers) {
         text.setTo(0);
         textLine = 40;

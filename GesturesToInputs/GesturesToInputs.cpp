@@ -6,7 +6,7 @@ namespace GesturesToInputs {
     GesturesToInputsProcessor::GesturesToInputsProcessor(std::map<std::string, Tracker> trackers, std::list<GestureInput> gestures)
     {
         this->trackers = trackers;
-        gesture = Gesture(gestures);
+        gesture.setGestures(gestures);
     }
     // TODO:: GesturesToInputs class should have a list of gestures passed into it
     // Configuration will be supplied by main()
