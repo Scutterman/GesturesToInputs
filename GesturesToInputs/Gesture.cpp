@@ -1,6 +1,7 @@
 #include "Gesture.h"
 #include <windows.h>
 #include <tchar.h>
+#include <thread>
 #include <dinput.h>
 #include <map>
 
@@ -11,21 +12,35 @@
 
 namespace GesturesToInputs {
     Gesture::Gesture() {
+        startMouseThread();
+        
         this->gestures = gestures;
         ip.type = INPUT_KEYBOARD;
         ip.ki.wScan = 0;
         ip.ki.time = 0;
         ip.ki.dwExtraInfo = 0;
     }
-    
+
+    Gesture::~Gesture()
+    {
+        mouseMovement.halt();
+    }
 
     void Gesture::setGestures(std::list<GestureInput> gestures)
     {
         this->gestures = gestures;
     }
+
+    void Gesture::startMouseThread()
+    {
+        std::thread t1(&ContinuousMouseMovement::run, &mouseMovement);
+        t1.detach();
+    }
+    
     void Gesture::calculateInstructions(std::map<std::string, Tracker> trackers) {
         text.setTo(0);
         textLine = 40;
+        int x = 0, y = 0;
 
         for (auto& input : gestures) {
             bool gestureDetected = true;
@@ -54,8 +69,14 @@ namespace GesturesToInputs {
                     }
                     break;
                 case GESTURE_INPUT_TYPE::MOUSE_MOVE:
-                    sendMouseMove(input.getValue());
+                {
+                    int direction = input.getValue();
+                    int gestureX = direction % 2;
+                    if (gestureX != 0) { x = gestureX; }
+                    int gestureY = direction / 2;
+                    if (gestureY != 0) { y = gestureY; }
                     break;
+                }
                 case GESTURE_INPUT_TYPE::MOUSE_BUTTON:
                     if (!input.active) {
                         sendMouseButton(input.getValue());
@@ -83,6 +104,9 @@ namespace GesturesToInputs {
                 input.active = false;
             }
         }
+
+        mouseMovement.setX(x);
+        mouseMovement.setY(y);
 
         cv::imshow("Text", text);
     }
@@ -139,20 +163,6 @@ namespace GesturesToInputs {
         ip.mi.dx = 0;
         ip.mi.dy = 0;
         ip.mi.dwFlags = release;
-        SendInput(1, &ip, sizeof(INPUT));
-    }
-
-    void Gesture::sendMouseMove(int direction)
-    {
-        int x = direction % 2;
-        int y = direction / 2;
-        ip.type = INPUT_MOUSE;
-        ip.mi.time = 0;
-        ip.mi.mouseData = 0;
-        ip.mi.dwExtraInfo = 0;
-        ip.mi.dx = x * 12;
-        ip.mi.dy = y * 12;
-        ip.mi.dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_MOVE_NOCOALESCE;
         SendInput(1, &ip, sizeof(INPUT));
     }
 }

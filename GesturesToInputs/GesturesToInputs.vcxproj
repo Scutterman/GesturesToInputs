@@ -82,6 +82,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="ColourValues.h" />
+    <ClInclude Include="ContinuousMouseMovement.h" />
     <ClInclude Include="Gesture.h" />
     <ClInclude Include="GestureInput.h" />
     <ClInclude Include="GestureRule.h" />
@@ -98,6 +99,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ColourValues.cpp" />
+    <ClCompile Include="ContinuousMouseMovement.cpp" />
     <ClCompile Include="GestureInput.cpp" />
     <ClCompile Include="GestureRule.cpp" />
     <ClCompile Include="main.cpp" />
