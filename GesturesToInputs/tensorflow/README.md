@@ -1,0 +1,1 @@
+Download [Tensorflow](https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-gpu-windows-x86_64-1.15.0.zip) and extract to this directory.
