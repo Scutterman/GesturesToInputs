@@ -1,5 +1,4 @@
 # How to use
-1. Download [Tensorflow](https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-gpu-windows-x86_64-1.15.0.zip) and extract to the `GesturesToInputs/tensorflow` directory.
 1. Install OpenCV according to their [instructions](https://docs.opencv.org/master/d3/d52/tutorial_windows_install.html), remembering to set the environment variable as shown at the bottom of the page.
 1. Build and run the program to bring up the program windows
     - Webcam preview: a video feed from the first camera detected on the PC, overlayed with the grid used to determine where a marker is on-screen for use in gesture processing
