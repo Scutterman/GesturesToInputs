@@ -58,6 +58,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(OPENCV_DIR)\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -72,6 +73,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(OPENCV_DIR)\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -86,6 +88,10 @@
     <ClInclude Include="Gesture.h" />
     <ClInclude Include="GestureInput.h" />
     <ClInclude Include="GestureRule.h" />
+    <ClInclude Include="glad\glad.h" />
+    <ClInclude Include="glad\khrplatform.h" />
+    <ClInclude Include="glfw\include\GLFW\glfw3.h" />
+    <ClInclude Include="glfw\include\GLFW\glfw3native.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="PerformanceTimer.h" />
     <ClInclude Include="Tracker.h" />
@@ -102,6 +108,7 @@
     <ClCompile Include="ContinuousMouseMovement.cpp" />
     <ClCompile Include="GestureInput.cpp" />
     <ClCompile Include="GestureRule.cpp" />
+    <ClCompile Include="glad\glad.c" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PerformanceTimer.cpp" />
     <ClCompile Include="TrackerValues.cpp" />
@@ -117,6 +124,14 @@
   <ItemGroup>
     <Image Include="GesturesToInputs.ico" />
     <Image Include="small.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="glfw\lib-vc2019\glfw3.dll" />
+    <None Include="glfw\LICENSE.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="glfw\lib-vc2019\glfw3.lib" />
+    <Library Include="glfw\lib-vc2019\glfw3dll.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
