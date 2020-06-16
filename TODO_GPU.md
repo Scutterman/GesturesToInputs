@@ -37,25 +37,45 @@ First pass:
 Sample the image into 10x10 squares and send each sample to the gpu
     - Mark the position of the leftmost (tlX), topmost (tlY), rightmost (brX), and bottommost (brY) white pixel in the sample
     - Keep a count of the number of white pixels in the sample as its area
-    - If one of the edge pixels is white, mark as potentially contiguous with another sample
+    - If one of the edge pixels is white, check the pixels of the other sample to see if they are contiguous
 
-Second Pass:
-Group samples in pairs.
-One set horizontal to check right/left contiguous connections and either keep or reset the flag.
-One set vertical to check bottom/top.
-Maybe keep the discard flag for no-connections area-too-small.
-After this pass is complete, loop through all samples on the cpu and make a list of objects which includes a list of connected samples within that object
+First pass input:
+- Sample X Index
+- Sample Y Index
+- vec2 imageSize // width, height
+- vec2 sampleSize // width, height
+
+First pass output:
+Array of:
+- vec4 sampleBoundingBox  // left, top, right, bottom
+- vec4 contiguous // left, top, right, bottom
+- int area
+- int objectIndex
+- vec2 padding
+
+// It might be better to do this as a compute shader with only one thread to save pulling data back to the cpu.
+// Could I use memory barriers to do this in the first pass?
+After first pass is complete, loop through all samples on the cpu and make a list of objects which includes a list of connected samples within that object
 - Each sample will have top, left, bottom, right, area values
 - Each object will have one or more samples
 - Each frame will have zero or more objects
 
-Third Pass:
+Second pass:
 Each GPU thread gets an object index and a sample value
 The object index points to a vertex storing top, left, bottom, right, area values for the whole object
 The thread will atomic add the sample area to the object area
 The thread will atomic min the top and left sample values with the respective object values
 The thread will atomic max the right and bottom sample values with the respective object values
 
-Fourth Pass:
-Each thread gets an object index and does an atomic max between its area and a global area.
-This somehow needs to surface the object index of the max area
+Second pass input:
+- Object Index X
+
+Second pass output:
+Array of:
+- vec4 objectBoundingBox
+- int area
+- vec3 padding
+
+Third Pass:
+CPU loops through objects and selects the index of the one with the highest area.
+Should only be a few objects so this shouldn't eat up too much tiem.
