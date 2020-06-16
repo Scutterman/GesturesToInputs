@@ -5,8 +5,10 @@
 #include "main.h"
 
 #include <iostream>
+#include <filesystem>
 
 #include "GesturesToInputs.h"
+#include "Shader.h"
 
 using namespace GesturesToInputs;
 
@@ -160,46 +162,6 @@ static const struct
 
 const unsigned int indices[] = { 0, 1, 2, 3, 0, 2 };
 
-static const char* vertex_shader_text =
-"#version 330 core\n"
-"layout (location = 0) in vec2 aPosition;\n"
-"layout (location = 1) in vec2 aTexCoord;\n"
-"out vec2 texCoord;\n"
-"void main()\n"
-"{\n"
-"    gl_Position = vec4(aPosition, 0.0, 1.0);\n"
-"    texCoord = aTexCoord;\n"
-"}\n";
-
-static const char* fragment_shader_text =
-"#version 330\n"
-"out vec4 FragColor;\n"
-"in vec2 texCoord;\n"
-"uniform sampler2D texture0;\n"
-"uniform int texture0Height;\n"
-"vec3 rgb2hsv(vec3 rgb)\n"
-"{\n"
-"   vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);\n"
-"   vec4 p = rgb.g < rgb.b ? vec4(rgb.bg, K.wz) : vec4(rgb.gb, K.xy);\n"
-"   vec4 q = rgb.r < p.x ? vec4(p.xyw, rgb.r) : vec4(rgb.r, p.yzx);\n"
-"   float d = q.x - min(q.w, q.y);\n"
-"   float e = 1.0e-10;\n"
-"   return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);\n"
-"}\n"
-"vec3 hsv2rgb(vec3 hsv)\n"
-"{\n"
-"   vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);\n"
-"   vec3 p = abs(fract(hsv.xxx + K.xyz) * 6.0 - K.www);\n"
-"   return vec3(hsv.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), hsv.y));\n"
-"}\n"
-"void main()\n"
-"{\n"
-"   vec4 bgr = texture(texture0, vec2(texCoord.x, texture0Height - texCoord.y));"
-"   vec3 rgb = bgr.zyx;\n"
-"   vec3 hsv = rgb2hsv(rgb).xyz;\n"
-"   FragColor = vec4(hsv2rgb(hsv).xyz, 1.0);\n"
-"}\n";
-
 bool opengl_has_errored = false;
 void checkError(std::string stage) {
     GLenum err;
@@ -222,6 +184,7 @@ void checkError(std::string stage) {
 
 int main(int argc, char** argv)
 {
+    auto dir = std::filesystem::path(argv[0]).parent_path();
     glfwSetErrorCallback(error_callback);
     
     if (!glfwInit())
@@ -251,7 +214,7 @@ int main(int argc, char** argv)
     }
     glfwSwapInterval(1);
 
-    GLuint vertex_array, vertex_buffer, element_buffer, vertex_shader, fragment_shader, program;
+    GLuint vertex_array, vertex_buffer, element_buffer;
     GLint vpos_location, tex_location, texture0Height_location;
 
     glGenVertexArrays(1, &vertex_array);
@@ -267,54 +230,32 @@ int main(int argc, char** argv)
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
     checkError("element buffer");
 
-    vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertex_shader, 1, &vertex_shader_text, NULL);
-    glCompileShader(vertex_shader);
+    Shader shader;
+    bool vertexShaderSuccess, fragmentShaderSuccess, shaderCompileSuccess;
+    std::filesystem::path vertexPath = dir / "shaders", fragmentPath = dir / "shaders";
+    
+    vertexPath /= "test.vert";
+    vertexShaderSuccess = shader.addShader(GL_VERTEX_SHADER, vertexPath.string());
     checkError("vertex shader");
     
-    GLint success;
-    glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        GLchar InfoLog[1024];
-        glGetShaderInfoLog(vertex_shader, sizeof(InfoLog), NULL, InfoLog);
-        std::cout << "Error compiling vertex shader" << InfoLog << '\n';
-    }
-    
-    fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragment_shader, 1, &fragment_shader_text, NULL);
-    glCompileShader(fragment_shader);
+    fragmentPath /= "test.frag";
+    fragmentShaderSuccess = shader.addShader(GL_FRAGMENT_SHADER, fragmentPath.string());
     checkError("fragment shader");
     
-    glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        GLchar InfoLog[1024];
-        glGetShaderInfoLog(fragment_shader, sizeof(InfoLog), NULL, InfoLog);
-        std::cout << "Error compiling fragment shader" << InfoLog << '\n';
-    }
-
-    program = glCreateProgram();
-    glAttachShader(program, vertex_shader);
-    glAttachShader(program, fragment_shader);
-    glLinkProgram(program);
-    glGetProgramiv(program, GL_LINK_STATUS, &success);
-    if (success == 0) {
-        GLchar InfoLog[1024];
-        glGetProgramInfoLog(program, sizeof(InfoLog), NULL, InfoLog);
-        std::cout << "Error linking shader program: " << InfoLog << '\n';
-    }
+    shaderCompileSuccess = shader.compile();
     checkError("program");
 
-    glUseProgram(program);
+    shader.use();
     checkError("use program 1");
     
-    vpos_location = glGetAttribLocation(program, "aPosition");
+    vpos_location = shader.attributeLocation("aPosition");
     checkError("get vertex location");
     
     glVertexAttribPointer(vpos_location, 2, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), (void*)0);
     glEnableVertexAttribArray(vpos_location);
     checkError("vertex attribute");
     
-    tex_location = glGetAttribLocation(program, "aTexCoord");
+    tex_location = shader.attributeLocation("aTexCoord");
     checkError("get texture location");
 
     glVertexAttribPointer(tex_location, 2, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), (void*)(2 * sizeof(float)));
@@ -341,7 +282,7 @@ int main(int argc, char** argv)
     glGenerateMipmap(GL_TEXTURE_2D);
     checkError("textures bound");
 
-    texture0Height_location = glGetAttribLocation(program, "texture0Height");
+    texture0Height_location = shader.attributeLocation("texture0Height");
     checkError("get height location");
     glUniform1i(texture0Height_location, frame.source.rows);
 
@@ -354,7 +295,7 @@ int main(int argc, char** argv)
         glClear(GL_COLOR_BUFFER_BIT);
         checkError("clear");
 
-        glUseProgram(program);
+        shader.use();
         checkError("use program");
         glBindTexture(GL_TEXTURE_2D, textureHandle);
         checkError("bind texture");
