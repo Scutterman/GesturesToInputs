@@ -1,0 +1,62 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="ColourValues.cpp" />
+    <ClCompile Include="ContinuousMouseMovement.cpp" />
+    <ClCompile Include="GestureInput.cpp" />
+    <ClCompile Include="GestureRule.cpp" />
+    <ClCompile Include="glad\glad.c" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="PerformanceTimer.cpp" />
+    <ClCompile Include="TrackerValues.cpp" />
+    <ClCompile Include="WebcamFrame.cpp" />
+    <ClCompile Include="Gesture.cpp" />
+    <ClCompile Include="GesturesToInputs.cpp" />
+    <ClCompile Include="Tracker.cpp" />
+    <ClCompile Include="Webcam.cpp" />
+    <ClCompile Include="Shader.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ColourValues.h" />
+    <ClInclude Include="ContinuousMouseMovement.h" />
+    <ClInclude Include="Gesture.h" />
+    <ClInclude Include="GestureInput.h" />
+    <ClInclude Include="GestureRule.h" />
+    <ClInclude Include="glad\glad.h" />
+    <ClInclude Include="glad\khrplatform.h" />
+    <ClInclude Include="glfw\include\GLFW\glfw3.h" />
+    <ClInclude Include="glfw\include\GLFW\glfw3native.h" />
+    <ClInclude Include="main.h" />
+    <ClInclude Include="PerformanceTimer.h" />
+    <ClInclude Include="Tracker.h" />
+    <ClInclude Include="TrackerValues.h" />
+    <ClInclude Include="Webcam.h" />
+    <ClInclude Include="WebcamFrame.h" />
+    <ClInclude Include="GesturesToInputs.h" />
+    <ClInclude Include="framework.h" />
+    <ClInclude Include="Resource.h" />
+    <ClInclude Include="targetver.h" />
+    <ClInclude Include="Shader.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="glfw\lib-vc2019\glfw3.lib" />
+    <Library Include="glfw\lib-vc2019\glfw3dll.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="GesturesToInputs.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="GesturesToInputs.ico" />
+    <Image Include="small.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="glfw\lib-vc2019\glfw3.dll" />
+    <None Include="glfw\LICENSE.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="shaders">
+      <UniqueIdentifier>{b203a952-2539-4e4e-b482-d1e97f6d5015}</UniqueIdentifier>
+      <Extensions>vert;frag</Extensions>
+    </Filter>
+  </ItemGroup>
+</Project>

@@ -59,6 +59,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(OPENCV_DIR)\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -74,6 +75,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(OPENCV_DIR)\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -94,6 +96,7 @@
     <ClInclude Include="glfw\include\GLFW\glfw3native.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="PerformanceTimer.h" />
+    <ClInclude Include="Shader.h" />
     <ClInclude Include="Tracker.h" />
     <ClInclude Include="TrackerValues.h" />
     <ClInclude Include="Webcam.h" />
@@ -111,6 +114,7 @@
     <ClCompile Include="glad\glad.c" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PerformanceTimer.cpp" />
+    <ClCompile Include="Shader.cpp" />
     <ClCompile Include="TrackerValues.cpp" />
     <ClCompile Include="WebcamFrame.cpp" />
     <ClCompile Include="Gesture.cpp" />
@@ -128,6 +132,12 @@
   <ItemGroup>
     <None Include="glfw\lib-vc2019\glfw3.dll" />
     <None Include="glfw\LICENSE.md" />
+    <Content Include="shaders\test.frag">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="shaders\test.vert">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Library Include="glfw\lib-vc2019\glfw3.lib" />
