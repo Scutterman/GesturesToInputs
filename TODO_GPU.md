@@ -67,6 +67,11 @@ CL_DEVICE_MAX_WORK_GROUP_SIZE defines the maximum size of a work group in the sa
 
 Have workgroups which at least 64 threads (and a number of threads divisible by 32/64 (nvidia/amd) per workgroup), because otherwise you will again have reduced performance (32/64 is the minimum granuaty for execution on gpus, so if you have less items in a workgroup, it will still execute as 32/64 threads, but discard the results from unused threads).
 
+From: https://www.khronos.org/opengl/wiki/Compute_Shader
+The individual [local] invocations within a [global] work group will be executed "in parallel"
+[Local] invocations within a [global] work group can communicate.
+[Local] invocations in different [global] work groups cannot effectively communicate.
+
 ---
 
 Execution:
