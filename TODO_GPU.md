@@ -37,11 +37,11 @@ First pass input:
 - Sample X Index
 - Sample Y Index
 - vec2 imageSize // width, height
-- vec2 sampleSize // M, N - larger sample size is faster but less accurate
-- vec2 sampleMax // number of columns and rows of samples in the image
+- vec2 samplePixelSize // width and height of each sample in pixels - larger sample size is faster but less accurate
+- vec2 samplesSize // number of columns and rows of samples in the image
 - int numberOfpasses // Higher number of passes = higher chance at successfully working out the bounding box but higher processing time. May be possible to best-guess on CPU based on number of sample rows and columns
 
-- Array Buffer [MxN] of:
+- Array Buffer [samplesSize.x * samplesSize.y] of:
     - vec4 objectBoundingBox // minimum left and minimum top, maximum right and maximum bottom of all contiguous areas
     - int isOn
     - int area
@@ -60,10 +60,16 @@ To update bounding box when interacting with a contiguous sample:
 - contiguousSample.z = atomicMax(objectBoundingBox.z, contiguousSample.objectBoundingBox.z)
 - contiguousSample.w = atomicMax(objectBoundingBox.w, contiguousSample.objectBoundingBox.w)
 
-Sample the image into NxM size rectangles and send each sample to the gpu
-    - calculate sample index = Sample X Index + (Sample Y Index * sampleMax.columns)
+samplesSize.columns = CEIL(imageSize.width / samplePixelSize.width)
+samplesSize.rows = CEIL(imageSize.height / samplePixelSize.height)
+
+Ideally we need local workgroup size to be X=samplesSize.columns, Y=samplesSize.rows, Z=1 and global workgroup size to be (1,1,1)
+If either samplesSize dimension is too large we need to split samples across global work groups
+
+Send the each sample to the gpu
+    - calculate sample index = Sample X Index + (Sample Y Index * samplesSize.columns)
     - Set isObjectTopLeft = 0, isOn = 0, area = 0, objectTopLeftSampleIndex = sample index
-    - Set the objectBoundingBox in the output to be (Sample X Index, Sample Y Index, Sample X Index + M, Sample Y Index + N)
+    - Set the objectBoundingBox in the output to be (Sample X Index, Sample Y Index, Sample X Index + 1, Sample Y Index + 1)
     - Loop all pixels, count white and black pixels
     - If there are more white than black pixels, set isOn = 1
 Memory Barrier
