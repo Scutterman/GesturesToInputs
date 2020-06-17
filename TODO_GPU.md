@@ -42,8 +42,6 @@ First pass input:
 - int numberOfpasses // Higher number of passes = higher chance at successfully working out the bounding box but higher processing time. May be possible to best-guess on CPU based on number of sample rows and columns
 
 - Array Buffer [MxN] of:
-    - vec4 contiguousIndex // topLeft, top, left, bottomLeft
-    - vec4 reciprocalContiguousIndex // topRight, right, top, bottomRight (set by other samples)
     - vec4 objectBoundingBox // minimum left and minimum top, maximum right and maximum bottom of all contiguous areas
     - int isOn
     - int area
@@ -63,18 +61,20 @@ To update bounding box when interacting with a contiguous sample:
 - contiguousSample.w = atomicMax(objectBoundingBox.w, contiguousSample.objectBoundingBox.w)
 
 Sample the image into NxM size rectangles and send each sample to the gpu
+    - calculate sample index = Sample X Index + (Sample Y Index * sampleMax.columns)
+    - Set isObjectTopLeft = 0, isOn = 0, area = 0, objectTopLeftSampleIndex = sample index
     - Set the objectBoundingBox in the output to be (Sample X Index, Sample Y Index, Sample X Index + M, Sample Y Index + N)
     - Loop all pixels, count white and black pixels
-    - If there are more white than black pixels, set isOn = 1, else isOn = 0
+    - If there are more white than black pixels, set isOn = 1
 Memory Barrier
     - Loop for numberOfpasses interations:
         - For each sample sample to topLeft, top, left, and bottomLeft
-            - If isOn and surrounding sample isOn then record the surrounding sample index and set that sample's reciprocalContiguousIndex
+            - If isOn and surrounding sample isOn then update bounding box
         - Memory Barrier
     - Set object sample index using objectBoundingBox.x and objectBoundingBox.y to calculate sample index of top-left position of object
     - Set approximate area based on top left and bottom right co-ordinates
     - If approximate area is less than threshold then set area to 0, isOn to 0
-    - If isOn and objectBoundingBox.x = Sample Index X and objectBoundingBox.y = Sample Index Y then set isObjectTopLeft to 1
+    - If isOn set isObjectTopLeft = 1 for sample at objectBoundingBox.x, objectBoundingBox.y // may not be a part of this object because left and top minimums may have come from different samples
 
 On CPU:
 Loop through sample:
