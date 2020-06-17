@@ -33,49 +33,51 @@ and it's difficult to prevent two invocations from repeating the same work.
 
 The best way might be to sample the image into small areas and do several passes to join contiguous areas.
 
-First pass:
-Sample the image into 10x10 squares and send each sample to the gpu
-    - Mark the position of the leftmost (tlX), topmost (tlY), rightmost (brX), and bottommost (brY) white pixel in the sample
-    - Keep a count of the number of white pixels in the sample as its area
-    - If one of the edge pixels is white, check the pixels of the other sample to see if they are contiguous
-
 First pass input:
 - Sample X Index
 - Sample Y Index
 - vec2 imageSize // width, height
-- vec2 sampleSize // width, height
+- vec2 sampleSize // M, N - larger sample size is faster but less accurate
+- vec2 sampleMax // number of columns and rows of samples in the image
+- int numberOfpasses // Higher number of passes = higher chance at successfully working out the bounding box but higher processing time. May be possible to best-guess on CPU based on number of sample rows and columns
 
-First pass output:
-Array of:
-- vec4 sampleBoundingBox  // left, top, right, bottom
-- vec4 contiguous // left, top, right, bottom
-- int area
-- int objectIndex
-- vec2 padding
+- Array Buffer [MxN] of:
+    - vec4 contiguousIndex // topLeft, top, left, bottomLeft
+    - vec4 reciprocalContiguousIndex // topRight, right, top, bottomRight (set by other samples)
+    - vec4 objectBoundingBox // minimum left and minimum top, maximum right and maximum bottom of all contiguous areas
+    - int isOn
+    - int area
+    - int objectTopLeftSampleIndex
+    - int isObjectTopLeft
 
-// It might be better to do this as a compute shader with only one thread to save pulling data back to the cpu.
-// Could I use memory barriers to do this in the first pass?
-After first pass is complete, loop through all samples on the cpu and make a list of objects which includes a list of connected samples within that object
-- Each sample will have top, left, bottom, right, area values
-- Each object will have one or more samples
-- Each frame will have zero or more objects
+First pass execution:
 
-Second pass:
-Each GPU thread gets an object index and a sample value
-The object index points to a vertex storing top, left, bottom, right, area values for the whole object
-The thread will atomic add the sample area to the object area
-The thread will atomic min the top and left sample values with the respective object values
-The thread will atomic max the right and bottom sample values with the respective object values
+To update bounding box when interacting with a contiguous sample:
+- objectBoundingBox.x = atomicMin(objectBoundingBox.x, contiguousSample.objectBoundingBox.x)
+- objectBoundingBox.y = atomicMin(objectBoundingBox.y, contiguousSample.objectBoundingBox.y)
+- objectBoundingBox.z = atomicMax(objectBoundingBox.z, contiguousSample.objectBoundingBox.z)
+- objectBoundingBox.w = atomicMax(objectBoundingBox.w, contiguousSample.objectBoundingBox.w)
+- contiguousSample.x = atomicMin(objectBoundingBox.x, contiguousSample.objectBoundingBox.x)
+- contiguousSample.y = atomicMin(objectBoundingBox.y, contiguousSample.objectBoundingBox.y)
+- contiguousSample.z = atomicMax(objectBoundingBox.z, contiguousSample.objectBoundingBox.z)
+- contiguousSample.w = atomicMax(objectBoundingBox.w, contiguousSample.objectBoundingBox.w)
 
-Second pass input:
-- Object Index X
+Sample the image into NxM size rectangles and send each sample to the gpu
+    - Set the objectBoundingBox in the output to be (Sample X Index, Sample Y Index, Sample X Index + M, Sample Y Index + N)
+    - Loop all pixels, count white and black pixels
+    - If there are more white than black pixels, set isOn = 1, else isOn = 0
+Memory Barrier
+    - Loop for numberOfpasses interations:
+        - For each sample sample to topLeft, top, left, and bottomLeft
+            - If isOn and surrounding sample isOn then record the surrounding sample index and set that sample's reciprocalContiguousIndex
+        - Memory Barrier
+    - Set object sample index using objectBoundingBox.x and objectBoundingBox.y to calculate sample index of top-left position of object
+    - Set approximate area based on top left and bottom right co-ordinates
+    - If approximate area is less than threshold then set area to 0, isOn to 0
+    - If isOn and objectBoundingBox.x = Sample Index X and objectBoundingBox.y = Sample Index Y then set isObjectTopLeft to 1
 
-Second pass output:
-Array of:
-- vec4 objectBoundingBox
-- int area
-- vec3 padding
-
-Third Pass:
-CPU loops through objects and selects the index of the one with the highest area.
-Should only be a few objects so this shouldn't eat up too much tiem.
+On CPU:
+Loop through sample:
+    - Draw bounding box on image for every sample with isObjectTopLeft = 1
+    - Track largestArea and largestAreaSampleIndex
+If largestAreaSampleIndex > -1 then object centre and object orientation can be worked out based on its objectBoundingBox
