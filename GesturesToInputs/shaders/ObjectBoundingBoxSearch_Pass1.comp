@@ -12,7 +12,7 @@ layout(std140, binding=0) buffer data {
     ObjectSearchData samples[];
 };
 
-layout(local_size_x=64, local_size_y=48, local_size_z=1) in;
+layout(local_size_x=1, local_size_y=1, local_size_z=1) in;
 
 uniform ivec2 imageDimensions;
 uniform ivec2 samplePixelDimensions;
