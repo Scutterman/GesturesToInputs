@@ -34,10 +34,10 @@ namespace GesturesToInputs {
         bool drawTrackingLine = false;
         void normaliseColourRanges();
         void addControlWindows();
-        cv::Mat isolateColours(cv::Mat frame);
         void setupGrid(cv::Size size);
         void setOrientation(std::vector<cv::Point>& contour, cv::Size size);
     public:
+        cv::Mat isolateColours(cv::Mat frame);
         cv::Mat lines;
         Tracker(std::string trackerName, std::list<TrackerValues> trackedColours,  cv::Scalar lineColour, bool drawTrackingLine = false);
 
