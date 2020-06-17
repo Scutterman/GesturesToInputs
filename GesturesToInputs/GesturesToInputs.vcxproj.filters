@@ -52,6 +52,9 @@
   <ItemGroup>
     <None Include="glfw\lib-vc2019\glfw3.dll" />
     <None Include="glfw\LICENSE.md" />
+    <None Include="ObjectBoundingBoxSearch_Pass1.comp">
+      <Filter>shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="shaders">

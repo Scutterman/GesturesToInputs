@@ -1,0 +1,84 @@
+#version 430 core
+
+struct ObjectSearchData {
+    ivec4 boundingBox;
+    uint area;
+    uint topLeftSampleIndex;
+    uint isPartOfAnObject;
+    uint isObjectTopLeft;
+};
+
+layout(std140, binding=0) buffer data {
+    ObjectSearchData samples[];
+};
+
+layout(local_size_x=64, local_size_y=48, local_size_z=1) in;
+
+uniform ivec2 imageDimensions;
+uniform ivec2 samplePixelDimensions;
+uniform ivec2 sampleSize;
+uniform uint numberOfPasses;
+uniform uint threshold;
+uniform sampler2D texture0;
+
+void atomicBoundingBoxUpdate(uint currentSample, uint targetSample) {
+    atomicMin(samples[currentSample].boundingBox.x, samples[targetSample].boundingBox.x);
+    atomicMin(samples[currentSample].boundingBox.y, samples[targetSample].boundingBox.y);
+    atomicMax(samples[currentSample].boundingBox.z, samples[targetSample].boundingBox.z);
+    atomicMax(samples[currentSample].boundingBox.w, samples[targetSample].boundingBox.w);
+    atomicMin(samples[targetSample].boundingBox.x, samples[currentSample].boundingBox.x);
+    atomicMin(samples[targetSample].boundingBox.y, samples[currentSample].boundingBox.y);
+    atomicMax(samples[targetSample].boundingBox.z, samples[currentSample].boundingBox.z);
+    atomicMax(samples[targetSample].boundingBox.w, samples[currentSample].boundingBox.w);
+}
+
+void main()
+{
+    uint sampleColumn = gl_GlobalInvocationID.x;
+    uint sampleRow = gl_GlobalInvocationID.y;
+    uint sampleIndex = sampleColumn + (sampleRow * sampleSize.x);
+    samples[sampleIndex].isObjectTopLeft = 0;
+    samples[sampleIndex].area = 0;
+    samples[sampleIndex].topLeftSampleIndex = sampleIndex;
+    samples[sampleIndex].boundingBox = ivec4(sampleColumn, sampleRow, sampleColumn+1, sampleRow+1);
+
+    int balance = 0;
+    for (uint i = 0; i < samplePixelDimensions.x; i++) {
+        for (uint j = 0; j < samplePixelDimensions.y; j++) {
+            uint x = min((sampleColumn * samplePixelDimensions.x) + i, imageDimensions.x);
+            uint y = min((sampleRow * samplePixelDimensions.x) + j, imageDimensions.y);
+            balance += texture(texture0, vec2(x, y)).x == 1 ? 1 : -1;
+        }
+    }
+    
+    samples[sampleIndex].isPartOfAnObject = (balance >= 0) ? 1 : 0;
+    memoryBarrier();
+    for (uint i = 0; i < numberOfPasses; i++) {
+        int leftIndex = int(sampleIndex) - 1;
+        int topIndex = int(sampleIndex) - sampleSize.x;
+        int topLeftIndex = (int(sampleIndex) - sampleSize.x) - 1;
+        if (samples[sampleIndex].isPartOfAnObject == 1 && leftIndex > 0 && samples[leftIndex].isPartOfAnObject == 1) {
+            atomicBoundingBoxUpdate(sampleIndex, leftIndex);
+        }
+        if (samples[sampleIndex].isPartOfAnObject == 1 && topIndex > 0 && samples[topIndex].isPartOfAnObject == 1) {
+            atomicBoundingBoxUpdate(sampleIndex, topIndex);
+        }
+        if (samples[sampleIndex].isPartOfAnObject == 1 && topLeftIndex > 0 && samples[topLeftIndex].isPartOfAnObject == 1) {
+            atomicBoundingBoxUpdate(sampleIndex, topLeftIndex);
+        }
+        memoryBarrier();
+    }
+
+    uint topLeftIndex = samples[sampleIndex].boundingBox.x + (samples[sampleIndex].boundingBox.y * sampleSize.x);
+    samples[sampleIndex].topLeftSampleIndex = topLeftIndex;
+    uint width = samples[sampleIndex].boundingBox.z - samples[sampleIndex].boundingBox.x;
+    uint height = samples[sampleIndex].boundingBox.w - samples[sampleIndex].boundingBox.y;
+    uint area = width * height;
+    samples[sampleIndex].area = area < threshold ? 0 : area;
+    samples[sampleIndex].isPartOfAnObject = area < threshold ? 0 : 1;
+    if (samples[sampleIndex].isPartOfAnObject == 1) {
+        samples[topLeftIndex].isObjectTopLeft = 1;
+        samples[topLeftIndex].area = area;
+        samples[topLeftIndex].boundingBox = samples[sampleIndex].boundingBox;
+    }
+}

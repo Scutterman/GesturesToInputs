@@ -53,6 +53,9 @@ samplesSize.rows = CEIL(imageSize.height / samplePixelSize.height)
 
 Ideally we need local workgroup size to be X=samplesSize.columns, Y=samplesSize.rows, Z=1 and global workgroup size to be (1,1,1)
 If either samplesSize dimension is too large we need to split samples across global work groups
+Unfortunately, the local workgroup size has to be hard coded into the shader before it's compiled,
+so I either need fixed number of samples even with variable sized images
+or I need to string replace the values in before compiling.
 
 ---
 
@@ -75,7 +78,7 @@ The individual [local] invocations within a [global] work group will be executed
 ---
 
 Execution:
-- calculate sample index = Sample X Index + (Sample Y Index * samplesSize.columns)
+- Calculate sample index = Sample X Index + (Sample Y Index * samplesSize.columns)
 - Set isObjectTopLeft = 0, isOn = 0, area = 0, objectTopLeftSampleIndex = sample index
 - Set the objectBoundingBox in the output to be (Sample X Index, Sample Y Index, Sample X Index + 1, Sample Y Index + 1)
 - Loop all pixels, count white and black pixels
