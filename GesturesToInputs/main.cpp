@@ -232,15 +232,103 @@ int main(int argc, char** argv)
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
     checkError("element buffer");
 
+    auto redTrackerValues = std::list<TrackerValues>{ TrackerValues(169, 10, 104, 255, 151, 255) };
+    auto redTracker = Tracker("Red", redTrackerValues, cv::Scalar(0, 0, 255));
+    cv::Mat threshold;
+    threshold = redTracker.isolateColours(frame.source);
+
+    const unsigned int sampleColumns = 64;
+    const unsigned int sampleRows = 48;
+    const unsigned int totalSamples = sampleColumns * sampleRows;
+    
+    struct ObjectSearchData {
+        GLfloat boundingBox[4];
+        GLuint area;
+        GLuint topLeftSampleIndex;
+        GLuint isPartOfAnObject;
+        GLuint isObjectTopLeft;
+    }/* *searchData*/;
+
+    //for (unsigned int i = 0; i < totalSamples; i++) { searchData[i] = ObjectSearchData(); }
+
+    Shader objectSearchShader;
+    std::filesystem::path searchShaderPath = dir / "shaders" / "ObjectBoundingBoxSearch_Pass1.comp";
+    objectSearchShader.addShader(GL_COMPUTE_SHADER, searchShaderPath.string());
+    checkError("object search shader");
+    objectSearchShader.compile();
+    checkError("object search shader compile");
+    objectSearchShader.use();
+    
+    GLint imageDimensions_location, samplePixelDimensions_location, sampleSize_location, passes_location, threshold_location;
+    imageDimensions_location = objectSearchShader.attributeLocation("imageDimensions");
+    samplePixelDimensions_location = objectSearchShader.attributeLocation("samplePixelDimensions");
+    sampleSize_location = objectSearchShader.attributeLocation("sampleSize");
+    passes_location = objectSearchShader.attributeLocation("numberOfPasses");
+    threshold_location = objectSearchShader.attributeLocation("threshold");
+
+    int imageDimensions[2];
+    imageDimensions[0] = threshold.cols;
+    imageDimensions[1] = threshold.rows;
+    glUniform2iv(imageDimensions_location, 1, imageDimensions);
+
+    int samplePixelDimensions[2];
+    samplePixelDimensions[0] = sampleColumns;
+    samplePixelDimensions[1] = sampleRows;
+    glUniform2iv(samplePixelDimensions_location, 1, samplePixelDimensions);
+    
+    int sampleSize[2];
+    sampleSize[0] = threshold.cols / sampleColumns;
+    sampleSize[1] = threshold.rows / sampleRows;
+    glUniform2iv(sampleSize_location, 1, sampleSize);
+
+    unsigned int numberOfPasses = 100;
+    glUniform1ui(passes_location, numberOfPasses);
+    
+    unsigned int thresholdArea = 0;
+    glUniform1ui(threshold_location, thresholdArea);
+    
+    GLuint computeShaderBuffer;
+    glGenBuffers(1, &computeShaderBuffer);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, computeShaderBuffer);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(ObjectSearchData) * totalSamples, NULL, GL_STATIC_DRAW);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, computeShaderBuffer);
+
+    checkError("Before Shader");
+
+    PerformanceTimer perf;
+    perf.Start();
+    glDispatchCompute(sampleColumns, sampleRows, 1);
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    checkError("After Shader");
+    perf.End();
+    
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, computeShaderBuffer);
+
+    ObjectSearchData* ptr;
+    ptr = (ObjectSearchData*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
+    
+    // TODO:: Apparently the first 64 samples are all top left of an object, and nothing else is.
+    // Also, three of the bounding box values seem to be uninitialised
+    for (int i = 0; i < totalSamples; i++) {
+        if (ptr[i].isPartOfAnObject == 1) {
+            std::cout << i << " - is top left? " << ptr[i].isObjectTopLeft << " - is topLeft? " << ptr[i].isObjectTopLeft << std::endl;
+            if (ptr[i].isObjectTopLeft == 1) {
+                std::cout << ptr[i].boundingBox[0] << "," << ptr[i].boundingBox[1] << " to " << ptr[i].boundingBox[2] << "," << ptr[i].boundingBox[3] << " (" << ptr[i].area << "pixels)" << std::endl;
+            }
+        }
+    }
+
+    glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+
     Shader shader;
     bool vertexShaderSuccess, fragmentShaderSuccess, shaderCompileSuccess;
-    std::filesystem::path vertexPath = dir / "shaders", fragmentPath = dir / "shaders";
+    std::filesystem::path vertexPath = dir / "shaders" / "test.vert", fragmentPath = dir / "shaders" / "test.frag";
     
-    vertexPath /= "test.vert";
     vertexShaderSuccess = shader.addShader(GL_VERTEX_SHADER, vertexPath.string());
     checkError("vertex shader");
     
-    fragmentPath /= "test.frag";
     fragmentShaderSuccess = shader.addShader(GL_FRAGMENT_SHADER, fragmentPath.string());
     checkError("fragment shader");
     
@@ -266,7 +354,7 @@ int main(int argc, char** argv)
 
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     checkError("clear colour");
-    
+
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -279,7 +367,7 @@ int main(int argc, char** argv)
     glGenTextures(1, &textureHandle);
     glBindTexture(GL_TEXTURE_2D, textureHandle);
     checkError("generating textures");
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frame.source.cols, frame.source.rows, 0, GL_RGB, GL_UNSIGNED_BYTE, frame.source.ptr());
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, threshold.cols, threshold.rows, 0, GL_RED, GL_UNSIGNED_BYTE, threshold.ptr());
     checkError("sending data");
     glGenerateMipmap(GL_TEXTURE_2D);
     checkError("textures bound");
