@@ -3,22 +3,29 @@
 - Store gesture data using tracker indexes instead of tracker names
 
 # Each Frame
-- load frame to gpu
-    - convert frame to HSV
-    - for each tracker in parallel
-        - for each tracked colour in parallel
-            - threshold
-            - morphological opening
-            - morphological closing
-        - add all tracked colours
-        - find largest contiguous white area
+Shader 1: Convert to HSV
+    - Process one pixel per thread (global_work_group.x = pixel.x, global_work_group.y = pixel.y)
+Shader 2: Thresholding
+    - Process one pixel per tracker per thread (global_work_group.x = pixel.x, global_work_group.y = pixel.y, global_work_group.z = trackedColour)
+        - threshold
+        - morphological opening
+        - morphological closing
+        - Ensure the shader knows what tracker the colour belongs to so a single Image2D per tracker can be updated by all tracked colours at once
+Shader 3: Blob detection
+    - Process one sample per tracker per thread (global_work_group.x = sample.x, global_work_group.y = sample.y, global_work_group.z = tracker)
+        - currently implemented in shaders/ObjectBoundingBoxSearch_Pass1.comp for a single tracker
+        - Needs adjusting for multiple trackers
+Shader 4: Marker calculations
+    - Process one tracker per thread (global_work_group.x = tracker)
+        - find largest blob
         - find width and height (furthest right point - furthest left point, uppermost point - lowest point)
         - find centre (half width and height added to top-left)
         - calculate horizontal / vertical / orientation values as ints
-    - for each gesture in parallel
-        - check if gesture is detected
-    - compile list of input type / value for all detected gestures
-- pull input list from gpu
+Shader 5: Gesture detection
+    - Process one gesture per thread (global_work_group.x = gesture)
+        - check tracker horizontal / vertical / orientation values to see if gesture is detected
+        - Add input type / value to a global list if gesture detected
+- pull input list from gpu to cpu
 - send all gesture instructions
 
 # Tracker width and centre position
