@@ -270,13 +270,13 @@ int main(int argc, char** argv)
     glUniform2iv(imageDimensions_location, 1, imageDimensions);
 
     int samplePixelDimensions[2];
-    samplePixelDimensions[0] = sampleColumns;
-    samplePixelDimensions[1] = sampleRows;
+    samplePixelDimensions[0] = threshold.cols / sampleColumns;
+    samplePixelDimensions[1] = threshold.rows / sampleRows;
     glUniform2iv(samplePixelDimensions_location, 1, samplePixelDimensions);
     
     int sampleSize[2];
-    sampleSize[0] = threshold.cols / sampleColumns;
-    sampleSize[1] = threshold.rows / sampleRows;
+    sampleSize[0] = sampleColumns;
+    sampleSize[1] = sampleRows;
     glUniform2iv(sampleSize_location, 1, sampleSize);
 
     unsigned int numberOfPasses = 100;
