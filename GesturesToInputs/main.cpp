@@ -285,41 +285,6 @@ int main(int argc, char** argv)
     unsigned int thresholdArea = 0;
     glUniform1ui(threshold_location, thresholdArea);
     
-    GLuint computeShaderBuffer;
-    glGenBuffers(1, &computeShaderBuffer);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, computeShaderBuffer);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(ObjectSearchData) * totalSamples, NULL, GL_STATIC_DRAW);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, computeShaderBuffer);
-
-    checkError("Before Shader");
-
-    PerformanceTimer perf;
-    perf.Start();
-    glDispatchCompute(sampleColumns, sampleRows, 1);
-    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-    checkError("After Shader");
-    perf.End();
-    
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
-
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, computeShaderBuffer);
-
-    ObjectSearchData* ptr;
-    ptr = (ObjectSearchData*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
-    
-    // TODO:: Apparently the first 64 samples are all top left of an object, and nothing else is.
-    // Also, three of the bounding box values seem to be uninitialised
-    for (int i = 0; i < totalSamples; i++) {
-        if (ptr[i].isPartOfAnObject == 1) {
-            std::cout << i << " - is top left? " << ptr[i].isObjectTopLeft << " - is topLeft? " << ptr[i].isObjectTopLeft << std::endl;
-            if (ptr[i].isObjectTopLeft == 1) {
-                std::cout << ptr[i].boundingBox[0] << "," << ptr[i].boundingBox[1] << " to " << ptr[i].boundingBox[2] << "," << ptr[i].boundingBox[3] << " (" << ptr[i].area << "pixels)" << std::endl;
-            }
-        }
-    }
-
-    glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-
     Shader shader;
     bool vertexShaderSuccess, fragmentShaderSuccess, shaderCompileSuccess;
     std::filesystem::path vertexPath = dir / "shaders" / "test.vert", fragmentPath = dir / "shaders" / "test.frag";
@@ -374,6 +339,47 @@ int main(int argc, char** argv)
     checkError("get height location");
     glUniform1i(texture0Height_location, frame.source.rows);
 
+    objectSearchShader.use();
+
+    uint objectDataSize = sizeof(ObjectSearchData) * totalSamples;
+    ObjectSearchData* objectBufferData;
+    objectBufferData = (ObjectSearchData*)malloc(objectDataSize);
+    for (unsigned int i = 0; i < totalSamples; i++) { objectBufferData[i] = ObjectSearchData(); }
+
+    GLuint computeShaderBuffer;
+    glGenBuffers(1, &computeShaderBuffer);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, computeShaderBuffer);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, objectDataSize, objectBufferData, GL_DYNAMIC_COPY);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, computeShaderBuffer);
+    free(objectBufferData);
+
+    checkError("After Buffer");
+    PerformanceTimer perf;
+    perf.Start();
+    glDispatchCompute(sampleColumns, sampleRows, 1);
+    checkError("After Shader");
+    glMemoryBarrier(GL_ALL_BARRIER_BITS);
+    checkError("After Barrier");
+    perf.End();
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, computeShaderBuffer);
+
+    objectBufferData = (ObjectSearchData*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
+
+    // TODO:: Apparently the first 64 samples are all top left of an object, and nothing else is.
+    // Also, three of the bounding box values seem to be uninitialised
+
+    for (int i = 0; i < totalSamples; i++) {
+        if (objectBufferData[i].isObjectTopLeft == 1) {
+            std::cout << i << " (" << objectBufferData[i].topLeftSampleIndex << ") " << " is part of object? " << objectBufferData[i].isPartOfAnObject << std::endl;
+            std::cout << objectBufferData[i].boundingBox[0] << "," << objectBufferData[i].boundingBox[1] << " to ";
+            std::cout << objectBufferData[i].boundingBox[2] << "," << objectBufferData[i].boundingBox[3];
+            std::cout << " (" << objectBufferData[i].area << " pixels)" << std::endl;
+        }
+    }
+
+    glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+    
     while (!glfwWindowShouldClose(window) && !opengl_has_errored)
     {
         int width, height;
