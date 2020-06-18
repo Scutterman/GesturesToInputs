@@ -282,7 +282,7 @@ int main(int argc, char** argv)
     unsigned int numberOfPasses = 100;
     glUniform1ui(passes_location, numberOfPasses);
     
-    unsigned int thresholdArea = 0;
+    unsigned int thresholdArea = 2;
     glUniform1ui(threshold_location, thresholdArea);
     
     Shader shader;
