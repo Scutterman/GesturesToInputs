@@ -10,6 +10,8 @@
 #include "GesturesToInputs.h"
 #include "Shader.h"
 
+#include <opencv2/highgui.hpp>
+
 using namespace GesturesToInputs;
 
 std::list<GestureInput> dragonGameGestures() {
@@ -382,11 +384,19 @@ int main(int argc, char** argv)
     for (int i = 0; i < totalSamples; i++) {
         if (objectBufferData[i].isObjectTopLeft == 1) {
             std::cout << i << " (" << objectBufferData[i].topLeftSampleIndex << ") " << " is part of object? " << objectBufferData[i].isPartOfAnObject << std::endl;
-            std::cout << objectBufferData[i].boundingBox[0] << "," << objectBufferData[i].boundingBox[1] << " to ";
-            std::cout << objectBufferData[i].boundingBox[2] << "," << objectBufferData[i].boundingBox[3];
+            std::cout << objectBufferData[i].boundingBox[0] * samplePixelDimensions[0] << "," << objectBufferData[i].boundingBox[1] * samplePixelDimensions[1] << " to ";
+            std::cout << objectBufferData[i].boundingBox[2] * samplePixelDimensions[0] << "," << objectBufferData[i].boundingBox[3] * samplePixelDimensions[1];
             std::cout << " (" << objectBufferData[i].area << " pixels)" << std::endl;
+
+            auto x = objectBufferData[i].boundingBox[0] * samplePixelDimensions[0];
+            auto y = objectBufferData[i].boundingBox[1] * samplePixelDimensions[1];
+            auto width = (objectBufferData[i].boundingBox[2] * samplePixelDimensions[0]) - x;
+            auto height = (objectBufferData[i].boundingBox[3] * samplePixelDimensions[1]) - y;
+            cv::rectangle(frame.source, cv::Rect(x, y, width, height), cv::Scalar(0, 255, 0, 255));
         }
     }
+
+    cv::imshow("Source with lines", frame.source);
 
     glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
     
