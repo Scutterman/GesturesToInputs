@@ -242,14 +242,12 @@ int main(int argc, char** argv)
     const unsigned int totalSamples = sampleColumns * sampleRows;
     
     struct ObjectSearchData {
-        GLfloat boundingBox[4];
+        GLint boundingBox[4];
         GLuint area;
         GLuint topLeftSampleIndex;
         GLuint isPartOfAnObject;
         GLuint isObjectTopLeft;
-    }/* *searchData*/;
-
-    //for (unsigned int i = 0; i < totalSamples; i++) { searchData[i] = ObjectSearchData(); }
+    };
 
     Shader objectSearchShader;
     std::filesystem::path searchShaderPath = dir / "shaders" / "ObjectBoundingBoxSearch_Pass1.comp";
