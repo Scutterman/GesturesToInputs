@@ -34,8 +34,8 @@ void atomicBoundingBoxUpdate(uint currentSample, uint targetSample) {
 
 void main()
 {
-    uint sampleColumn = gl_GlobalInvocationID.x;
-    uint sampleRow = gl_GlobalInvocationID.y;
+    uint sampleColumn = gl_WorkGroupID.x;
+    uint sampleRow = gl_WorkGroupID.y;
     uint sampleIndex = sampleColumn + (sampleRow * sampleSize.x);
     samples[sampleIndex].isObjectTopLeft = 0;
     samples[sampleIndex].area = 0;
