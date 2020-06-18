@@ -44,7 +44,8 @@ void main()
 
     uint balance = 0;
     uint target = (samplePixelDimensions.x * samplePixelDimensions.y) / 2;
-        for (uint j = 0; j < samplePixelDimensions.y; j++) {
+    for (uint j = 0; j < samplePixelDimensions.y; j++) {
+        for (uint i = 0; i < samplePixelDimensions.x; i++) {
             uint x = min((sampleColumn * samplePixelDimensions.x) + i, imageDimensions.x);
             uint y = min((sampleRow * samplePixelDimensions.x) + j, imageDimensions.y);
             vec4 pixel = imageLoad(texture0, ivec2(x, y));
