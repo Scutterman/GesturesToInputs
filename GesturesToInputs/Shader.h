@@ -14,4 +14,5 @@ public:
     bool compile();
     void use();
     int attributeLocation(const GLchar* name);
+    int uniformLocation(const GLchar* name);
 };

@@ -260,11 +260,11 @@ int main(int argc, char** argv)
     objectSearchShader.use();
     
     GLint imageDimensions_location, samplePixelDimensions_location, sampleSize_location, passes_location, threshold_location;
-    imageDimensions_location = objectSearchShader.attributeLocation("imageDimensions");
-    samplePixelDimensions_location = objectSearchShader.attributeLocation("samplePixelDimensions");
-    sampleSize_location = objectSearchShader.attributeLocation("sampleSize");
-    passes_location = objectSearchShader.attributeLocation("numberOfPasses");
-    threshold_location = objectSearchShader.attributeLocation("threshold");
+    imageDimensions_location = objectSearchShader.uniformLocation("imageDimensions");
+    samplePixelDimensions_location = objectSearchShader.uniformLocation("samplePixelDimensions");
+    sampleSize_location = objectSearchShader.uniformLocation("sampleSize");
+    passes_location = objectSearchShader.uniformLocation("numberOfPasses");
+    threshold_location = objectSearchShader.uniformLocation("threshold");
 
     int imageDimensions[2];
     imageDimensions[0] = threshold.cols;
@@ -372,7 +372,7 @@ int main(int argc, char** argv)
     glGenerateMipmap(GL_TEXTURE_2D);
     checkError("textures bound");
 
-    texture0Height_location = shader.attributeLocation("texture0Height");
+    texture0Height_location = shader.uniformLocation("texture0Height");
     checkError("get height location");
     glUniform1i(texture0Height_location, frame.source.rows);
 

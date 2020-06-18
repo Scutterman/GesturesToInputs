@@ -64,3 +64,8 @@ int Shader::attributeLocation(const GLchar* name)
 {
     return glGetAttribLocation(programHandle, name);
 }
+
+int Shader::uniformLocation(const GLchar* name)
+{
+    return glGetUniformLocation(programHandle, name);
+}
