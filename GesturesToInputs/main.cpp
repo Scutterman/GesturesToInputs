@@ -318,6 +318,13 @@ int main(int argc, char** argv)
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     checkError("clear colour");
 
+    GLuint textureHandle;
+    glGenTextures(1, &textureHandle);
+    glBindTexture(GL_TEXTURE_2D, textureHandle);
+    checkError("generating textures");
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, threshold.cols, threshold.rows, 0, GL_RED, GL_UNSIGNED_BYTE, threshold.ptr());
+    checkError("sending data");
+
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -325,13 +332,7 @@ int main(int argc, char** argv)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     checkError("texture options");
-    
-    GLuint textureHandle;
-    glGenTextures(1, &textureHandle);
-    glBindTexture(GL_TEXTURE_2D, textureHandle);
-    checkError("generating textures");
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, threshold.cols, threshold.rows, 0, GL_RED, GL_UNSIGNED_BYTE, threshold.ptr());
-    checkError("sending data");
+
     glGenerateMipmap(GL_TEXTURE_2D);
     checkError("textures bound");
 
@@ -354,6 +355,15 @@ int main(int argc, char** argv)
     free(objectBufferData);
 
     checkError("After Buffer");
+
+    glBindImageTexture(0, textureHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R8UI);
+    checkError("Bind Texture");
+    auto objectTextureLocation = objectSearchShader.uniformLocation("textuer0");
+    checkError("Get Texture Location");
+    glUniform1i(objectTextureLocation, 0);
+
+    checkError("Set Texture Location");
+
     PerformanceTimer perf;
     perf.Start();
     glDispatchCompute(sampleColumns, sampleRows, 1);
