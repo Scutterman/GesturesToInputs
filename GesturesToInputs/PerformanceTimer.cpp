@@ -16,9 +16,9 @@ namespace GesturesToInputs {
     void PerformanceTimer::End()
     {
         auto endPoint = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endPoint - startPoint).count();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(endPoint - startPoint).count();
         frameTime.setTo(0);
-        cv::putText(frameTime, std::to_string(duration) + "ms", cv::Point(10, 40), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(128));
+        cv::putText(frameTime, std::to_string(duration) + " microseconds", cv::Point(10, 40), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(128));
         cv::imshow("Frame Time", frameTime);
     }
 }
