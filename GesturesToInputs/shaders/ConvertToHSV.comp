@@ -1,0 +1,24 @@
+#version 430 core
+
+layout(local_size_x=1, local_size_y=1, local_size_z=1) in;
+
+uniform layout(rgba8ui) uimage2D inputImageBGR;
+uniform layout(rgba8ui) uimage2D thresholdTexture;
+
+vec3 rgb2hsv(vec3 rgb)
+{
+   vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+   vec4 p = rgb.g < rgb.b ? vec4(rgb.bg, K.wz) : vec4(rgb.gb, K.xy);
+   vec4 q = rgb.r < p.x ? vec4(p.xyw, rgb.r) : vec4(rgb.r, p.yzx);
+   float d = q.x - min(q.w, q.y);
+   float e = 1.0e-10;
+   return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + e)), d / (q.x + e), q.x);
+}
+
+void main()
+{
+    ivec2 coords = ivec2(gl_WorkGroupID.x, gl_WorkGroupID.y);
+    vec4 bgr = imageLoad(inputImageBGR, coords);
+    vec3 hsv = rgb2hsv(bgr.zyx).xyz;
+    imageStore(thresholdTexture, coords, ivec4(hsv, 1));
+}

@@ -133,6 +133,10 @@
   <ItemGroup>
     <None Include="glfw\lib-vc2019\glfw3.dll" />
     <None Include="glfw\LICENSE.md" />
+    <None Include="shaders\ObjectBoundingBoxSearch_Pass1.comp" />
+    <None Include="shaders\test.frag" />
+    <None Include="shaders\test.vert" />
+    <None Include="shaders\ConvertToHSV.comp" />
     <Content Include="shaders\test.frag">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -140,6 +144,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="shaders\ObjectBoundingBoxSearch_Pass1.comp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="shaders\ConvertToHSV.comp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
