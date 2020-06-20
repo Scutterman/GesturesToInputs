@@ -1,0 +1,33 @@
+#version 430 core
+
+layout(local_size_x=1, local_size_y=1, local_size_z=1) in;
+
+struct ThresholdData {
+    uvec4 lowColour;
+    uvec4 highColour;
+    uvec4 trackerColour;
+};
+
+layout(std430, binding=0) buffer data {
+    ThresholdData thresholds[];
+};
+
+uniform layout(rgba8ui) uimage2D thresholdTexture;
+
+void main() {
+    ivec2 coords = ivec2(gl_WorkGroupID.x, gl_WorkGroupID.y);
+    uint index = gl_WorkGroupID.z;
+    
+    uvec4 sourcePixel = imageLoad(thresholdTexture, coords);
+    uvec4 lowColour = thresholds[index].lowColour;
+    uvec4 highColour = thresholds[index].highColour;
+    uvec4 targetPixel = (
+        sourcePixel.x >= lowColour.x && sourcePixel.x <= highColour.x &&
+        sourcePixel.y >= lowColour.y && sourcePixel.y <= highColour.y &&
+        sourcePixel.z >= lowColour.z && sourcePixel.z <= highColour.z
+    ) ? thresholds[index].trackerColour : uvec4(0, 0, 0, 0);
+    
+    imageStore(thresholdTexture, coords, thresholds[index].trackerColour);
+
+    // TODO:: memory barrier, morphological opening, memory barrier, morphological closing
+}

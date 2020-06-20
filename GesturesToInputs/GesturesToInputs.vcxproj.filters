@@ -61,16 +61,17 @@
     <None Include="shaders\test.vert">
       <Filter>shaders</Filter>
     </None>
+    <None Include="shaders\Threshold.comp">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\ConvertToHSV.comp">
+      <Filter>shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="shaders">
       <UniqueIdentifier>{b203a952-2539-4e4e-b482-d1e97f6d5015}</UniqueIdentifier>
       <Extensions>vert;frag</Extensions>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="ConvertToHSV.comp">
-      <Filter>shaders</Filter>
-    </FxCompile>
   </ItemGroup>
 </Project>

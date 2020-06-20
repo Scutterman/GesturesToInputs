@@ -137,6 +137,7 @@
     <None Include="shaders\test.frag" />
     <None Include="shaders\test.vert" />
     <None Include="shaders\ConvertToHSV.comp" />
+    <None Include="shaders\Threshold.comp" />
     <Content Include="shaders\test.frag">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -147,6 +148,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="shaders\ConvertToHSV.comp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="shaders\Threshold.comp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

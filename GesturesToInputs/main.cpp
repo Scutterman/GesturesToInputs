@@ -150,6 +150,27 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
         glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
 
+struct ThresholdData {
+    uint lowColour[4];
+    uint highColour[4];
+    uint trackerColour[4];
+
+    ThresholdData(uint _lowColour[4], uint _highColour[4], uint _trackerColour[4]) {
+        lowColour[0] = _lowColour[0];
+        lowColour[1] = _lowColour[1];
+        lowColour[2] = _lowColour[2];
+        lowColour[3] = _lowColour[3];
+        highColour[0] = _highColour[0];
+        highColour[1] = _highColour[1];
+        highColour[2] = _highColour[2];
+        highColour[3] = _highColour[3];
+        trackerColour[0] = _trackerColour[0];
+        trackerColour[1] = _trackerColour[1];
+        trackerColour[2] = _trackerColour[2];
+        trackerColour[3] = _trackerColour[3];
+    }
+};
+
 struct ObjectSearchData {
     GLint boundingBox[4];
     GLuint area;
@@ -173,6 +194,9 @@ static const struct
 const unsigned int indices[] = { 0, 1, 2, 3, 0, 2 };
 const int INPUT_IMAGE_UNIT = 0;
 const int THRESHOLD_IMAGE_UNIT = 1;
+
+const int SHADER_STORAGE_THRESHOLD = 0;
+const int SHADER_STORAGE_OBJECT_SEARCH = 1;
 
 const unsigned int sampleColumns = 64;
 const unsigned int sampleRows = 48;
@@ -306,6 +330,40 @@ void convertToHSV(std::filesystem::path basePath, cv::Mat* inputImageBGR) {
     checkError("After Barrier");
 }
 
+void threshold(std::filesystem::path basePath, int width, int height, std::vector<ThresholdData> items) {
+    Shader thresholdShader;
+    thresholdShader.addShader(GL_COMPUTE_SHADER, (basePath / "shaders" / "Threshold.comp").string());
+    checkError("threshold shader");
+    thresholdShader.compile();
+    checkError("threshold shader compile");
+    thresholdShader.use();
+
+    auto thresholdTextureLocation = thresholdShader.uniformLocation("thresholdTexture");
+    checkError("Get Threshold Texture Location");
+    glUniform1i(thresholdTextureLocation, THRESHOLD_IMAGE_UNIT);
+    checkError("Set Texture Location");
+
+    GLuint thresholdShaderBuffer;
+    glGenBuffers(1, &thresholdShaderBuffer);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, thresholdShaderBuffer);
+
+    uint thresholdDataSize = sizeof(ThresholdData) * items.size();
+    ThresholdData* bufferItems;
+    bufferItems = (ThresholdData*)malloc(thresholdDataSize);
+    int i = 0;
+    for (auto& item : items) { bufferItems[i] = item; i++; }
+    glBufferData(GL_SHADER_STORAGE_BUFFER, thresholdDataSize, bufferItems, GL_STATIC_COPY);
+    free(bufferItems);
+    
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_THRESHOLD, thresholdShaderBuffer);
+    checkError("After Buffer");
+
+    glDispatchCompute(width, height, items.size());
+    checkError("After Shader");
+    glMemoryBarrier(GL_ALL_BARRIER_BITS);
+    checkError("After Barrier");
+}
+
 void searchForObjects(std::filesystem::path basePath, int width, int height) {
 
     //auto redTrackerValues = std::list<TrackerValues>{ TrackerValues(169, 10, 104, 255, 151, 255) };
@@ -356,11 +414,10 @@ void searchForObjects(std::filesystem::path basePath, int width, int height) {
     uint objectDataSize = sizeof(ObjectSearchData) * totalSamples;
 
     GLuint computeShaderBuffer;
-
     glGenBuffers(1, &computeShaderBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, computeShaderBuffer);
     glBufferData(GL_SHADER_STORAGE_BUFFER, objectDataSize, NULL, GL_DYNAMIC_COPY);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, computeShaderBuffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_OBJECT_SEARCH, computeShaderBuffer);
 
     checkError("After Buffer");
 
@@ -481,15 +538,22 @@ int main(int argc, char** argv)
         return status;
     }
     
+    std::vector<ThresholdData> trackers;
+    uint low[4] = { 80, 111, 110, 255 };
+    uint high[4] = { 95, 255, 255, 255 };
+    uint tracker[4] = { 87, 183, 183, 255 };
+    trackers.push_back(ThresholdData(low, high, tracker));
+
     PerformanceTimer perf;
     perf.Start();
     convertToHSV(dir, &(frame.source));
+    threshold(dir, frame.source.cols, frame.source.rows, trackers);
     searchForObjects(dir, frame.source.cols, frame.source.rows);
-    debugBoundingBoxes(&(frame.source));
     perf.End();
+    
+    debugBoundingBoxes(&(frame.source));
     while (!glfwWindowShouldClose(window) && !opengl_has_errored)
     {
-        
         glfwPollEvents();
     }
     
