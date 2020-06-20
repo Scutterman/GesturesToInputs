@@ -299,6 +299,11 @@ void convertToHSV(std::filesystem::path basePath, cv::Mat* inputImageBGR) {
     checkError("Bind Threshold Image");
     glUniform1i(thresholdTextureLocation, THRESHOLD_IMAGE_UNIT);
     checkError("Set Texture Location");
+
+    glDispatchCompute(cv::Mat(*inputImageBGR).cols, cv::Mat(*inputImageBGR).rows, 1);
+    checkError("After Shader");
+    glMemoryBarrier(GL_ALL_BARRIER_BITS);
+    checkError("After Barrier");
 }
 
 void searchForObjects(std::filesystem::path basePath, int width, int height) {
