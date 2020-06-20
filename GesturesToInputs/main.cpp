@@ -141,7 +141,7 @@ int end(std::string message = "") {
     glfwDestroyWindow(window);
     glfwTerminate();
     std::cout << message << '\n';
-    return 0;
+    return 1;
 }
 
 static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -149,6 +149,14 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
+
+struct ObjectSearchData {
+    GLint boundingBox[4];
+    GLuint area;
+    GLuint topLeftSampleIndex;
+    GLuint isPartOfAnObject;
+    GLuint isObjectTopLeft;
+};
 
 static const struct
 {
@@ -163,8 +171,16 @@ static const struct
 };
 
 const unsigned int indices[] = { 0, 1, 2, 3, 0, 2 };
+const int INPUT_IMAGE_UNIT = 0;
+const int THRESHOLD_IMAGE_UNIT = 1;
+
+const unsigned int sampleColumns = 64;
+const unsigned int sampleRows = 48;
+const unsigned int totalSamples = sampleColumns * sampleRows;
 
 bool opengl_has_errored = false;
+GLuint thresholdTextureHandle;
+
 void checkError(std::string stage) {
     GLenum err;
     while ((err = glGetError()) != GL_NO_ERROR)
@@ -184,27 +200,22 @@ void checkError(std::string stage) {
     }
 }
 
-int main(int argc, char** argv)
-{
+int setup(int width, int height) {
     // TODO:: If no GPU or opengl version < 4.3 then fall back to cpu method.
     // TODO:: Cpu method may be optimisable since we only need rough bounding box. Moments can certainly be removed, and perhaps more optimisaitons.
-    auto dir = std::filesystem::path(argv[0]).parent_path();
     glfwSetErrorCallback(error_callback);
-    
+
     if (!glfwInit())
     {
         // Initialization failed
         return end("GLFW could not initialise OpenGL");
     }
-    
+
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    auto cam = Webcam();
-    auto frame = cam.next();
-    
-    window = glfwCreateWindow(frame.source.size().width, frame.source.size().height, "Output", NULL, NULL);
+    window = glfwCreateWindow(width, height, "Output", NULL, NULL);
     if (!window)
     {
         return end("GLFW could not create a window");
@@ -216,10 +227,181 @@ int main(int argc, char** argv)
     {
         return end("Could not set up GLAD");
     }
+    
     glfwSwapInterval(1);
 
+    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    checkError("clear colour");
+
+    return 0;
+}
+
+void bindImage(GLuint* handle, cv::Mat* source) {
+    glGenTextures(1, handle);
+    glBindTexture(GL_TEXTURE_2D, GLuint(*handle));
+    checkError("generating textures");
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, cv::Mat(*source).cols, cv::Mat(*source).rows, 0, GL_RGBA, GL_UNSIGNED_BYTE, cv::Mat(*source).ptr());
+    checkError("sending data");
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    checkError("texture options");
+
+    glGenerateMipmap(GL_TEXTURE_2D);
+    checkError("textures bound");
+}
+
+void bindImageHandle(GLuint* handle, int width, int height) {
+    glGenTextures(1, handle);
+    glBindTexture(GL_TEXTURE_2D, GLuint(*handle));
+    checkError("generating textures");
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    checkError("sending data");
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    checkError("texture options");
+
+    glGenerateMipmap(GL_TEXTURE_2D);
+    checkError("textures bound");
+}
+
+void convertToHSV(std::filesystem::path basePath, cv::Mat* inputImageBGR) {
+    Shader hsvShader;
+    hsvShader.addShader(GL_COMPUTE_SHADER, (basePath / "shaders" / "ConvertToHSV.comp").string());
+    checkError("hsv shader");
+    hsvShader.compile();
+    checkError("hsv shader compile");
+    hsvShader.use();
+
+    GLuint frameTextureHandle;
+    auto objectTextureLocation = hsvShader.uniformLocation("inputImageBGR");
+    checkError("Get Input Texture Location");
+    auto thresholdTextureLocation = hsvShader.uniformLocation("thresholdTexture");
+    checkError("Get Threshold Texture Location");
+    
+    bindImage(&frameTextureHandle, inputImageBGR);
+    glBindImageTexture(INPUT_IMAGE_UNIT, frameTextureHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI);
+    checkError("Bind input image");
+    glUniform1i(objectTextureLocation, INPUT_IMAGE_UNIT);
+    checkError("Set Texture Location");
+
+    bindImageHandle(&thresholdTextureHandle, cv::Mat(*inputImageBGR).cols, cv::Mat(*inputImageBGR).rows);
+    glBindImageTexture(THRESHOLD_IMAGE_UNIT, thresholdTextureHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI);
+    checkError("Bind Threshold Image");
+    glUniform1i(thresholdTextureLocation, THRESHOLD_IMAGE_UNIT);
+    checkError("Set Texture Location");
+}
+
+void searchForObjects(std::filesystem::path basePath, int width, int height) {
+
+    //auto redTrackerValues = std::list<TrackerValues>{ TrackerValues(169, 10, 104, 255, 151, 255) };
+    //auto redTracker = Tracker("Red", redTrackerValues, cv::Scalar(0, 0, 255));
+    //cv::Mat threshold;
+    //threshold = redTracker.isolateColours(source);
+
+    Shader objectSearchShader;
+    objectSearchShader.addShader(GL_COMPUTE_SHADER, (basePath / "shaders" / "ObjectBoundingBoxSearch_Pass1.comp").string());
+    checkError("object search shader");
+    objectSearchShader.compile();
+    checkError("object search shader compile");
+    objectSearchShader.use();
+
+    auto objectTextureLocation = objectSearchShader.uniformLocation("thresholdTexture");
+    checkError("Get Threshold Texture Location");
+    glUniform1i(objectTextureLocation, THRESHOLD_IMAGE_UNIT);
+    checkError("Set Threshold Texture Location");
+
+    GLint imageDimensions_location, samplePixelDimensions_location, sampleSize_location, passes_location, threshold_location;
+    imageDimensions_location = objectSearchShader.uniformLocation("imageDimensions");
+    samplePixelDimensions_location = objectSearchShader.uniformLocation("samplePixelDimensions");
+    sampleSize_location = objectSearchShader.uniformLocation("sampleSize");
+    passes_location = objectSearchShader.uniformLocation("numberOfPasses");
+    threshold_location = objectSearchShader.uniformLocation("threshold");
+
+    int imageDimensions[2];
+    imageDimensions[0] = width;
+    imageDimensions[1] = height;
+    glUniform2iv(imageDimensions_location, 1, imageDimensions);
+
+    int samplePixelDimensions[2];
+    samplePixelDimensions[0] = width / sampleColumns;
+    samplePixelDimensions[1] = height / sampleRows;
+    glUniform2iv(samplePixelDimensions_location, 1, samplePixelDimensions);
+
+    int sampleSize[2];
+    sampleSize[0] = sampleColumns;
+    sampleSize[1] = sampleRows;
+    glUniform2iv(sampleSize_location, 1, sampleSize);
+
+    unsigned int numberOfPasses = 100;
+    glUniform1ui(passes_location, numberOfPasses);
+
+    unsigned int thresholdArea = 2;
+    glUniform1ui(threshold_location, thresholdArea);
+
+    uint objectDataSize = sizeof(ObjectSearchData) * totalSamples;
+
+    GLuint computeShaderBuffer;
+
+    glGenBuffers(1, &computeShaderBuffer);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, computeShaderBuffer);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, objectDataSize, NULL, GL_DYNAMIC_COPY);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, computeShaderBuffer);
+
+    checkError("After Buffer");
+
+    glDispatchCompute(sampleColumns, sampleRows, 1);
+    checkError("After Shader");
+    glMemoryBarrier(GL_ALL_BARRIER_BITS);
+    checkError("After Barrier");
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, computeShaderBuffer);
+}
+
+void debugBoundingBoxes(cv::Mat* source) {
+    auto objectBufferData = (ObjectSearchData*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
+
+    // TODO:: Apparently the first 64 samples are all top left of an object, and nothing else is.
+    // Also, three of the bounding box values seem to be uninitialised
+    int columns = cv::Mat(*source).cols;
+    int rows = cv::Mat(*source).rows;
+    int samplePixelColumns = columns / sampleColumns;
+    int samplePixelRows = rows / sampleRows;
+    for (int i = 0; i < totalSamples; i++) {
+        if (objectBufferData[i].isObjectTopLeft == 1) {
+            std::cout << i << " (" << objectBufferData[i].topLeftSampleIndex << ") " << " is part of object? " << objectBufferData[i].isPartOfAnObject << std::endl;
+            std::cout << objectBufferData[i].boundingBox[0] * samplePixelColumns << "," << objectBufferData[i].boundingBox[1] * samplePixelRows << " to ";
+            std::cout << objectBufferData[i].boundingBox[2] * samplePixelColumns << "," << objectBufferData[i].boundingBox[3] * samplePixelRows;
+            std::cout << " (" << objectBufferData[i].area << " pixels)" << std::endl;
+
+            auto x = objectBufferData[i].boundingBox[0] * samplePixelColumns;
+            auto y = objectBufferData[i].boundingBox[1] * samplePixelRows;
+            auto width = (objectBufferData[i].boundingBox[2] * samplePixelColumns) - x;
+            auto height = (objectBufferData[i].boundingBox[3] * samplePixelRows) - y;
+            cv::rectangle(cv::Mat(*source), cv::Rect(x, y, width, height), cv::Scalar(0, 255, 0, 255));
+        }
+    }
+
+    cv::imshow("Source with lines", cv::Mat(*source));
+
+    glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+}
+
+void displayOutput(std::filesystem::path basePath) {
     GLuint vertex_array, vertex_buffer, element_buffer;
     GLint vpos_location, tex_location, texture0Height_location;
+    
+    int width, height;
+    glfwGetFramebufferSize(window, &width, &height);
 
     glGenVertexArrays(1, &vertex_array);
     glBindVertexArray(vertex_array);
@@ -234,82 +416,29 @@ int main(int argc, char** argv)
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
     checkError("element buffer");
 
-    auto redTrackerValues = std::list<TrackerValues>{ TrackerValues(169, 10, 104, 255, 151, 255) };
-    auto redTracker = Tracker("Red", redTrackerValues, cv::Scalar(0, 0, 255));
-    cv::Mat threshold;
-    threshold = redTracker.isolateColours(frame.source);
-
-    const unsigned int sampleColumns = 64;
-    const unsigned int sampleRows = 48;
-    const unsigned int totalSamples = sampleColumns * sampleRows;
-    
-    struct ObjectSearchData {
-        GLint boundingBox[4];
-        GLuint area;
-        GLuint topLeftSampleIndex;
-        GLuint isPartOfAnObject;
-        GLuint isObjectTopLeft;
-    };
-
-    Shader objectSearchShader;
-    std::filesystem::path searchShaderPath = dir / "shaders" / "ObjectBoundingBoxSearch_Pass1.comp";
-    objectSearchShader.addShader(GL_COMPUTE_SHADER, searchShaderPath.string());
-    checkError("object search shader");
-    objectSearchShader.compile();
-    checkError("object search shader compile");
-    objectSearchShader.use();
-    
-    GLint imageDimensions_location, samplePixelDimensions_location, sampleSize_location, passes_location, threshold_location;
-    imageDimensions_location = objectSearchShader.uniformLocation("imageDimensions");
-    samplePixelDimensions_location = objectSearchShader.uniformLocation("samplePixelDimensions");
-    sampleSize_location = objectSearchShader.uniformLocation("sampleSize");
-    passes_location = objectSearchShader.uniformLocation("numberOfPasses");
-    threshold_location = objectSearchShader.uniformLocation("threshold");
-
-    int imageDimensions[2];
-    imageDimensions[0] = threshold.cols;
-    imageDimensions[1] = threshold.rows;
-    glUniform2iv(imageDimensions_location, 1, imageDimensions);
-
-    int samplePixelDimensions[2];
-    samplePixelDimensions[0] = threshold.cols / sampleColumns;
-    samplePixelDimensions[1] = threshold.rows / sampleRows;
-    glUniform2iv(samplePixelDimensions_location, 1, samplePixelDimensions);
-    
-    int sampleSize[2];
-    sampleSize[0] = sampleColumns;
-    sampleSize[1] = sampleRows;
-    glUniform2iv(sampleSize_location, 1, sampleSize);
-
-    unsigned int numberOfPasses = 100;
-    glUniform1ui(passes_location, numberOfPasses);
-    
-    unsigned int thresholdArea = 2;
-    glUniform1ui(threshold_location, thresholdArea);
-    
     Shader shader;
     bool vertexShaderSuccess, fragmentShaderSuccess, shaderCompileSuccess;
-    std::filesystem::path vertexPath = dir / "shaders" / "test.vert", fragmentPath = dir / "shaders" / "test.frag";
-    
+    std::filesystem::path vertexPath = basePath / "shaders" / "test.vert", fragmentPath = basePath / "shaders" / "test.frag";
+
     vertexShaderSuccess = shader.addShader(GL_VERTEX_SHADER, vertexPath.string());
     checkError("vertex shader");
-    
+
     fragmentShaderSuccess = shader.addShader(GL_FRAGMENT_SHADER, fragmentPath.string());
     checkError("fragment shader");
-    
+
     shaderCompileSuccess = shader.compile();
     checkError("program");
 
     shader.use();
     checkError("use program 1");
-    
+
     vpos_location = shader.attributeLocation("aPosition");
     checkError("get vertex location");
-    
+
     glVertexAttribPointer(vpos_location, 2, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), (void*)0);
     glEnableVertexAttribArray(vpos_location);
     checkError("vertex attribute");
-    
+
     tex_location = shader.attributeLocation("aTexCoord");
     checkError("get texture location");
 
@@ -317,108 +446,45 @@ int main(int argc, char** argv)
     glEnableVertexAttribArray(tex_location);
     checkError("texture attribute");
 
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-    checkError("clear colour");
-
-    GLuint textureHandle;
-    glGenTextures(1, &textureHandle);
-    glBindTexture(GL_TEXTURE_2D, textureHandle);
-    checkError("generating textures");
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, threshold.cols, threshold.rows, 0, GL_RED, GL_UNSIGNED_BYTE, threshold.ptr());
-    checkError("sending data");
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    checkError("texture options");
-
-    glGenerateMipmap(GL_TEXTURE_2D);
-    checkError("textures bound");
-
     texture0Height_location = shader.uniformLocation("texture0Height");
     checkError("get height location");
-    glUniform1i(texture0Height_location, frame.source.rows);
+    glUniform1i(texture0Height_location, height);
 
-    objectSearchShader.use();
+    glViewport(0, 0, width, height);
+    checkError("viewport size");
+    glClear(GL_COLOR_BUFFER_BIT);
+    checkError("clear");
 
-    uint objectDataSize = sizeof(ObjectSearchData) * totalSamples;
-    ObjectSearchData* objectBufferData;
-    objectBufferData = (ObjectSearchData*)malloc(objectDataSize);
-    for (unsigned int i = 0; i < totalSamples; i++) { objectBufferData[i] = ObjectSearchData(); }
+    checkError("use program");
+    checkError("bind texture");
+    glBindVertexArray(vertex_array);
+    checkError("bind array");
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
+    checkError("draw");
 
-    GLuint computeShaderBuffer;
-    glGenBuffers(1, &computeShaderBuffer);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, computeShaderBuffer);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, objectDataSize, objectBufferData, GL_DYNAMIC_COPY);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, computeShaderBuffer);
-    free(objectBufferData);
+    glfwSwapBuffers(window);
+}
 
-    checkError("After Buffer");
-
-    glBindImageTexture(0, textureHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R8UI);
-    checkError("Bind Texture");
-    auto objectTextureLocation = objectSearchShader.uniformLocation("textuer0");
-    checkError("Get Texture Location");
-    glUniform1i(objectTextureLocation, 0);
-
-    checkError("Set Texture Location");
-
+int main(int argc, char** argv)
+{
+    auto cam = Webcam();
+    auto frame = cam.next();
+    auto dir = std::filesystem::path(argv[0]).parent_path();
+    
+    int status = setup(frame.source.size().width, frame.source.size().height);
+    if (status != 0) {
+        return status;
+    }
+    
     PerformanceTimer perf;
     perf.Start();
-    glDispatchCompute(sampleColumns, sampleRows, 1);
-    checkError("After Shader");
-    glMemoryBarrier(GL_ALL_BARRIER_BITS);
-    checkError("After Barrier");
+    convertToHSV(dir, &(frame.source));
+    searchForObjects(dir, frame.source.cols, frame.source.rows);
+    debugBoundingBoxes(&(frame.source));
     perf.End();
-
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, computeShaderBuffer);
-
-    objectBufferData = (ObjectSearchData*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
-
-    // TODO:: Apparently the first 64 samples are all top left of an object, and nothing else is.
-    // Also, three of the bounding box values seem to be uninitialised
-
-    for (int i = 0; i < totalSamples; i++) {
-        if (objectBufferData[i].isObjectTopLeft == 1) {
-            std::cout << i << " (" << objectBufferData[i].topLeftSampleIndex << ") " << " is part of object? " << objectBufferData[i].isPartOfAnObject << std::endl;
-            std::cout << objectBufferData[i].boundingBox[0] * samplePixelDimensions[0] << "," << objectBufferData[i].boundingBox[1] * samplePixelDimensions[1] << " to ";
-            std::cout << objectBufferData[i].boundingBox[2] * samplePixelDimensions[0] << "," << objectBufferData[i].boundingBox[3] * samplePixelDimensions[1];
-            std::cout << " (" << objectBufferData[i].area << " pixels)" << std::endl;
-
-            auto x = objectBufferData[i].boundingBox[0] * samplePixelDimensions[0];
-            auto y = objectBufferData[i].boundingBox[1] * samplePixelDimensions[1];
-            auto width = (objectBufferData[i].boundingBox[2] * samplePixelDimensions[0]) - x;
-            auto height = (objectBufferData[i].boundingBox[3] * samplePixelDimensions[1]) - y;
-            cv::rectangle(frame.source, cv::Rect(x, y, width, height), cv::Scalar(0, 255, 0, 255));
-        }
-    }
-
-    cv::imshow("Source with lines", frame.source);
-
-    glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-    
     while (!glfwWindowShouldClose(window) && !opengl_has_errored)
     {
-        int width, height;
-        glfwGetFramebufferSize(window, &width, &height);
-        glViewport(0, 0, width, height);
-        checkError("viewport size");
-        glClear(GL_COLOR_BUFFER_BIT);
-        checkError("clear");
-
-        shader.use();
-        checkError("use program");
-        glBindTexture(GL_TEXTURE_2D, textureHandle);
-        checkError("bind texture");
-        glBindVertexArray(vertex_array);
-        checkError("bind array");
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
-        checkError("draw");
-
-        glfwSwapBuffers(window);
+        
         glfwPollEvents();
     }
     
