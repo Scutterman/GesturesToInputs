@@ -260,11 +260,11 @@ int setup(int width, int height) {
     return 0;
 }
 
-void bindImage(GLuint* handle, cv::Mat* source) {
+void bindOpenCVImage(GLuint* handle, cv::Mat* source) {
     glGenTextures(1, handle);
     glBindTexture(GL_TEXTURE_2D, GLuint(*handle));
     checkError("generating textures");
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, cv::Mat(*source).cols, cv::Mat(*source).rows, 0, GL_RGBA, GL_UNSIGNED_BYTE, cv::Mat(*source).ptr());
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, cv::Mat(*source).cols, cv::Mat(*source).rows, 0, GL_BGRA, GL_UNSIGNED_BYTE, cv::Mat(*source).ptr());
     checkError("sending data");
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -279,11 +279,12 @@ void bindImage(GLuint* handle, cv::Mat* source) {
     checkError("textures bound");
 }
 
-void bindImageHandle(GLuint* handle, int width, int height) {
+void bindImageHandle(GLuint* handle, int width, int height, bool isGreyscale = false) {
     glGenTextures(1, handle);
     glBindTexture(GL_TEXTURE_2D, GLuint(*handle));
     checkError("generating textures");
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    int format = isGreyscale ? GL_RED : GL_RGBA;
+    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, NULL);
     checkError("sending data");
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -298,7 +299,7 @@ void bindImageHandle(GLuint* handle, int width, int height) {
     checkError("textures bound");
 }
 
-void convertToHSV(std::filesystem::path basePath, cv::Mat* inputImageBGR) {
+void convertToHSV(std::filesystem::path basePath, cv::Mat* inputImage) {
     Shader hsvShader;
     hsvShader.addShader(GL_COMPUTE_SHADER, (basePath / "shaders" / "ConvertToHSV.comp").string());
     checkError("hsv shader");
@@ -307,24 +308,24 @@ void convertToHSV(std::filesystem::path basePath, cv::Mat* inputImageBGR) {
     hsvShader.use();
 
     GLuint frameTextureHandle;
-    auto objectTextureLocation = hsvShader.uniformLocation("inputImageBGR");
+    auto objectTextureLocation = hsvShader.uniformLocation("inputImage");
     checkError("Get Input Texture Location");
     auto thresholdTextureLocation = hsvShader.uniformLocation("thresholdTexture");
     checkError("Get Threshold Texture Location");
     
-    bindImage(&frameTextureHandle, inputImageBGR);
+    bindOpenCVImage(&frameTextureHandle, inputImage);
     glBindImageTexture(INPUT_IMAGE_UNIT, frameTextureHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI);
     checkError("Bind input image");
     glUniform1i(objectTextureLocation, INPUT_IMAGE_UNIT);
     checkError("Set Texture Location");
 
-    bindImageHandle(&thresholdTextureHandle, cv::Mat(*inputImageBGR).cols, cv::Mat(*inputImageBGR).rows);
+    bindImageHandle(&thresholdTextureHandle, cv::Mat(*inputImage).cols, cv::Mat(*inputImage).rows);
     glBindImageTexture(THRESHOLD_IMAGE_UNIT, thresholdTextureHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI);
     checkError("Bind Threshold Image");
     glUniform1i(thresholdTextureLocation, THRESHOLD_IMAGE_UNIT);
     checkError("Set Texture Location");
 
-    glDispatchCompute(cv::Mat(*inputImageBGR).cols, cv::Mat(*inputImageBGR).rows, 1);
+    glDispatchCompute(cv::Mat(*inputImage).cols, cv::Mat(*inputImage).rows, 1);
     checkError("After Shader");
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
     checkError("After Barrier");
