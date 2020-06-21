@@ -15,9 +15,7 @@ Shader 2: Thresholding
 Shader 3: Blob detection
     - Process one sample per tracker per thread (global_work_group.x = sample.x, global_work_group.y = sample.y, global_work_group.z = tracker)
         - currently implemented in shaders/ObjectBoundingBoxSearch_Pass1.comp for a single tracker
-        - Multiply shader data size by the number of trackers
-        - Initialise shader data before dispatch
-        - Pass in tracker colour along with shader data and check x, y, and z values of pixel against tracker colour
+        - Create and bind tracker data storage unit (we currently have tracker *colour* data bound) so we can check x, y, and z values of pixel against tracked colour
         - Use local work groups so memoryBarrier() works correctly
         - Return area and bounding box as pixels and not samples
         - Prevent Susurration indexes from wrapping around to the right-hand side of the grid
