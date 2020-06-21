@@ -193,6 +193,7 @@ static const struct
 
 const unsigned int indices[] = { 0, 1, 2, 3, 0, 2 };
 const int INPUT_IMAGE_UNIT = 0;
+const int OUTPUT_IMAGE_UNIT = 0;
 const int THRESHOLD_IMAGE_UNIT = 1;
 
 const int SHADER_STORAGE_THRESHOLD = 0;
@@ -450,6 +451,43 @@ void debugBoundingBoxes(cv::Mat* source) {
     glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 }
 
+void convertToRGB(std::filesystem::path basePath, int width, int height, std::string windowName="Output Image") {
+    Shader rgbShader;
+    rgbShader.addShader(GL_COMPUTE_SHADER, (basePath / "shaders" / "ConvertToRGB.comp").string());
+    checkError("rgb shader");
+    rgbShader.compile();
+    checkError("rgb shader compile");
+    rgbShader.use();
+
+    auto thresholdTextureLocation = rgbShader.uniformLocation("thresholdTexture");
+    checkError("Get Threshold Texture Location");
+
+    checkError("Bind Threshold Image");
+    glUniform1i(thresholdTextureLocation, THRESHOLD_IMAGE_UNIT);
+    checkError("Set Texture Location");
+
+    GLuint outputImageHandle;
+    auto outputImageTextureLocation = rgbShader.uniformLocation("outputImage");
+    checkError("Get Input Texture Location");
+
+    bindImageHandle(&outputImageHandle, width, height);
+    glBindImageTexture(OUTPUT_IMAGE_UNIT, outputImageHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8);
+    checkError("Bind input image");
+    glUniform1i(outputImageTextureLocation, OUTPUT_IMAGE_UNIT);
+    checkError("Set Texture Location");
+    
+    glDispatchCompute(width, height, 1);
+    checkError("After Shader");
+    glMemoryBarrier(GL_ALL_BARRIER_BITS);
+    checkError("After Barrier");
+
+    unsigned char* gl_texture_bytes = (unsigned char*)malloc(sizeof(unsigned char) * width * height * 4);
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_BGR, GL_UNSIGNED_BYTE, gl_texture_bytes);
+
+    cv::imshow(windowName, cv::Mat(height, width, CV_8UC4, gl_texture_bytes));
+    free(gl_texture_bytes);
+}
+
 void displayOutput(std::filesystem::path basePath) {
     GLuint vertex_array, vertex_buffer, element_buffer;
     GLint vpos_location, tex_location, texture0Height_location;
@@ -539,7 +577,9 @@ int main(int argc, char** argv)
     PerformanceTimer perf;
     perf.Start();
     convertToHSV(dir, &(frame.source));
+    convertToRGB(dir, frame.source.cols, frame.source.rows, "AFTER HSV");
     threshold(dir, frame.source.cols, frame.source.rows, trackers);
+    convertToRGB(dir, frame.source.cols, frame.source.rows, "AFTER THRESHOLD");
     searchForObjects(dir, frame.source.cols, frame.source.rows);
     perf.End();
     

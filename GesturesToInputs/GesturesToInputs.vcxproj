@@ -133,6 +133,7 @@
   <ItemGroup>
     <None Include="glfw\lib-vc2019\glfw3.dll" />
     <None Include="glfw\LICENSE.md" />
+    <None Include="shaders\ConvertToRGB.comp" />
     <None Include="shaders\ObjectBoundingBoxSearch_Pass1.comp" />
     <None Include="shaders\test.frag" />
     <None Include="shaders\test.vert" />
@@ -151,6 +152,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="shaders\Threshold.comp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="shaders\ConvertToRGB.comp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
