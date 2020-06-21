@@ -151,11 +151,11 @@ static void key_callback(GLFWwindow* window, int key, int scancode, int action, 
 }
 
 struct ThresholdData {
-    uint lowColour[4];
-    uint highColour[4];
-    uint trackerColour[4];
+    float lowColour[4];
+    float highColour[4];
+    float trackerColour[4];
 
-    ThresholdData(uint _lowColour[4], uint _highColour[4], uint _trackerColour[4]) {
+    ThresholdData(float _lowColour[4], float _highColour[4], float _trackerColour[4]) {
         lowColour[0] = _lowColour[0];
         lowColour[1] = _lowColour[1];
         lowColour[2] = _lowColour[2];
@@ -575,15 +575,11 @@ int main(int argc, char** argv)
         return status;
     }
 
-    /*GLuint testImage;
-    bindOpenCVImage(&testImage, &(frame.source));
-    debugDisplayTexture(&testImage, frame.source.cols, frame.source.rows, "TEST");*/
-
-    /*std::vector<ThresholdData> trackers;
-    uint low[4] = { 80, 111, 110, 255 };
-    uint high[4] = { 95, 255, 255, 255 };
-    uint tracker[4] = { 87, 183, 183, 255 };
-    trackers.push_back(ThresholdData(low, high, tracker));*/
+    std::vector<ThresholdData> trackers;
+    float low[4] = { 80, 111, 110, 255 };
+    float high[4] = { 95, 255, 255, 255 };
+    float tracker[4] = { 87, 183, 183, 255 };
+    trackers.push_back(ThresholdData(low, high, tracker));
 
     /*
     PerformanceTimer perf;

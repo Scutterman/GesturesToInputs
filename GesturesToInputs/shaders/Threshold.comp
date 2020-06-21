@@ -3,9 +3,9 @@
 layout(local_size_x=1, local_size_y=1, local_size_z=1) in;
 
 struct ThresholdData {
-    uvec4 lowColour;
-    uvec4 highColour;
-    uvec4 trackerColour;
+    vec4 lowColour;
+    vec4 highColour;
+    vec4 trackerColour;
 };
 
 layout(std430, binding=0) buffer data {
@@ -19,13 +19,13 @@ void main() {
     uint index = gl_WorkGroupID.z;
     
     vec4 sourcePixel = imageLoad(thresholdTexture, coords);
-    uvec4 lowColour = thresholds[index].lowColour;
-    uvec4 highColour = thresholds[index].highColour;
-    uvec4 targetPixel = (
+    vec4 lowColour = thresholds[index].lowColour;
+    vec4 highColour = thresholds[index].highColour;
+    vec4 targetPixel = (
         sourcePixel.x >= lowColour.x / 179 && sourcePixel.x <= highColour.x  / 179 &&
         sourcePixel.y >= lowColour.y / 255 && sourcePixel.y <= highColour.y / 255 &&
         sourcePixel.z >= lowColour.z / 255 && sourcePixel.z <= highColour.z / 255
-    ) ? uvec4(thresholds[index].trackerColour.x / 179, thresholds[index].trackerColour.y / 255, thresholds[index].trackerColour.z / 255, 1) : uvec4(0, 0, 0, 0);
+    ) ? vec4(thresholds[index].trackerColour.x / 179, thresholds[index].trackerColour.y / 255, thresholds[index].trackerColour.z / 255, 1) : vec4(0, 0, 0, 0);
     
     imageStore(thresholdTexture, coords, thresholds[index].trackerColour);
 
