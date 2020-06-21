@@ -294,9 +294,6 @@ void bindImageHandle(GLuint* handle, int width, int height, bool isGreyscale = f
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     checkError("texture options");
-
-    glGenerateMipmap(GL_TEXTURE_2D);
-    checkError("textures bound");
 }
 
 void convertToHSV(std::filesystem::path basePath, cv::Mat* inputImage) {
