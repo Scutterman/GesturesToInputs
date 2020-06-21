@@ -27,7 +27,7 @@ void main() {
         sourcePixel.z >= lowColour.z / 255 && sourcePixel.z <= highColour.z / 255
     ) ? vec4(thresholds[index].trackerColour.x / 179, thresholds[index].trackerColour.y / 255, thresholds[index].trackerColour.z / 255, 1) : vec4(0, 0, 0, 0);
     
-    imageStore(thresholdTexture, coords, thresholds[index].trackerColour);
+    imageStore(thresholdTexture, coords, targetPixel);
 
     // TODO:: memory barrier, morphological opening, memory barrier, morphological closing
 }
