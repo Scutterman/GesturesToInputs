@@ -3,6 +3,8 @@
 - Store gesture data using tracker indexes instead of tracker names
 
 # Each Frame
+All Shaders:
+    - Convert everything to use [0...1] ranges not [0...255]
 Shader 1: Convert to HSV
     - Process one pixel per thread (global_work_group.x = pixel.x, global_work_group.y = pixel.y)
 Shader 2: Thresholding
@@ -10,14 +12,14 @@ Shader 2: Thresholding
         - threshold
         - morphological opening
         - morphological closing
-        - Ensure the shader knows what tracker the colour belongs to so a single Image2D per tracker can be updated by all tracked colours at once
 Shader 3: Blob detection
     - Process one sample per tracker per thread (global_work_group.x = sample.x, global_work_group.y = sample.y, global_work_group.z = tracker)
         - currently implemented in shaders/ObjectBoundingBoxSearch_Pass1.comp for a single tracker
-        - Needs adjusting for multiple trackers
-        - Check if we need to add "bottom-left" into susurration stage
-        - Check to make sure memory barrier works across global work groups
-        - Update so it returns area and bounding box as pixels and not samples
+        - Multiply shader data size by the number of trackers
+        - Initialise shader data before dispatch
+        - Pass in tracker colour along with shader data and check x, y, and z values of pixel against tracker colour
+        - Use local work groups so memoryBarrier() works correctly
+        - Return area and bounding box as pixels and not samples
 Shader 4: Marker calculations
     - Process one tracker per thread (global_work_group.x = tracker)
         - find largest blob
