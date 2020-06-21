@@ -204,7 +204,7 @@ const unsigned int sampleRows = 48;
 const unsigned int totalSamples = sampleColumns * sampleRows;
 
 bool opengl_has_errored = false;
-GLuint thresholdTextureHandle;
+GLuint frameTextureHandle, thresholdTextureHandle, outputImageHandle;
 
 void checkError(std::string stage) {
     GLenum err;
@@ -301,7 +301,6 @@ void convertToHSV(std::filesystem::path basePath, cv::Mat* inputImage) {
     checkError("hsv shader compile");
     hsvShader.use();
 
-    GLuint frameTextureHandle;
     auto objectTextureLocation = hsvShader.uniformLocation("inputImage");
     checkError("Get Input Texture Location");
     auto thresholdTextureLocation = hsvShader.uniformLocation("thresholdTexture");
@@ -313,6 +312,8 @@ void convertToHSV(std::filesystem::path basePath, cv::Mat* inputImage) {
     glUniform1i(objectTextureLocation, INPUT_IMAGE_UNIT);
     checkError("Set Texture Location");
 
+    //bindImageHandle(&thresholdTextureHandle, cv::Mat(*inputImage).cols, cv::Mat(*inputImage).rows);
+    bindOpenCVImage(&thresholdTextureHandle, inputImage);
     glBindImageTexture(THRESHOLD_IMAGE_UNIT, thresholdTextureHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
     checkError("Bind Threshold Image");
     glUniform1i(thresholdTextureLocation, THRESHOLD_IMAGE_UNIT);
@@ -446,7 +447,7 @@ void debugBoundingBoxes(cv::Mat* source) {
     glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 }
 
-void convertToRGB(std::filesystem::path basePath, int width, int height, std::string windowName="Output Image") {
+void convertToRGB(std::filesystem::path basePath, int width, int height) {
     Shader rgbShader;
     rgbShader.addShader(GL_COMPUTE_SHADER, (basePath / "shaders" / "ConvertToRGB.comp").string());
     checkError("rgb shader");
@@ -461,7 +462,6 @@ void convertToRGB(std::filesystem::path basePath, int width, int height, std::st
     glUniform1i(thresholdTextureLocation, THRESHOLD_IMAGE_UNIT);
     checkError("Set Texture Location");
 
-    GLuint outputImageHandle;
     auto outputImageTextureLocation = rgbShader.uniformLocation("outputImage");
     checkError("Get Input Texture Location");
 
@@ -476,11 +476,7 @@ void convertToRGB(std::filesystem::path basePath, int width, int height, std::st
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
     checkError("After Barrier");
 
-    unsigned char* gl_texture_bytes = (unsigned char*)malloc(sizeof(unsigned char) * width * height * 4);
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_BGR, GL_UNSIGNED_BYTE, gl_texture_bytes);
 
-    cv::imshow(windowName, cv::Mat(height, width, CV_8UC4, gl_texture_bytes));
-    free(gl_texture_bytes);
 }
 
 void displayOutput(std::filesystem::path basePath) {
@@ -552,6 +548,16 @@ void displayOutput(std::filesystem::path basePath) {
     glfwSwapBuffers(window);
 }
 
+void debugDisplayTexture(GLuint* handle, int width, int height, std::string windowName) {
+    glBindTexture(GL_TEXTURE_2D, GLuint(*handle));
+    checkError(windowName + " display texture bind");
+    unsigned char* gl_texture_bytes = (unsigned char*)malloc(sizeof(unsigned char) * width * height * 3);
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_BGR, GL_UNSIGNED_BYTE, gl_texture_bytes);
+    checkError(windowName + " display texture get");
+    cv::imshow(windowName, cv::Mat(height, width, CV_8UC3, gl_texture_bytes));
+    free(gl_texture_bytes);
+}
+
 int main(int argc, char** argv)
 {
     auto cam = Webcam();
@@ -562,23 +568,34 @@ int main(int argc, char** argv)
     if (status != 0) {
         return status;
     }
-    
-    std::vector<ThresholdData> trackers;
+
+    /*GLuint testImage;
+    bindOpenCVImage(&testImage, &(frame.source));
+    debugDisplayTexture(&testImage, frame.source.cols, frame.source.rows, "TEST");*/
+
+    /*std::vector<ThresholdData> trackers;
     uint low[4] = { 80, 111, 110, 255 };
     uint high[4] = { 95, 255, 255, 255 };
     uint tracker[4] = { 87, 183, 183, 255 };
-    trackers.push_back(ThresholdData(low, high, tracker));
+    trackers.push_back(ThresholdData(low, high, tracker));*/
 
+    /*
     PerformanceTimer perf;
     perf.Start();
+    */
     convertToHSV(dir, &(frame.source));
-    convertToRGB(dir, frame.source.cols, frame.source.rows, "AFTER HSV");
+    debugDisplayTexture(&frameTextureHandle, frame.source.cols, frame.source.rows, "SOURCE IMAGE");
+    debugDisplayTexture(&thresholdTextureHandle, frame.source.cols, frame.source.rows, "HSV IMAGE");
+    /*
+    debugDisplayTexture(&outputImageHandle, frame.source.cols, frame.source.rows, "HSV IMAGE TO RGB");*/
+    /*
     threshold(dir, frame.source.cols, frame.source.rows, trackers);
-    convertToRGB(dir, frame.source.cols, frame.source.rows, "AFTER THRESHOLD");
+    convertToRGB(dir, frame.source.cols, frame.source.rows);
     searchForObjects(dir, frame.source.cols, frame.source.rows);
     perf.End();
+    */
     
-    debugBoundingBoxes(&(frame.source));
+    //debugBoundingBoxes(&(frame.source));
     while (!glfwWindowShouldClose(window) && !opengl_has_errored)
     {
         glfwPollEvents();

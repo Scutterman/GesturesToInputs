@@ -17,8 +17,9 @@ vec3 rgb2hsv(vec3 rgb)
 
 void main()
 {
-    ivec2 coords = ivec2(gl_WorkGroupID.x, gl_WorkGroupID.y);
-    vec4 rgb = imageLoad(inputImage, coords);
-    vec3 hsv = rgb2hsv(rgb.xyz).xyz;
-    imageStore(thresholdTexture, coords, vec4(hsv, 1));
+    ivec2 coords = ivec2(gl_WorkGroupID.xy);
+    //vec4 rgb = imageLoad(inputImage, coords);
+    //vec3 hsv = rgb2hsv(rgb.xyz);
+    //imageStore(thresholdTexture, coords, vec4(hsv, 1));
+    imageStore(thresholdTexture, coords, vec4(0.0f, 255.0f, 0.0f, 255.0f));
 }
