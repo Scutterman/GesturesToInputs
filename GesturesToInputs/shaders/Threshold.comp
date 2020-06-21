@@ -12,10 +12,10 @@ layout(std430, binding=0) buffer data {
     ThresholdData thresholds[];
 };
 
-uniform layout(binding=1,rgba8) image2D thresholdTexture;
+uniform layout(binding=1,rgba32f) image2D thresholdTexture;
 
 void main() {
-    ivec2 coords = ivec2(gl_WorkGroupID.x, gl_WorkGroupID.y);
+    ivec2 coords = ivec2(gl_WorkGroupID.xy);
     uint index = gl_WorkGroupID.z;
     
     vec4 sourcePixel = imageLoad(thresholdTexture, coords);
