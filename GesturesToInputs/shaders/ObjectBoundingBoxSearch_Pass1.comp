@@ -78,6 +78,11 @@ void main()
             atomicBoundingBoxUpdate(sampleIndex, topLeftIndex);
         }
         
+        int bottomLeftIndex = (int(sampleIndex) + sampleSize.x) - 1;
+        if (samples[sampleIndex].isPartOfAnObject == 1 && bottomLeftIndex > 0 && samples[bottomLeftIndex].isPartOfAnObject == 1) {
+            atomicBoundingBoxUpdate(sampleIndex, bottomLeftIndex);
+        }
+        
         // Unfortunately need to wait and make sure all samples have finished their checks this pass before we continue
         memoryBarrier();
     }

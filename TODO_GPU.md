@@ -20,6 +20,8 @@ Shader 3: Blob detection
         - Pass in tracker colour along with shader data and check x, y, and z values of pixel against tracker colour
         - Use local work groups so memoryBarrier() works correctly
         - Return area and bounding box as pixels and not samples
+        - Prevent Susurration indexes from wrapping around to the right-hand side of the grid
+        - Ensure bottomLeft Susurration index does not go beyond the bottom of the grid
 Shader 4: Marker calculations
     - Process one tracker per thread (global_work_group.x = tracker)
         - find largest blob
