@@ -586,9 +586,11 @@ int main(int argc, char** argv)
     perf.Start();
     */
     convertToHSV(dir, &(frame.source));
+    debugDisplayTexture(&thresholdTextureHandle, frame.source.cols, frame.source.rows, "HSV IMAGE");
+    threshold(dir, frame.source.cols, frame.source.rows, trackers);
+    debugDisplayTexture(&thresholdTextureHandle, frame.source.cols, frame.source.rows, "Threshold image");
     convertToRGB(dir, frame.source.cols, frame.source.rows);
     debugDisplayTexture(&frameTextureHandle, frame.source.cols, frame.source.rows, "SOURCE IMAGE");
-    debugDisplayTexture(&thresholdTextureHandle, frame.source.cols, frame.source.rows, "HSV IMAGE");
     debugDisplayTexture(&outputImageHandle, frame.source.cols, frame.source.rows, "RGB OUTPUT");
     /*
     debugDisplayTexture(&outputImageHandle, frame.source.cols, frame.source.rows, "HSV IMAGE TO RGB");*/
