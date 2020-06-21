@@ -265,7 +265,7 @@ void bindOpenCVImage(GLuint* handle, cv::Mat* source) {
     glGenTextures(1, handle);
     glBindTexture(GL_TEXTURE_2D, GLuint(*handle));
     checkError("generating textures");
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, cv::Mat(*source).cols, cv::Mat(*source).rows, 0, GL_BGRA, GL_UNSIGNED_BYTE, cv::Mat(*source).ptr());
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, cv::Mat(*source).cols, cv::Mat(*source).rows, 0, GL_BGR, GL_UNSIGNED_BYTE, cv::Mat(*source).ptr());
     checkError("sending data");
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -275,17 +275,13 @@ void bindOpenCVImage(GLuint* handle, cv::Mat* source) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     checkError("texture options");
-
-    glGenerateMipmap(GL_TEXTURE_2D);
-    checkError("textures bound");
 }
 
-void bindImageHandle(GLuint* handle, int width, int height, bool isGreyscale = false) {
+void bindImageHandle(GLuint* handle, int width, int height) {
     glGenTextures(1, handle);
     glBindTexture(GL_TEXTURE_2D, GLuint(*handle));
     checkError("generating textures");
-    int format = isGreyscale ? GL_RED : GL_RGBA;
-    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
     checkError("sending data");
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -312,13 +308,12 @@ void convertToHSV(std::filesystem::path basePath, cv::Mat* inputImage) {
     checkError("Get Threshold Texture Location");
     
     bindOpenCVImage(&frameTextureHandle, inputImage);
-    glBindImageTexture(INPUT_IMAGE_UNIT, frameTextureHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8);
+    glBindImageTexture(INPUT_IMAGE_UNIT, frameTextureHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
     checkError("Bind input image");
     glUniform1i(objectTextureLocation, INPUT_IMAGE_UNIT);
     checkError("Set Texture Location");
 
-    bindImageHandle(&thresholdTextureHandle, cv::Mat(*inputImage).cols, cv::Mat(*inputImage).rows);
-    glBindImageTexture(THRESHOLD_IMAGE_UNIT, thresholdTextureHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8);
+    glBindImageTexture(THRESHOLD_IMAGE_UNIT, thresholdTextureHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
     checkError("Bind Threshold Image");
     glUniform1i(thresholdTextureLocation, THRESHOLD_IMAGE_UNIT);
     checkError("Set Texture Location");
@@ -471,8 +466,8 @@ void convertToRGB(std::filesystem::path basePath, int width, int height, std::st
     checkError("Get Input Texture Location");
 
     bindImageHandle(&outputImageHandle, width, height);
-    glBindImageTexture(OUTPUT_IMAGE_UNIT, outputImageHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8);
-    checkError("Bind input image");
+    glBindImageTexture(OUTPUT_IMAGE_UNIT, outputImageHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+    checkError("Bind output image");
     glUniform1i(outputImageTextureLocation, OUTPUT_IMAGE_UNIT);
     checkError("Set Texture Location");
     
