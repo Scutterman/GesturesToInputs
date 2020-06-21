@@ -264,7 +264,7 @@ void bindOpenCVImage(GLuint* handle, cv::Mat* source) {
     glGenTextures(1, handle);
     glBindTexture(GL_TEXTURE_2D, GLuint(*handle));
     checkError("generating textures");
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, cv::Mat(*source).cols, cv::Mat(*source).rows, 0, GL_BGRA, GL_UNSIGNED_BYTE, cv::Mat(*source).ptr());
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, cv::Mat(*source).cols, cv::Mat(*source).rows, 0, GL_BGRA, GL_UNSIGNED_BYTE, cv::Mat(*source).ptr());
     checkError("sending data");
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -314,13 +314,13 @@ void convertToHSV(std::filesystem::path basePath, cv::Mat* inputImage) {
     checkError("Get Threshold Texture Location");
     
     bindOpenCVImage(&frameTextureHandle, inputImage);
-    glBindImageTexture(INPUT_IMAGE_UNIT, frameTextureHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI);
+    glBindImageTexture(INPUT_IMAGE_UNIT, frameTextureHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8);
     checkError("Bind input image");
     glUniform1i(objectTextureLocation, INPUT_IMAGE_UNIT);
     checkError("Set Texture Location");
 
     bindImageHandle(&thresholdTextureHandle, cv::Mat(*inputImage).cols, cv::Mat(*inputImage).rows);
-    glBindImageTexture(THRESHOLD_IMAGE_UNIT, thresholdTextureHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8UI);
+    glBindImageTexture(THRESHOLD_IMAGE_UNIT, thresholdTextureHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA8);
     checkError("Bind Threshold Image");
     glUniform1i(thresholdTextureLocation, THRESHOLD_IMAGE_UNIT);
     checkError("Set Texture Location");
@@ -384,17 +384,11 @@ void searchForObjects(std::filesystem::path basePath, int width, int height) {
     glUniform1i(objectTextureLocation, THRESHOLD_IMAGE_UNIT);
     checkError("Set Threshold Texture Location");
 
-    GLint imageDimensions_location, samplePixelDimensions_location, sampleSize_location, passes_location, threshold_location;
-    imageDimensions_location = objectSearchShader.uniformLocation("imageDimensions");
+    GLint samplePixelDimensions_location, sampleSize_location, passes_location, threshold_location;
     samplePixelDimensions_location = objectSearchShader.uniformLocation("samplePixelDimensions");
     sampleSize_location = objectSearchShader.uniformLocation("sampleSize");
     passes_location = objectSearchShader.uniformLocation("numberOfPasses");
     threshold_location = objectSearchShader.uniformLocation("threshold");
-
-    int imageDimensions[2];
-    imageDimensions[0] = width;
-    imageDimensions[1] = height;
-    glUniform2iv(imageDimensions_location, 1, imageDimensions);
 
     int samplePixelDimensions[2];
     samplePixelDimensions[0] = width / sampleColumns;
