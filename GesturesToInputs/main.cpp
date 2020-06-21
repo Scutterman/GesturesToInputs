@@ -196,7 +196,7 @@ const int INPUT_IMAGE_UNIT = 0;
 const int THRESHOLD_IMAGE_UNIT = 1;
 
 const int SHADER_STORAGE_THRESHOLD = 0;
-const int SHADER_STORAGE_OBJECT_SEARCH = 1;
+const int SHADER_STORAGE_OBJECT_SEARCH = 0;
 
 const unsigned int sampleColumns = 64;
 const unsigned int sampleRows = 48;
