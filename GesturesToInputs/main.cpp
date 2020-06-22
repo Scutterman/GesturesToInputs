@@ -208,6 +208,7 @@ GLuint frameTextureHandle, thresholdTextureHandle, outputImageHandle;
 const GLenum inputTextureUnit = GL_TEXTURE0;
 const GLenum thresholdTextureUnit = GL_TEXTURE1;
 const GLenum outputTextureUnit = GL_TEXTURE2;
+int xMaxInstances, yMaxInstances, zMaxInstances, totalMaxInstances;
 
 cv::Mat source;
 int sourceWidth, sourceHeight;
@@ -263,6 +264,19 @@ int setup() {
 
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
     checkError("clear colour");
+
+    int work_group_size[3];
+    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &work_group_size[0]);
+    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &work_group_size[1]);
+    glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, &work_group_size[2]);
+    checkError("group size");
+    xMaxInstances = work_group_size[0];
+    yMaxInstances = work_group_size[1];
+    zMaxInstances = work_group_size[2];
+    glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &totalMaxInstances);
+    checkError("total size");
+    
+    std::cout << std::endl << "(" << xMaxInstances << ", " << yMaxInstances << ", " << zMaxInstances << ") = " << totalMaxInstances << std::endl;
 
     return 0;
 }
