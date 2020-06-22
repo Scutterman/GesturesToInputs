@@ -4,32 +4,56 @@
 
 # Each Frame
 All Shaders:
-    - Convert everything to use [0...1] ranges not [0...255]
+- Convert everything to use [0...1] ranges not [0...255]
+- Split c++ functions into "shader setup" and "shader run" and "debug display" sections so we can get perf of just the runtime not the setup time or debug display.
+- Use local groups instead of global
+    - *MaxInstances variables can be used to calculate appropriate values for local x, y, and z to ensure they don't overflow allowed invocations
+    - prepend a string containing #DEFINE macros to the beginning of each shader to "dynamically" set the local x, y, and z values
+    - Each shader may need to put loops in place to ensure all work gets executed
+        - e.g: in a 64x64 image with 1024 max executions, local_size_x=32, local_size_y=32, local_size_z=1, xRepeat = 2, xRepeatOffset = 32, yRepeat = 2, yRepeatOffset = 2
+        ```
+            for (int xOffset = 0; xOffset < xRepeat * xRepeatOffset; xOffset += xRepeatOffset) {
+                for (int yOffset = 0; yOffset < yRepeat * yRepeatOffset; yOffset += yRepeatOffset) {
+                    ivec2 coords = ivec2(gl_LocalInvocationID.x + xOffset, gl_LocalInvocationID.y + yOffset)
+                    /** Now process the pixel **/
+                }
+            }
+        ```
+        - This should ensure that gl_LocalInvocationID(0,0,0) will process pixel (0,0), (0,32), (32,0), and finally (32, 32)
+        - gl_LocalInvocationID(31,31,0) will process pixel (31,31), (31,63), (63,0), and finally (63, 63)
+        - All of the in-between invocations will process the pixels in between
+
 Shader 1: Convert to HSV
-    - Process one pixel per thread (global_work_group.x = pixel.x, global_work_group.y = pixel.y)
+- Process one pixel per thread (global_work_group.x = pixel.x, global_work_group.y = pixel.y)
+
 Shader 2: Thresholding
-    - Process one pixel per tracker per thread (global_work_group.x = pixel.x, global_work_group.y = pixel.y, global_work_group.z = trackedColour)
-        - threshold
-        - morphological opening
-        - morphological closing
+- Process one pixel per tracker per thread (global_work_group.x = pixel.x, global_work_group.y = pixel.y, global_work_group.z = trackedColour)
+    - threshold
+    - morphological opening
+    - morphological closing
+
 Shader 3: Blob detection
-    - Process one sample per tracker per thread (global_work_group.x = sample.x, global_work_group.y = sample.y, global_work_group.z = tracker)
-        - currently implemented in shaders/ObjectBoundingBoxSearch_Pass1.comp for a single tracker
-        - Create and bind tracker data storage unit (we currently have tracker *colour* data bound) so we can check x, y, and z values of pixel against tracked colour
-        - Use local work groups so memoryBarrier() works correctly
-        - Return area and bounding box as pixels and not samples
-        - Prevent Susurration indexes from wrapping around to the right-hand side of the grid
-        - Ensure bottomLeft Susurration index does not go beyond the bottom of the grid
+- Process one sample per tracker per thread (global_work_group.x = sample.x, global_work_group.y = sample.y, global_work_group.z = tracker)
+    - currently implemented in shaders/ObjectBoundingBoxSearch_Pass1.comp for a single tracker
+    - Create and bind tracker data storage unit (we currently have tracker *colour* data bound) so we can check x, y, and z values of pixel against tracked colour
+    - Use local work groups so memoryBarrier() works correctly
+    - Return area and bounding box as pixels and not samples
+    - Prevent Susurration indexes from wrapping around to the right-hand side of the grid
+    - Ensure bottomLeft Susurration index does not go beyond the bottom of the grid
+
 Shader 4: Marker calculations
-    - Process one tracker per thread (global_work_group.x = tracker)
-        - find largest blob
-        - find width and height (furthest right point - furthest left point, uppermost point - lowest point)
-        - find centre (half width and height added to top-left)
-        - calculate horizontal / vertical / orientation values as ints
+- Process one tracker per thread (global_work_group.x = tracker)
+    - find largest blob
+    - find width and height (furthest right point - furthest left point, uppermost point - lowest point)
+    - find centre (half width and height added to top-left)
+    - calculate horizontal / vertical / orientation values as ints
+
 Shader 5: Gesture detection
-    - Process one gesture per thread (global_work_group.x = gesture)
-        - check tracker horizontal / vertical / orientation values to see if gesture is detected
-        - Add input type / value to a global list if gesture detected
+- Process one gesture per thread (global_work_group.x = gesture)
+    - check tracker horizontal / vertical / orientation values to see if gesture is detected
+    - Add input type / value to a global list if gesture detected
+
+Finally
 - pull input list from gpu to cpu
 - send all gesture instructions
 - Some shaders may perform well enough on CPU that GPU is not required. Perf testing during development will determine this.
