@@ -209,6 +209,9 @@ const GLenum inputTextureUnit = GL_TEXTURE0;
 const GLenum thresholdTextureUnit = GL_TEXTURE1;
 const GLenum outputTextureUnit = GL_TEXTURE2;
 
+cv::Mat source;
+int sourceWidth, sourceHeight;
+
 void checkError(std::string stage) {
     GLenum err;
     while ((err = glGetError()) != GL_NO_ERROR)
@@ -228,7 +231,7 @@ void checkError(std::string stage) {
     }
 }
 
-int setup(int width, int height) {
+int setup() {
     // TODO:: If no GPU or opengl version < 4.3 then fall back to cpu method.
     // TODO:: Cpu method may be optimisable since we only need rough bounding box. Moments can certainly be removed, and perhaps more optimisaitons.
     glfwSetErrorCallback(error_callback);
@@ -243,7 +246,7 @@ int setup(int width, int height) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    window = glfwCreateWindow(width, height, "Output", NULL, NULL);
+    window = glfwCreateWindow(sourceWidth, sourceHeight, "Output", NULL, NULL);
     if (!window)
     {
         return end("GLFW could not create a window");
@@ -264,12 +267,12 @@ int setup(int width, int height) {
     return 0;
 }
 
-void bindOpenCVImage(GLuint* handle, GLenum textureUnit, cv::Mat* source) {
+void bindOpenCVImage(GLuint* handle, GLenum textureUnit, cv::Mat image) {
     glActiveTexture(textureUnit);
     glGenTextures(1, handle);
     glBindTexture(GL_TEXTURE_2D, GLuint(*handle));
     checkError("bind texture");
-    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, cv::Mat(*source).cols, cv::Mat(*source).rows);
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, sourceWidth, sourceHeight);
     checkError("texture storage");
     
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -280,16 +283,16 @@ void bindOpenCVImage(GLuint* handle, GLenum textureUnit, cv::Mat* source) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     checkError("texture options");
     
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, cv::Mat(*source).cols, cv::Mat(*source).rows, GL_BGR, GL_UNSIGNED_BYTE, cv::Mat(*source).ptr());
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, sourceWidth, sourceHeight, GL_BGR, GL_UNSIGNED_BYTE, image.ptr());
     checkError("sending data");
 }
 
-void bindImageHandle(GLuint* handle, GLenum textureUnit, int width, int height) {
+void bindImageHandle(GLuint* handle, GLenum textureUnit) {
     glActiveTexture(textureUnit);
     glGenTextures(1, handle);
     glBindTexture(GL_TEXTURE_2D, GLuint(*handle));
     checkError("generating textures");
-    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, width, height);
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, sourceWidth, sourceHeight);
     checkError("texture storage");
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -301,7 +304,35 @@ void bindImageHandle(GLuint* handle, GLenum textureUnit, int width, int height) 
     checkError("texture options");
 }
 
-void convertToHSV(std::filesystem::path basePath, cv::Mat* inputImage) {
+void debugBoundingBoxes(cv::Scalar colour, int trackerNumber) {
+    auto objectBufferData = (ObjectSearchData*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
+    auto clean = source.clone();
+
+    // TODO:: Apparently the first 64 samples are all top left of an object, and nothing else is.
+    // Also, three of the bounding box values seem to be uninitialised
+    int samplePixelColumns = sourceWidth / sampleColumns;
+    int samplePixelRows = sourceHeight / sampleRows;
+    for (int i = 0; i < totalSamples; i++) {
+        if (objectBufferData[i].isObjectTopLeft == 1) {
+            std::cout << i << " (" << objectBufferData[i].topLeftSampleIndex << ") " << " is part of object? " << objectBufferData[i].isPartOfAnObject << std::endl;
+            std::cout << objectBufferData[i].boundingBox[0] * samplePixelColumns << "," << objectBufferData[i].boundingBox[1] * samplePixelRows << " to ";
+            std::cout << objectBufferData[i].boundingBox[2] * samplePixelColumns << "," << objectBufferData[i].boundingBox[3] * samplePixelRows;
+            std::cout << " (" << objectBufferData[i].area << " pixels)" << std::endl;
+
+            auto x = objectBufferData[i].boundingBox[0] * samplePixelColumns;
+            auto y = objectBufferData[i].boundingBox[1] * samplePixelRows;
+            auto width = (objectBufferData[i].boundingBox[2] * samplePixelColumns) - x;
+            auto height = (objectBufferData[i].boundingBox[3] * samplePixelRows) - y;
+            cv::rectangle(clean, cv::Rect(x, y, width, height), cv::Scalar(0, 255, 0, 255));
+        }
+    }
+
+    cv::imshow("Tracker " + trackerNumber, clean);
+
+    glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+}
+
+void convertToHSV(std::filesystem::path basePath) {
     Shader hsvShader;
     hsvShader.addShader(GL_COMPUTE_SHADER, (basePath / "shaders" / "ConvertToHSV.comp").string());
     checkError("hsv shader");
@@ -312,7 +343,7 @@ void convertToHSV(std::filesystem::path basePath, cv::Mat* inputImage) {
     auto inputTextureLocation = hsvShader.uniformLocation("inputImage");
     checkError("Get Input Texture Location");
     
-    bindOpenCVImage(&frameTextureHandle, inputTextureUnit, inputImage);
+    bindOpenCVImage(&frameTextureHandle, inputTextureUnit, source);
     glBindImageTexture(INPUT_IMAGE_UNIT, frameTextureHandle, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
     checkError("Bind input image");
     glUniform1i(inputTextureLocation, INPUT_IMAGE_UNIT);
@@ -321,19 +352,19 @@ void convertToHSV(std::filesystem::path basePath, cv::Mat* inputImage) {
     auto thresholdTextureLocation = hsvShader.uniformLocation("thresholdTexture");
     checkError("Get Threshold Texture Location");
     
-    bindImageHandle(&thresholdTextureHandle, thresholdTextureUnit, cv::Mat(*inputImage).cols, cv::Mat(*inputImage).rows);
-    glBindImageTexture(THRESHOLD_IMAGE_UNIT, thresholdTextureHandle, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+    bindImageHandle(&thresholdTextureHandle, thresholdTextureUnit);
+    glBindImageTexture(THRESHOLD_IMAGE_UNIT, thresholdTextureHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
     checkError("Bind Threshold Image");
     glUniform1i(thresholdTextureLocation, THRESHOLD_IMAGE_UNIT);
     checkError("Set Texture Location");
 
-    glDispatchCompute(cv::Mat(*inputImage).cols, cv::Mat(*inputImage).rows, 1);
+    glDispatchCompute(sourceWidth, sourceHeight, 1);
     checkError("After Shader");
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
     checkError("After Barrier");
 }
 
-void threshold(std::filesystem::path basePath, int width, int height, std::vector<ThresholdData> items) {
+void threshold(std::filesystem::path basePath, std::vector<ThresholdData> items) {
     Shader thresholdShader;
     thresholdShader.addShader(GL_COMPUTE_SHADER, (basePath / "shaders" / "Threshold.comp").string());
     checkError("threshold shader");
@@ -366,7 +397,7 @@ void threshold(std::filesystem::path basePath, int width, int height, std::vecto
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_THRESHOLD, thresholdShaderBuffer);
     checkError("After Buffer");
 
-    glDispatchCompute(width, height, 1);
+    glDispatchCompute(sourceWidth, sourceHeight, 1);
     checkError("After Shader");
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
     checkError("After Barrier");
@@ -431,36 +462,7 @@ void searchForObjects(std::filesystem::path basePath, int width, int height) {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, computeShaderBuffer);
 }
 
-void debugBoundingBoxes(cv::Mat* source) {
-    auto objectBufferData = (ObjectSearchData*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
-
-    // TODO:: Apparently the first 64 samples are all top left of an object, and nothing else is.
-    // Also, three of the bounding box values seem to be uninitialised
-    int columns = cv::Mat(*source).cols;
-    int rows = cv::Mat(*source).rows;
-    int samplePixelColumns = columns / sampleColumns;
-    int samplePixelRows = rows / sampleRows;
-    for (int i = 0; i < totalSamples; i++) {
-        if (objectBufferData[i].isObjectTopLeft == 1) {
-            std::cout << i << " (" << objectBufferData[i].topLeftSampleIndex << ") " << " is part of object? " << objectBufferData[i].isPartOfAnObject << std::endl;
-            std::cout << objectBufferData[i].boundingBox[0] * samplePixelColumns << "," << objectBufferData[i].boundingBox[1] * samplePixelRows << " to ";
-            std::cout << objectBufferData[i].boundingBox[2] * samplePixelColumns << "," << objectBufferData[i].boundingBox[3] * samplePixelRows;
-            std::cout << " (" << objectBufferData[i].area << " pixels)" << std::endl;
-
-            auto x = objectBufferData[i].boundingBox[0] * samplePixelColumns;
-            auto y = objectBufferData[i].boundingBox[1] * samplePixelRows;
-            auto width = (objectBufferData[i].boundingBox[2] * samplePixelColumns) - x;
-            auto height = (objectBufferData[i].boundingBox[3] * samplePixelRows) - y;
-            cv::rectangle(cv::Mat(*source), cv::Rect(x, y, width, height), cv::Scalar(0, 255, 0, 255));
-        }
-    }
-
-    cv::imshow("Source with lines", cv::Mat(*source));
-
-    glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-}
-
-void convertToRGB(std::filesystem::path basePath, int width, int height) {
+void convertToRGB(std::filesystem::path basePath) {
     Shader rgbShader;
     rgbShader.addShader(GL_COMPUTE_SHADER, (basePath / "shaders" / "ConvertToRGB.comp").string());
     checkError("rgb shader");
@@ -478,13 +480,13 @@ void convertToRGB(std::filesystem::path basePath, int width, int height) {
     auto outputImageTextureLocation = rgbShader.uniformLocation("outputImage");
     checkError("Get Input Texture Location");
 
-    bindImageHandle(&outputImageHandle, outputTextureUnit, width, height);
+    bindImageHandle(&outputImageHandle, outputTextureUnit);
     glBindImageTexture(OUTPUT_IMAGE_UNIT, outputImageHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
     checkError("Bind output image");
     glUniform1i(outputImageTextureLocation, OUTPUT_IMAGE_UNIT);
     checkError("Set Texture Location");
     
-    glDispatchCompute(width, height, 1);
+    glDispatchCompute(sourceWidth, sourceHeight, 1);
     checkError("After Shader");
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
     checkError("After Barrier");
@@ -559,13 +561,13 @@ void displayOutput(std::filesystem::path basePath) {
     glfwSwapBuffers(window);
 }
 
-void debugDisplayTexture(GLuint* handle, int width, int height, std::string windowName) {
+void debugDisplayTexture(GLuint* handle, std::string windowName) {
     glBindTexture(GL_TEXTURE_2D, GLuint(*handle));
     checkError(windowName + " display texture bind");
-    unsigned char* gl_texture_bytes = (unsigned char*)malloc(sizeof(unsigned char) * width * height * 3);
+    unsigned char* gl_texture_bytes = (unsigned char*)malloc(sizeof(unsigned char) * sourceWidth * sourceHeight * 3);
     glGetTexImage(GL_TEXTURE_2D, 0, GL_BGR, GL_UNSIGNED_BYTE, gl_texture_bytes);
     checkError(windowName + " display texture get");
-    cv::imshow(windowName, cv::Mat(height, width, CV_8UC3, gl_texture_bytes));
+    cv::imshow(windowName, cv::Mat(sourceHeight, sourceWidth, CV_8UC3, gl_texture_bytes));
     free(gl_texture_bytes);
 }
 
@@ -573,9 +575,12 @@ int main(int argc, char** argv)
 {
     auto cam = Webcam();
     auto frame = cam.next();
+    source = frame.source.clone();
+    sourceWidth = source.cols;
+    sourceHeight = source.rows;
     auto dir = std::filesystem::path(argv[0]).parent_path();
     
-    int status = setup(frame.source.size().width, frame.source.size().height);
+    int status = setup();
     if (status != 0) {
         return status;
     }
@@ -598,21 +603,17 @@ int main(int argc, char** argv)
     PerformanceTimer perf;
     perf.Start();
     */
-    debugDisplayTexture(&frameTextureHandle, frame.source.cols, frame.source.rows, "SOURCE IMAGE");
-    convertToHSV(dir, &(frame.source));
-    threshold(dir, frame.source.cols, frame.source.rows, trackers);
-    debugDisplayTexture(&thresholdTextureHandle, frame.source.cols, frame.source.rows, "Threshold image");
-    convertToRGB(dir, frame.source.cols, frame.source.rows);
+    convertToHSV(dir);
+    debugDisplayTexture(&frameTextureHandle, "SOURCE IMAGE");
+    threshold(dir, trackers);
+    debugDisplayTexture(&thresholdTextureHandle, "Threshold image");
+    convertToRGB(dir);
     /*
-    debugDisplayTexture(&outputImageHandle, frame.source.cols, frame.source.rows, "HSV IMAGE TO RGB");*/
+    debugDisplayTexture(&outputImageHandle, "HSV IMAGE TO RGB");*/
     /*
-    threshold(dir, frame.source.cols, frame.source.rows, trackers);
-    convertToRGB(dir, frame.source.cols, frame.source.rows);
-    searchForObjects(dir, frame.source.cols, frame.source.rows);
+    searchForObjects(dir);
     perf.End();
     */
-    
-    //debugBoundingBoxes(&(frame.source));
     while (!glfwWindowShouldClose(window) && !opengl_has_errored)
     {
         glfwPollEvents();
