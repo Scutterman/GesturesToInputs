@@ -340,6 +340,11 @@ void threshold(std::filesystem::path basePath, int width, int height, std::vecto
     thresholdShader.compile();
     checkError("threshold shader compile");
     thresholdShader.use();
+    
+    auto numberOfColoursLocation = thresholdShader.uniformLocation("numberOfColours");
+    checkError("Get Threshold number of colours Location");
+    glUniform1ui(numberOfColoursLocation, items.size());
+    checkError("Set threshold number of colours Location");
 
     auto thresholdTextureLocation = thresholdShader.uniformLocation("thresholdTexture");
     checkError("Get Threshold Texture Location");
@@ -361,7 +366,7 @@ void threshold(std::filesystem::path basePath, int width, int height, std::vecto
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_THRESHOLD, thresholdShaderBuffer);
     checkError("After Buffer");
 
-    glDispatchCompute(width, height, items.size());
+    glDispatchCompute(width, height, 1);
     checkError("After Shader");
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
     checkError("After Barrier");
@@ -581,17 +586,23 @@ int main(int argc, char** argv)
     float tracker[4] = { 87, 183, 183, 255 };
     trackers.push_back(ThresholdData(low, high, tracker));
 
+    float redtracker[4] = { 174, 179, 205, 255 };
+    float red1low[4] = { 169, 104, 151, 255 };
+    float red1high[4] = { 179, 255, 255, 255 };
+    float red2low[4] = { 0, 104, 151, 255 };
+    float red2high[4] = { 10, 255, 255, 255 };
+    trackers.push_back(ThresholdData(red1low, red1high, redtracker));
+    trackers.push_back(ThresholdData(red2low, red2high, redtracker));
+
     /*
     PerformanceTimer perf;
     perf.Start();
     */
+    debugDisplayTexture(&frameTextureHandle, frame.source.cols, frame.source.rows, "SOURCE IMAGE");
     convertToHSV(dir, &(frame.source));
-    debugDisplayTexture(&thresholdTextureHandle, frame.source.cols, frame.source.rows, "HSV IMAGE");
     threshold(dir, frame.source.cols, frame.source.rows, trackers);
     debugDisplayTexture(&thresholdTextureHandle, frame.source.cols, frame.source.rows, "Threshold image");
     convertToRGB(dir, frame.source.cols, frame.source.rows);
-    debugDisplayTexture(&frameTextureHandle, frame.source.cols, frame.source.rows, "SOURCE IMAGE");
-    debugDisplayTexture(&outputImageHandle, frame.source.cols, frame.source.rows, "RGB OUTPUT");
     /*
     debugDisplayTexture(&outputImageHandle, frame.source.cols, frame.source.rows, "HSV IMAGE TO RGB");*/
     /*

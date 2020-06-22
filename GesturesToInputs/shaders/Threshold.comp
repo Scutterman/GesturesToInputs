@@ -13,21 +13,27 @@ layout(std430, binding=0) buffer data {
 };
 
 uniform layout(binding=1,rgba32f) image2D thresholdTexture;
+uniform uint numberOfColours;
 
 void main() {
     ivec2 coords = ivec2(gl_WorkGroupID.xy);
-    uint index = gl_WorkGroupID.z;
+    vec4 targetColour = vec4(0,0,0,0);
+    for (uint index=  0; index < numberOfColours; index++) {
+        vec4 sourcePixel = imageLoad(thresholdTexture, coords);
+        vec4 lowColour = thresholds[index].lowColour;
+        vec4 highColour = thresholds[index].highColour;
+        if (
+            sourcePixel.x >= lowColour.x / 179 && sourcePixel.x <= highColour.x  / 179 &&
+            sourcePixel.y >= lowColour.y / 255 && sourcePixel.y <= highColour.y / 255 &&
+            sourcePixel.z >= lowColour.z / 255 && sourcePixel.z <= highColour.z / 255
+        ) {
+            vec4 colour = thresholds[index].trackerColour;
+            targetColour = vec4(colour.x / 179, colour.y / 255, colour.z / 255, 1);
+            break;
+        }
+    }
     
-    vec4 sourcePixel = imageLoad(thresholdTexture, coords);
-    vec4 lowColour = thresholds[index].lowColour;
-    vec4 highColour = thresholds[index].highColour;
-    vec4 targetPixel = (
-        sourcePixel.x >= lowColour.x / 179 && sourcePixel.x <= highColour.x  / 179 &&
-        sourcePixel.y >= lowColour.y / 255 && sourcePixel.y <= highColour.y / 255 &&
-        sourcePixel.z >= lowColour.z / 255 && sourcePixel.z <= highColour.z / 255
-    ) ? vec4(thresholds[index].trackerColour.x / 179, thresholds[index].trackerColour.y / 255, thresholds[index].trackerColour.z / 255, 1) : vec4(0, 0, 0, 0);
-    
-    imageStore(thresholdTexture, coords, targetPixel);
+    imageStore(thresholdTexture, coords, targetColour);
 
     // TODO:: memory barrier, morphological opening, memory barrier, morphological closing
 }
