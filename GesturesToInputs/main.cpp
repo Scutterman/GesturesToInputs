@@ -337,7 +337,7 @@ void debugBoundingBoxes(cv::Scalar colour, int trackerNumber) {
             auto y = objectBufferData[i].boundingBox[1] * samplePixelRows;
             auto width = (objectBufferData[i].boundingBox[2] * samplePixelColumns) - x;
             auto height = (objectBufferData[i].boundingBox[3] * samplePixelRows) - y;
-            cv::rectangle(clean, cv::Rect(x, y, width, height), cv::Scalar(0, 255, 0, 255));
+            cv::rectangle(clean, cv::Rect(x, y, width, height), colour);
         }
     }
 
@@ -417,7 +417,7 @@ void threshold(std::filesystem::path basePath, std::vector<ThresholdData> items)
     checkError("After Barrier");
 }
 
-void searchForObjects(std::filesystem::path basePath, std::vector<float[4]> trackerColours) {
+void searchForObjects(std::filesystem::path basePath, std::vector<cv::Scalar> trackerColours) {
 
     Shader objectSearchShader;
     objectSearchShader.addShader(GL_COMPUTE_SHADER, (basePath / "shaders" / "ObjectBoundingBoxSearch_Pass1.comp").string());
@@ -467,14 +467,15 @@ void searchForObjects(std::filesystem::path basePath, std::vector<float[4]> trac
     checkError("Get Tracker Colour Location");
     int i = 0;
     for (auto& colour : trackerColours) {
-        glUniform4fv(trackerColourLocation, 1, colour);
+        float uniformColour[4] = { colour[0], colour[1], colour[2], colour[3] };
+        glUniform4fv(trackerColourLocation, 1, uniformColour);
         checkError("Set Tracker Colour Location");
         glDispatchCompute(sampleColumns, sampleRows, 1);
         checkError("After Shader");
         glMemoryBarrier(GL_ALL_BARRIER_BITS);
         checkError("After Barrier");
         // TODO:: This scalar is HSV, should be RGB
-        debugBoundingBoxes(cv::Scalar(colour[0], colour[1], colour[2], colour[4]), i);
+        debugBoundingBoxes(colour, i);
         i++;
     }
 
@@ -626,11 +627,11 @@ int main(int argc, char** argv)
     debugDisplayTexture(&frameTextureHandle, "SOURCE IMAGE");
     threshold(dir, trackers);
     debugDisplayTexture(&thresholdTextureHandle, "Threshold image");
+    searchForObjects(dir, std::vector<cv::Scalar> { cv::Scalar(tracker[0], tracker[1], tracker[2], tracker[3]), cv::Scalar(redtracker[0], redtracker[1], redtracker[2], redtracker[3]) });
     convertToRGB(dir);
     /*
     debugDisplayTexture(&outputImageHandle, "HSV IMAGE TO RGB");*/
     /*
-    searchForObjects(dir);
     perf.End();
     */
     while (!glfwWindowShouldClose(window) && !opengl_has_errored)
