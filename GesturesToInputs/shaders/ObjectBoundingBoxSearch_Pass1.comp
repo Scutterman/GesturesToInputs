@@ -14,7 +14,8 @@ layout(std430, binding=0) buffer data {
 
 layout(local_size_x=1, local_size_y=1, local_size_z=1) in;
 
-uniform layout(binding=1, rgba8) image2D thresholdTexture;
+uniform layout(binding=1, rgba32f) image2D thresholdTexture;
+uniform vec4 trackerColour;
 uniform ivec2 samplePixelDimensions; // width and height of each sample in pixels - larger sample size is faster but less accurate
 uniform ivec2 sampleSize; // number of horizontal and vertical samples in the image
 uniform uint numberOfPasses; // Higher number of passes = higher chance at successfully working out the bounding box but higher processing time. May be possible to best-guess on CPU based on number of sample rows and columns
@@ -45,6 +46,8 @@ void main()
     samples[sampleIndex].topLeftSampleIndex = sampleIndex;
     samples[sampleIndex].boundingBox = ivec4(sampleColumn, sampleRow, sampleColumn+1, sampleRow+1);
 
+    vec4 normalisedTrackerColour = vec4(trackerColour.x / 179, trackerColour.y / 255, trackerColour.z / 255, trackerColour.w / 255);
+
     // Determine whether sample has enough pixels to be part of an object
     uint balance = 0;
     uint target = (samplePixelDimensions.x * samplePixelDimensions.y) / 2;
@@ -53,7 +56,7 @@ void main()
             uint x = min((sampleColumn * samplePixelDimensions.x) + i, imageDimensions.x);
             uint y = min((sampleRow * samplePixelDimensions.x) + j, imageDimensions.y);
             vec4 pixel = imageLoad(thresholdTexture, ivec2(x, y));
-            balance += pixel.x == 1 ? 1 : 0;
+            balance += pixel.x == normalisedTrackerColour.x && pixel.y == normalisedTrackerColour.y && pixel.z == normalisedTrackerColour.z ? 1 : 0;
         }
     }
 

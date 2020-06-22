@@ -417,12 +417,7 @@ void threshold(std::filesystem::path basePath, std::vector<ThresholdData> items)
     checkError("After Barrier");
 }
 
-void searchForObjects(std::filesystem::path basePath, int width, int height) {
-
-    //auto redTrackerValues = std::list<TrackerValues>{ TrackerValues(169, 10, 104, 255, 151, 255) };
-    //auto redTracker = Tracker("Red", redTrackerValues, cv::Scalar(0, 0, 255));
-    //cv::Mat threshold;
-    //threshold = redTracker.isolateColours(source);
+void searchForObjects(std::filesystem::path basePath, std::vector<float[4]> trackerColours) {
 
     Shader objectSearchShader;
     objectSearchShader.addShader(GL_COMPUTE_SHADER, (basePath / "shaders" / "ObjectBoundingBoxSearch_Pass1.comp").string());
@@ -443,8 +438,8 @@ void searchForObjects(std::filesystem::path basePath, int width, int height) {
     threshold_location = objectSearchShader.uniformLocation("threshold");
 
     int samplePixelDimensions[2];
-    samplePixelDimensions[0] = width / sampleColumns;
-    samplePixelDimensions[1] = height / sampleRows;
+    samplePixelDimensions[0] = sourceWidth / sampleColumns;
+    samplePixelDimensions[1] = sourceHeight / sampleRows;
     glUniform2iv(samplePixelDimensions_location, 1, samplePixelDimensions);
 
     int sampleSize[2];
@@ -468,10 +463,20 @@ void searchForObjects(std::filesystem::path basePath, int width, int height) {
 
     checkError("After Buffer");
 
-    glDispatchCompute(sampleColumns, sampleRows, 1);
-    checkError("After Shader");
-    glMemoryBarrier(GL_ALL_BARRIER_BITS);
-    checkError("After Barrier");
+    auto trackerColourLocation = objectSearchShader.uniformLocation("trackerColour");
+    checkError("Get Tracker Colour Location");
+    int i = 0;
+    for (auto& colour : trackerColours) {
+        glUniform4fv(trackerColourLocation, 1, colour);
+        checkError("Set Tracker Colour Location");
+        glDispatchCompute(sampleColumns, sampleRows, 1);
+        checkError("After Shader");
+        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        checkError("After Barrier");
+        // TODO:: This scalar is HSV, should be RGB
+        debugBoundingBoxes(cv::Scalar(colour[0], colour[1], colour[2], colour[4]), i);
+        i++;
+    }
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, computeShaderBuffer);
 }
