@@ -204,11 +204,15 @@ const unsigned int sampleRows = 48;
 const unsigned int totalSamples = sampleColumns * sampleRows;
 
 bool opengl_has_errored = false;
-GLuint frameTextureHandle, thresholdTextureHandle, outputImageHandle;
-const GLenum inputTextureUnit = GL_TEXTURE0;
-const GLenum thresholdTextureUnit = GL_TEXTURE1;
-const GLenum outputTextureUnit = GL_TEXTURE2;
+GLuint inputTextureHandle, thresholdTextureHandle, outputTextureHandle;
+const GLenum inputTextureUnit = GL_TEXTURE0, thresholdTextureUnit = GL_TEXTURE1, outputTextureUnit = GL_TEXTURE2;
 int xMaxInstances, yMaxInstances, zMaxInstances, totalMaxInstances;
+
+GLuint thresholdShaderBuffer, computeShaderBuffer;
+
+std::filesystem::path basePath;
+Shader hsvShader, thresholdShader, objectSearchShader, rgbShader;
+int trackerColourLocation;
 
 cv::Mat source;
 int sourceWidth, sourceHeight;
@@ -281,22 +285,8 @@ int setup() {
     return 0;
 }
 
-void bindOpenCVImage(GLuint* handle, GLenum textureUnit, cv::Mat image) {
+void bindOpenCVImage(GLenum textureUnit, cv::Mat image) {
     glActiveTexture(textureUnit);
-    glGenTextures(1, handle);
-    glBindTexture(GL_TEXTURE_2D, GLuint(*handle));
-    checkError("bind texture");
-    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, sourceWidth, sourceHeight);
-    checkError("texture storage");
-    
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    checkError("texture options");
-    
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, sourceWidth, sourceHeight, GL_BGR, GL_UNSIGNED_BYTE, image.ptr());
     checkError("sending data");
 }
@@ -346,8 +336,7 @@ void debugBoundingBoxes(cv::Scalar colour, int trackerNumber) {
     glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 }
 
-void convertToHSV(std::filesystem::path basePath) {
-    Shader hsvShader;
+void convertToHSV() {
     hsvShader.addShader(GL_COMPUTE_SHADER, (basePath / "shaders" / "ConvertToHSV.comp").string());
     checkError("hsv shader");
     hsvShader.compile();
@@ -357,8 +346,8 @@ void convertToHSV(std::filesystem::path basePath) {
     auto inputTextureLocation = hsvShader.uniformLocation("inputImage");
     checkError("Get Input Texture Location");
     
-    bindOpenCVImage(&frameTextureHandle, inputTextureUnit, source);
-    glBindImageTexture(INPUT_IMAGE_UNIT, frameTextureHandle, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+    bindImageHandle(&inputTextureHandle, inputTextureUnit);
+    glBindImageTexture(INPUT_IMAGE_UNIT, inputTextureHandle, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
     checkError("Bind input image");
     glUniform1i(inputTextureLocation, INPUT_IMAGE_UNIT);
     checkError("Set Texture Location");
@@ -371,15 +360,9 @@ void convertToHSV(std::filesystem::path basePath) {
     checkError("Bind Threshold Image");
     glUniform1i(thresholdTextureLocation, THRESHOLD_IMAGE_UNIT);
     checkError("Set Texture Location");
-
-    glDispatchCompute(sourceWidth, sourceHeight, 1);
-    checkError("After Shader");
-    glMemoryBarrier(GL_ALL_BARRIER_BITS);
-    checkError("After Barrier");
 }
 
-void threshold(std::filesystem::path basePath, std::vector<ThresholdData> items) {
-    Shader thresholdShader;
+void threshold(std::vector<ThresholdData> items) {
     thresholdShader.addShader(GL_COMPUTE_SHADER, (basePath / "shaders" / "Threshold.comp").string());
     checkError("threshold shader");
     thresholdShader.compile();
@@ -396,7 +379,6 @@ void threshold(std::filesystem::path basePath, std::vector<ThresholdData> items)
     glUniform1i(thresholdTextureLocation, THRESHOLD_IMAGE_UNIT);
     checkError("Set Texture Location");
 
-    GLuint thresholdShaderBuffer;
     glGenBuffers(1, &thresholdShaderBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, thresholdShaderBuffer);
 
@@ -410,16 +392,9 @@ void threshold(std::filesystem::path basePath, std::vector<ThresholdData> items)
     
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_THRESHOLD, thresholdShaderBuffer);
     checkError("After Buffer");
-
-    glDispatchCompute(sourceWidth, sourceHeight, 1);
-    checkError("After Shader");
-    glMemoryBarrier(GL_ALL_BARRIER_BITS);
-    checkError("After Barrier");
 }
 
-void searchForObjects(std::filesystem::path basePath, std::vector<cv::Scalar> trackerColours) {
-
-    Shader objectSearchShader;
+void searchForObjects() {
     objectSearchShader.addShader(GL_COMPUTE_SHADER, (basePath / "shaders" / "ObjectBoundingBoxSearch_Pass1.comp").string());
     checkError("object search shader");
     objectSearchShader.compile();
@@ -455,7 +430,6 @@ void searchForObjects(std::filesystem::path basePath, std::vector<cv::Scalar> tr
 
     uint objectDataSize = sizeof(ObjectSearchData) * totalSamples;
 
-    GLuint computeShaderBuffer;
     glGenBuffers(1, &computeShaderBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, computeShaderBuffer);
     glBufferData(GL_SHADER_STORAGE_BUFFER, objectDataSize, NULL, GL_DYNAMIC_COPY);
@@ -463,27 +437,11 @@ void searchForObjects(std::filesystem::path basePath, std::vector<cv::Scalar> tr
 
     checkError("After Buffer");
 
-    auto trackerColourLocation = objectSearchShader.uniformLocation("trackerColour");
+    trackerColourLocation = objectSearchShader.uniformLocation("trackerColour");
     checkError("Get Tracker Colour Location");
-    int i = 0;
-    for (auto& colour : trackerColours) {
-        float uniformColour[4] = { colour[0], colour[1], colour[2], colour[3] };
-        glUniform4fv(trackerColourLocation, 1, uniformColour);
-        checkError("Set Tracker Colour Location");
-        glDispatchCompute(sampleColumns, sampleRows, 1);
-        checkError("After Shader");
-        glMemoryBarrier(GL_ALL_BARRIER_BITS);
-        checkError("After Barrier");
-        // TODO:: This scalar is HSV, should be RGB
-        debugBoundingBoxes(colour, i);
-        i++;
-    }
-
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, computeShaderBuffer);
 }
 
-void convertToRGB(std::filesystem::path basePath) {
-    Shader rgbShader;
+void convertToRGB() {
     rgbShader.addShader(GL_COMPUTE_SHADER, (basePath / "shaders" / "ConvertToRGB.comp").string());
     checkError("rgb shader");
     rgbShader.compile();
@@ -500,16 +458,11 @@ void convertToRGB(std::filesystem::path basePath) {
     auto outputImageTextureLocation = rgbShader.uniformLocation("outputImage");
     checkError("Get Input Texture Location");
 
-    bindImageHandle(&outputImageHandle, outputTextureUnit);
-    glBindImageTexture(OUTPUT_IMAGE_UNIT, outputImageHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+    bindImageHandle(&outputTextureHandle, outputTextureUnit);
+    glBindImageTexture(OUTPUT_IMAGE_UNIT, outputTextureHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
     checkError("Bind output image");
     glUniform1i(outputImageTextureLocation, OUTPUT_IMAGE_UNIT);
     checkError("Set Texture Location");
-    
-    glDispatchCompute(sourceWidth, sourceHeight, 1);
-    checkError("After Shader");
-    glMemoryBarrier(GL_ALL_BARRIER_BITS);
-    checkError("After Barrier");
 }
 
 void displayOutput(std::filesystem::path basePath) {
@@ -581,8 +534,8 @@ void displayOutput(std::filesystem::path basePath) {
     glfwSwapBuffers(window);
 }
 
-void debugDisplayTexture(GLuint* handle, std::string windowName) {
-    glBindTexture(GL_TEXTURE_2D, GLuint(*handle));
+void debugDisplayTexture(GLenum textureUnit, std::string windowName) {
+    glActiveTexture(textureUnit);
     checkError(windowName + " display texture bind");
     unsigned char* gl_texture_bytes = (unsigned char*)malloc(sizeof(unsigned char) * sourceWidth * sourceHeight * 3);
     glGetTexImage(GL_TEXTURE_2D, 0, GL_BGR, GL_UNSIGNED_BYTE, gl_texture_bytes);
@@ -593,12 +546,11 @@ void debugDisplayTexture(GLuint* handle, std::string windowName) {
 
 int main(int argc, char** argv)
 {
+    basePath = std::filesystem::path(argv[0]).parent_path();
     auto cam = Webcam();
-    auto frame = cam.next();
-    source = frame.source.clone();
+    source = cam.next().source.clone();
     sourceWidth = source.cols;
     sourceHeight = source.rows;
-    auto dir = std::filesystem::path(argv[0]).parent_path();
     
     int status = setup();
     if (status != 0) {
@@ -619,23 +571,65 @@ int main(int argc, char** argv)
     trackers.push_back(ThresholdData(red1low, red1high, redtracker));
     trackers.push_back(ThresholdData(red2low, red2high, redtracker));
 
-    /*
+    auto trackerColours = std::vector<cv::Scalar> {
+        cv::Scalar(tracker[0], tracker[1], tracker[2], tracker[3]),
+        cv::Scalar(redtracker[0], redtracker[1], redtracker[2], redtracker[3])
+    };
+    
     PerformanceTimer perf;
-    perf.Start();
-    */
-    convertToHSV(dir);
-    debugDisplayTexture(&frameTextureHandle, "SOURCE IMAGE");
-    threshold(dir, trackers);
-    debugDisplayTexture(&thresholdTextureHandle, "Threshold image");
-    searchForObjects(dir, std::vector<cv::Scalar> { cv::Scalar(tracker[0], tracker[1], tracker[2], tracker[3]), cv::Scalar(redtracker[0], redtracker[1], redtracker[2], redtracker[3]) });
-    convertToRGB(dir);
-    /*
-    debugDisplayTexture(&outputImageHandle, "HSV IMAGE TO RGB");*/
-    /*
-    perf.End();
-    */
+    convertToHSV();
+    threshold(trackers);
+    searchForObjects();
+    convertToRGB();
+    
     while (!glfwWindowShouldClose(window) && !opengl_has_errored)
     {
+        source = cam.next().source.clone();
+        perf.Start();
+        hsvShader.use();
+        bindOpenCVImage(inputTextureUnit, source);
+        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        debugDisplayTexture(inputTextureUnit, "Input Image");
+        checkError("Bind source image");
+        glDispatchCompute(sourceWidth, sourceHeight, 1);
+        checkError("After Shader");
+        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        checkError("After Barrier");
+
+        debugDisplayTexture(thresholdTextureUnit, "HSV Image");
+
+        thresholdShader.use();
+        glDispatchCompute(sourceWidth, sourceHeight, 1);
+        checkError("After Shader");
+        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        checkError("After Barrier");
+
+        debugDisplayTexture(thresholdTextureUnit, "Threshold Image");
+
+        objectSearchShader.use();
+        int i = 0;
+        for (auto& colour : trackerColours) {
+            float uniformColour[4] = { colour[0], colour[1], colour[2], colour[3] };
+            glUniform4fv(trackerColourLocation, 1, uniformColour);
+            checkError("Set Tracker Colour Location");
+            glDispatchCompute(sampleColumns, sampleRows, 1);
+            checkError("After Shader");
+            glMemoryBarrier(GL_ALL_BARRIER_BITS);
+            checkError("After Barrier");
+            // TODO:: This scalar is HSV, should be RGB
+            //debugBoundingBoxes(colour, i);
+            i++;
+        }
+        /*
+        rgbShader.use();
+
+        glDispatchCompute(sourceWidth, sourceHeight, 1);
+        checkError("After Shader");
+        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        checkError("After Barrier");
+        */
+        perf.End();
+
         glfwPollEvents();
     }
     
