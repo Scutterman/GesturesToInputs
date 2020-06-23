@@ -4,8 +4,6 @@
 
 # Each Frame
 All Shaders:
-- Convert everything to use [0...1] ranges not [0...255]
-- Split c++ functions into "shader setup" and "shader run" and "debug display" sections so we can get perf of just the runtime not the setup time or debug display.
 - Use local groups instead of global
     - *MaxInstances variables can be used to calculate appropriate values for local x, y, and z to ensure they don't overflow allowed invocations
     - prepend a string containing #DEFINE macros to the beginning of each shader to "dynamically" set the local x, y, and z values
@@ -24,23 +22,14 @@ All Shaders:
         - All of the in-between invocations will process the pixels in between
 
 Shader 1: Convert to HSV
-- Process one pixel per thread (global_work_group.x = pixel.x, global_work_group.y = pixel.y)
-- Check if the frame is mirrored and place the output pixel accordingly.
 
 Shader 2: Thresholding
-- Process one pixel per tracker per thread (global_work_group.x = pixel.x, global_work_group.y = pixel.y, global_work_group.z = trackedColour)
-    - threshold
-    - morphological opening
-    - morphological closing
+- morphological opening
+- morphological closing
 
 Shader 3: Blob detection
-- Process one sample per tracker per thread (global_work_group.x = sample.x, global_work_group.y = sample.y, global_work_group.z = tracker)
-    - currently implemented in shaders/ObjectBoundingBoxSearch_Pass1.comp for a single tracker
-    - Create and bind tracker data storage unit (we currently have tracker *colour* data bound) so we can check x, y, and z values of pixel against tracked colour
-    - Use local work groups so memoryBarrier() works correctly
-    - Return area and bounding box as pixels and not samples
-    - Prevent Susurration indexes from wrapping around to the right-hand side of the grid
-    - Ensure bottomLeft Susurration index does not go beyond the bottom of the grid
+- Prevent Susurration indexes from wrapping around to the right-hand side of the grid
+- Ensure bottomLeft Susurration index does not go beyond the bottom of the grid
 
 Shader 4: Marker calculations
 - Process one tracker per thread (global_work_group.x = tracker)
