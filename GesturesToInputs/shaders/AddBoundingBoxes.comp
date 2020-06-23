@@ -2,7 +2,7 @@
 
 layout(local_size_x=1, local_size_y=1, local_size_z=1) in;
 
-uniform layout(binding=1,rgba8) image2D thresholdTexture;
+uniform layout(binding=0,rgba8) image2D inputImage;
 uniform layout(binding=2,rgba8) image2D outputImage;
 
 vec3 hsv2rgb(vec3 hsv)
@@ -14,8 +14,8 @@ vec3 hsv2rgb(vec3 hsv)
 
 void main()
 {
-    ivec2 coords = ivec2(gl_WorkGroupID.x, gl_WorkGroupID.y);
-    vec4 hsv = imageLoad(thresholdTexture, coords);
+    ivec2 coords = ivec2(gl_WorkGroupID.xy);
+    vec4 hsv = imageLoad(inputImage, coords);
     vec3 rgb = hsv2rgb(hsv.xyz).xyz;
     imageStore(outputImage, coords, vec4(rgb, 1));
 }

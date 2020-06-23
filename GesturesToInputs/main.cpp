@@ -443,18 +443,18 @@ void searchForObjects() {
     checkError("Get Tracker Colour Location");
 }
 
-void convertToRGB() {
-    rgbShader.addShader(GL_COMPUTE_SHADER, (basePath / "shaders" / "ConvertToRGB.comp").string());
+void addBoundingBoxes() {
+    rgbShader.addShader(GL_COMPUTE_SHADER, (basePath / "shaders" / "AddBoundingBoxes.comp").string());
     checkError("rgb shader");
     rgbShader.compile();
     checkError("rgb shader compile");
     rgbShader.use();
 
-    auto thresholdTextureLocation = rgbShader.uniformLocation("thresholdTexture");
-    checkError("Get Threshold Texture Location");
+    auto inputImageLocation = rgbShader.uniformLocation("inputImage");
+    checkError("Get Input ImageLocation");
 
     checkError("Bind Threshold Image");
-    glUniform1i(thresholdTextureLocation, THRESHOLD_IMAGE_UNIT);
+    glUniform1i(inputImageLocation, INPUT_IMAGE_UNIT);
     checkError("Set Texture Location");
 
     auto outputImageTextureLocation = rgbShader.uniformLocation("outputImage");
@@ -582,7 +582,7 @@ int main(int argc, char** argv)
     convertToHSV();
     threshold(trackers);
     searchForObjects();
-    convertToRGB();
+    addBoundingBoxes();
     
     while (!glfwWindowShouldClose(window) && !opengl_has_errored)
     {
