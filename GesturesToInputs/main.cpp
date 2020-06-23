@@ -581,8 +581,11 @@ int main(int argc, char** argv)
     while (!glfwWindowShouldClose(window) && !opengl_has_errored)
     {
         perf.Start();
-        trackerObjects.clear();
+        //trackerObjects.clear();
         source = cam.next().source.clone();
+        std::cout << "source capture in "; perf.End();
+        
+        perf.Start();
         hsvShader.use();
         bindOpenCVImage(inputTextureUnit, source);
         glMemoryBarrier(GL_ALL_BARRIER_BITS);
@@ -599,7 +602,6 @@ int main(int argc, char** argv)
         checkError("After Barrier");
 
         objectSearchShader.use();
-        int i = 0;
         for (auto& colour : trackerColours) {
             float uniformColour[4] = { colour[0], colour[1], colour[2], colour[3] };
             glUniform4fv(trackerColourLocation, 1, uniformColour);
@@ -608,17 +610,21 @@ int main(int argc, char** argv)
             checkError("After Shader");
             glMemoryBarrier(GL_ALL_BARRIER_BITS);
             checkError("After Barrier");
+            /*
             DetectedObjects objects;
             objects.colour = colour;
             debugBoundingBoxes(&objects);
             trackerObjects.push_back(objects);
-            i++;
+            */
         }
-        
-        displayOutput();
-        glfwPollEvents();
+        std::cout << "everything else in "; perf.End();
 
-        perf.End();
+        perf.Start();
+        displayOutput();
+        std::cout << "output displayed in "; perf.End();
+        std::cout << std::endl << std::endl << std::endl;
+
+        glfwPollEvents();
     }
     
     return end();
