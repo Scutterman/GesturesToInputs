@@ -360,6 +360,11 @@ void convertToHSV() {
     checkError("Bind Threshold Image");
     glUniform1i(thresholdTextureLocation, THRESHOLD_IMAGE_UNIT);
     checkError("Set Texture Location");
+
+    auto isMirroredLocation = hsvShader.uniformLocation("inputIsMirrored");
+    checkError("Get isMirrored Location");
+    glUniform1ui(isMirroredLocation, 1);
+    checkError("Set isMirrored");
 }
 
 void threshold(std::vector<ThresholdData> items) {

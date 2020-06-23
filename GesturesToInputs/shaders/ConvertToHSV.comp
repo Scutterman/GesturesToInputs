@@ -4,6 +4,7 @@ layout(local_size_x=1, local_size_y=1, local_size_z=1) in;
 
 uniform layout(binding=0,rgba32f) image2D inputImage;
 uniform layout(binding=1,rgba32f) image2D thresholdTexture;
+uniform uint inputIsMirrored;
 
 vec3 rgb2hsv(vec3 rgb)
 {
@@ -20,5 +21,7 @@ void main()
     ivec2 coords = ivec2(gl_WorkGroupID.xy);
     vec4 rgb = imageLoad(inputImage, coords);
     vec3 hsv = rgb2hsv(rgb.xyz);
-    imageStore(thresholdTexture, coords, vec4(hsv, 1));
+    memoryBarrier();
+    ivec2 outputCoords = inputIsMirrored == 0 ? coords : ivec2(imageSize(inputImage).x - coords.x, coords.y);
+    imageStore(thresholdTexture, outputCoords, vec4(hsv, 1));
 }
