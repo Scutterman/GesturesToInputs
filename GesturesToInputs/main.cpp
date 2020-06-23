@@ -212,6 +212,7 @@ const unsigned int sampleRows = 48;
 const unsigned int totalSamples = sampleColumns * sampleRows;
 
 bool opengl_has_errored = false;
+GLuint vertex_array;
 GLuint inputTextureHandle, thresholdTextureHandle, outputTextureHandle;
 const GLenum inputTextureUnit = GL_TEXTURE0, thresholdTextureUnit = GL_TEXTURE1, outputTextureUnit = GL_TEXTURE2;
 int xMaxInstances, yMaxInstances, zMaxInstances, totalMaxInstances;
@@ -219,7 +220,7 @@ int xMaxInstances, yMaxInstances, zMaxInstances, totalMaxInstances;
 GLuint thresholdShaderBuffer, computeShaderBuffer;
 
 std::filesystem::path basePath;
-Shader hsvShader, thresholdShader, objectSearchShader, rgbShader;
+Shader hsvShader, thresholdShader, objectSearchShader, displayShader;
 int trackerColourLocation;
 
 cv::Mat source;
@@ -457,37 +458,10 @@ void searchForObjects() {
     checkError("Get Tracker Colour Location");
 }
 
-void addBoundingBoxes() {
-    rgbShader.addShader(GL_COMPUTE_SHADER, (basePath / "shaders" / "AddBoundingBoxes.comp").string());
-    checkError("rgb shader");
-    rgbShader.compile();
-    checkError("rgb shader compile");
-    rgbShader.use();
-
-    auto inputImageLocation = rgbShader.uniformLocation("inputImage");
-    checkError("Get Input ImageLocation");
-
-    checkError("Bind Threshold Image");
-    glUniform1i(inputImageLocation, INPUT_IMAGE_UNIT);
-    checkError("Set Texture Location");
-
-    auto outputImageTextureLocation = rgbShader.uniformLocation("outputImage");
-    checkError("Get Input Texture Location");
-
-    bindImageHandle(&outputTextureHandle, outputTextureUnit);
-    glBindImageTexture(OUTPUT_IMAGE_UNIT, outputTextureHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-    checkError("Bind output image");
-    glUniform1i(outputImageTextureLocation, OUTPUT_IMAGE_UNIT);
-    checkError("Set Texture Location");
-}
-
-void displayOutput() {
-    GLuint vertex_array, vertex_buffer, element_buffer;
+void displayOutputSetup() {
+    GLuint vertex_buffer, element_buffer;
     GLint vpos_location, tex_location, texture0Height_location;
     
-    int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
-
     glGenVertexArrays(1, &vertex_array);
     glBindVertexArray(vertex_array);
 
@@ -501,47 +475,53 @@ void displayOutput() {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
     checkError("element buffer");
 
-    Shader shader;
     bool vertexShaderSuccess, fragmentShaderSuccess, shaderCompileSuccess;
     std::filesystem::path vertexPath = basePath / "shaders" / "test.vert", fragmentPath = basePath / "shaders" / "test.frag";
 
-    vertexShaderSuccess = shader.addShader(GL_VERTEX_SHADER, vertexPath.string());
+    vertexShaderSuccess = displayShader.addShader(GL_VERTEX_SHADER, vertexPath.string());
     checkError("vertex shader");
 
-    fragmentShaderSuccess = shader.addShader(GL_FRAGMENT_SHADER, fragmentPath.string());
+    fragmentShaderSuccess = displayShader.addShader(GL_FRAGMENT_SHADER, fragmentPath.string());
     checkError("fragment shader");
 
-    shaderCompileSuccess = shader.compile();
+    shaderCompileSuccess = displayShader.compile();
     checkError("program");
 
-    shader.use();
+    displayShader.use();
     checkError("use program 1");
 
-    vpos_location = shader.attributeLocation("aPosition");
+    vpos_location = displayShader.attributeLocation("aPosition");
     checkError("get vertex location");
 
     glVertexAttribPointer(vpos_location, 2, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), (void*)0);
     glEnableVertexAttribArray(vpos_location);
     checkError("vertex attribute");
 
-    tex_location = shader.attributeLocation("aTexCoord");
+    tex_location = displayShader.attributeLocation("aTexCoord");
     checkError("get texture location");
 
     glVertexAttribPointer(tex_location, 2, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), (void*)(2 * sizeof(float)));
     glEnableVertexAttribArray(tex_location);
     checkError("texture attribute");
 
-    texture0Height_location = shader.uniformLocation("texture0Height");
-    checkError("get height location");
-    glUniform1i(texture0Height_location, height);
+    auto outputImageTextureLocation = displayShader.uniformLocation("outputImage");
+    checkError("Get Output Image Location");
+    glUniform1i(outputImageTextureLocation, OUTPUT_IMAGE_UNIT);
+    checkError("Set Output Image Location");
+}
+
+void displayOutput() {
+    int width, height;
+    glfwGetFramebufferSize(window, &width, &height);
 
     glViewport(0, 0, width, height);
     checkError("viewport size");
     glClear(GL_COLOR_BUFFER_BIT);
     checkError("clear");
 
+    displayShader.use();
     checkError("use program");
-    checkError("bind texture");
+    glActiveTexture(outputTextureUnit);
     glBindVertexArray(vertex_array);
     checkError("bind array");
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
@@ -596,7 +576,7 @@ int main(int argc, char** argv)
     convertToHSV();
     threshold(trackers);
     searchForObjects();
-    addBoundingBoxes();
+    displayOutputSetup();
     
     while (!glfwWindowShouldClose(window) && !opengl_has_errored)
     {
@@ -635,7 +615,7 @@ int main(int argc, char** argv)
             i++;
         }
         
-        debugDisplayTexture(outputTextureUnit, "Bounding Boxes");
+        displayOutput();
         glfwPollEvents();
 
         perf.End();
