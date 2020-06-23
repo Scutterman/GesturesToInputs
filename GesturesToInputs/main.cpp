@@ -510,20 +510,17 @@ void displayOutputSetup() {
     checkError("Get Output Image Location");
     glUniform1i(outputImageTextureLocation, OUTPUT_IMAGE_UNIT);
     checkError("Set Output Image Location");
-}
 
-void displayOutput() {
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
 
     glViewport(0, 0, width, height);
     checkError("viewport size");
-    glClear(GL_COLOR_BUFFER_BIT);
-    checkError("clear");
+}
 
+void displayOutput() {
     displayShader.use();
     checkError("use program");
-    glActiveTexture(outputTextureUnit);
     glBindVertexArray(vertex_array);
     checkError("bind array");
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
