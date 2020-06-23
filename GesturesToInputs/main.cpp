@@ -199,6 +199,7 @@ static const struct
     {  1.0f,  1.0f, 1.0f, 1.0f },
 };
 
+bool doErrorCheck = false;
 const unsigned int indices[] = { 0, 1, 2, 3, 0, 2 };
 const int INPUT_IMAGE_UNIT = 0;
 const int THRESHOLD_IMAGE_UNIT = 1;
@@ -227,6 +228,7 @@ cv::Mat source;
 int sourceWidth, sourceHeight;
 
 void checkError(std::string stage) {
+    if (!doErrorCheck) { return; }
     GLenum err;
     while ((err = glGetError()) != GL_NO_ERROR)
     {
@@ -542,6 +544,7 @@ void debugDisplayTexture(GLenum textureUnit, std::string windowName) {
 
 int main(int argc, char** argv)
 {
+    // doErrorCheck = true;
     basePath = std::filesystem::path(argv[0]).parent_path();
     auto cam = Webcam();
     source = cam.next().source.clone();
