@@ -3,7 +3,7 @@
 layout(local_size_x=1, local_size_y=1, local_size_z=1) in;
 
 uniform layout(binding=1,rgba8) image2D thresholdTexture;
-uniform layout(binding=0,rgba8) image2D outputImage;
+uniform layout(binding=2,rgba8) image2D outputImage;
 
 vec3 hsv2rgb(vec3 hsv)
 {

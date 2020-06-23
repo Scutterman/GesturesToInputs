@@ -25,6 +25,7 @@ All Shaders:
 
 Shader 1: Convert to HSV
 - Process one pixel per thread (global_work_group.x = pixel.x, global_work_group.y = pixel.y)
+- Check if the frame is mirrored and place the output pixel accordingly.
 
 Shader 2: Thresholding
 - Process one pixel per tracker per thread (global_work_group.x = pixel.x, global_work_group.y = pixel.y, global_work_group.z = trackedColour)

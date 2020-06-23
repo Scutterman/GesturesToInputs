@@ -193,11 +193,11 @@ static const struct
 
 const unsigned int indices[] = { 0, 1, 2, 3, 0, 2 };
 const int INPUT_IMAGE_UNIT = 0;
-const int OUTPUT_IMAGE_UNIT = 0;
 const int THRESHOLD_IMAGE_UNIT = 1;
+const int OUTPUT_IMAGE_UNIT = 2;
 
-const int SHADER_STORAGE_THRESHOLD = 0;
-const int SHADER_STORAGE_OBJECT_SEARCH = 0;
+const int SHADER_STORAGE_THRESHOLD = 3;
+const int SHADER_STORAGE_OBJECT_SEARCH = 4;
 
 const unsigned int sampleColumns = 64;
 const unsigned int sampleRows = 48;
