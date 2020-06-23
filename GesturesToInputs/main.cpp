@@ -179,6 +179,14 @@ struct ObjectSearchData {
     GLuint isObjectTopLeft;
 };
 
+class DetectedObjects {
+public:
+    std::vector<cv::Vec4i> boundingBoxes;
+    cv::Scalar colour;
+};
+
+std::vector<DetectedObjects> trackerObjects;
+
 static const struct
 {
     float x, y;
@@ -308,31 +316,20 @@ void bindImageHandle(GLuint* handle, GLenum textureUnit) {
     checkError("texture options");
 }
 
-void debugBoundingBoxes(cv::Scalar colour, int trackerNumber) {
+void debugBoundingBoxes(DetectedObjects* objects) {
     auto objectBufferData = (ObjectSearchData*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
-    auto clean = source.clone();
 
-    // TODO:: Apparently the first 64 samples are all top left of an object, and nothing else is.
-    // Also, three of the bounding box values seem to be uninitialised
     int samplePixelColumns = sourceWidth / sampleColumns;
     int samplePixelRows = sourceHeight / sampleRows;
     for (int i = 0; i < totalSamples; i++) {
         if (objectBufferData[i].isObjectTopLeft == 1) {
-            std::cout << i << " (" << objectBufferData[i].topLeftSampleIndex << ") " << " is part of object? " << objectBufferData[i].isPartOfAnObject << std::endl;
-            std::cout << objectBufferData[i].boundingBox[0] * samplePixelColumns << "," << objectBufferData[i].boundingBox[1] * samplePixelRows << " to ";
-            std::cout << objectBufferData[i].boundingBox[2] * samplePixelColumns << "," << objectBufferData[i].boundingBox[3] * samplePixelRows;
-            std::cout << " (" << objectBufferData[i].area << " pixels)" << std::endl;
-
             auto x = objectBufferData[i].boundingBox[0] * samplePixelColumns;
             auto y = objectBufferData[i].boundingBox[1] * samplePixelRows;
             auto width = (objectBufferData[i].boundingBox[2] * samplePixelColumns) - x;
             auto height = (objectBufferData[i].boundingBox[3] * samplePixelRows) - y;
-            cv::rectangle(clean, cv::Rect(x, y, width, height), colour);
+            objects->boundingBoxes.push_back({ x, y, width, height });
         }
     }
-
-    cv::imshow("Tracker " + trackerNumber, clean);
-
     glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 }
 
@@ -470,7 +467,7 @@ void convertToRGB() {
     checkError("Set Texture Location");
 }
 
-void displayOutput(std::filesystem::path basePath) {
+void displayOutput() {
     GLuint vertex_array, vertex_buffer, element_buffer;
     GLint vpos_location, tex_location, texture0Height_location;
     
@@ -589,27 +586,23 @@ int main(int argc, char** argv)
     
     while (!glfwWindowShouldClose(window) && !opengl_has_errored)
     {
-        source = cam.next().source.clone();
         perf.Start();
+        trackerObjects.clear();
+        source = cam.next().source.clone();
         hsvShader.use();
         bindOpenCVImage(inputTextureUnit, source);
         glMemoryBarrier(GL_ALL_BARRIER_BITS);
-        debugDisplayTexture(inputTextureUnit, "Input Image");
         checkError("Bind source image");
         glDispatchCompute(sourceWidth, sourceHeight, 1);
         checkError("After Shader");
         glMemoryBarrier(GL_ALL_BARRIER_BITS);
         checkError("After Barrier");
 
-        debugDisplayTexture(thresholdTextureUnit, "HSV Image");
-
         thresholdShader.use();
         glDispatchCompute(sourceWidth, sourceHeight, 1);
         checkError("After Shader");
         glMemoryBarrier(GL_ALL_BARRIER_BITS);
         checkError("After Barrier");
-
-        debugDisplayTexture(thresholdTextureUnit, "Threshold Image");
 
         objectSearchShader.use();
         int i = 0;
@@ -621,10 +614,13 @@ int main(int argc, char** argv)
             checkError("After Shader");
             glMemoryBarrier(GL_ALL_BARRIER_BITS);
             checkError("After Barrier");
-            // TODO:: This scalar is HSV, should be RGB
-            //debugBoundingBoxes(colour, i);
+            DetectedObjects objects;
+            objects.colour = colour;
+            debugBoundingBoxes(&objects);
+            trackerObjects.push_back(objects);
             i++;
         }
+
         /*
         rgbShader.use();
 
@@ -633,9 +629,18 @@ int main(int argc, char** argv)
         glMemoryBarrier(GL_ALL_BARRIER_BITS);
         checkError("After Barrier");
         */
-        perf.End();
-
+        
+        cv::Mat clean;
+        cv::flip(source.clone(), clean, 1);
+        for (auto& t : trackerObjects) {
+            for (auto& b : t.boundingBoxes) {
+                cv::rectangle(clean, cv::Rect(b[0], b[1], b[2], b[3]), t.colour);
+            }
+        }
+        cv::imshow("Bounding Boxes", clean);
         glfwPollEvents();
+
+        perf.End();
     }
     
     return end();
