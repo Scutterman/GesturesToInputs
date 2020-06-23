@@ -358,6 +358,15 @@ void convertToHSV() {
     glUniform1i(thresholdTextureLocation, THRESHOLD_IMAGE_UNIT);
     checkError("Set Texture Location");
 
+    auto outputImageTextureLocation = hsvShader.uniformLocation("outputImage");
+    checkError("Get Output Image Location");
+
+    bindImageHandle(&outputTextureHandle, outputTextureUnit);
+    glBindImageTexture(OUTPUT_IMAGE_UNIT, outputTextureHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+    checkError("Bind output image");
+    glUniform1i(outputImageTextureLocation, OUTPUT_IMAGE_UNIT);
+    checkError("Set Texture Location");
+
     auto isMirroredLocation = hsvShader.uniformLocation("inputIsMirrored");
     checkError("Get isMirrored Location");
     glUniform1ui(isMirroredLocation, 1);
@@ -427,8 +436,13 @@ void searchForObjects() {
     unsigned int numberOfPasses = 100;
     glUniform1ui(passes_location, numberOfPasses);
 
-    unsigned int thresholdArea = 2;
+    unsigned int thresholdArea = 500;
     glUniform1ui(threshold_location, thresholdArea);
+
+    auto outputImageTextureLocation = objectSearchShader.uniformLocation("outputImage");
+    checkError("Get Output Image Location");
+    glUniform1i(outputImageTextureLocation, OUTPUT_IMAGE_UNIT);
+    checkError("Set Texture Location");
 
     uint objectDataSize = sizeof(ObjectSearchData) * totalSamples;
 
@@ -620,24 +634,8 @@ int main(int argc, char** argv)
             trackerObjects.push_back(objects);
             i++;
         }
-
-        /*
-        rgbShader.use();
-
-        glDispatchCompute(sourceWidth, sourceHeight, 1);
-        checkError("After Shader");
-        glMemoryBarrier(GL_ALL_BARRIER_BITS);
-        checkError("After Barrier");
-        */
         
-        cv::Mat clean;
-        cv::flip(source.clone(), clean, 1);
-        for (auto& t : trackerObjects) {
-            for (auto& b : t.boundingBoxes) {
-                cv::rectangle(clean, cv::Rect(b[0], b[1], b[2], b[3]), t.colour);
-            }
-        }
-        cv::imshow("Bounding Boxes", clean);
+        debugDisplayTexture(outputTextureUnit, "Bounding Boxes");
         glfwPollEvents();
 
         perf.End();

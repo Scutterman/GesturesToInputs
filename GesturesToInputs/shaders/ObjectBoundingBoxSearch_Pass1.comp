@@ -15,6 +15,7 @@ layout(std430, binding=4) buffer data {
 layout(local_size_x=1, local_size_y=1, local_size_z=1) in;
 
 uniform layout(binding=1, rgba32f) image2D thresholdTexture;
+uniform layout(binding=2, rgba32f) image2D outputImage;
 uniform vec4 trackerColour;
 uniform ivec2 samplePixelDimensions; // width and height of each sample in pixels - larger sample size is faster but less accurate
 uniform ivec2 sampleSize; // number of horizontal and vertical samples in the image
@@ -31,6 +32,13 @@ void atomicBoundingBoxUpdate(uint currentSample, uint targetSample) {
     atomicMin(samples[targetSample].boundingBox.y, samples[currentSample].boundingBox.y);
     atomicMax(samples[targetSample].boundingBox.z, samples[currentSample].boundingBox.z);
     atomicMax(samples[targetSample].boundingBox.w, samples[currentSample].boundingBox.w);
+}
+
+vec3 hsv2rgb(vec3 hsv)
+{
+  vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+  vec3 p = abs(fract(hsv.xxx + K.xyz) * 6.0 - K.www);
+  return vec3(hsv.z * mix(K.xxx, clamp(p - K.xxx, 0.0, 1.0), hsv.y));
 }
 
 void main()
@@ -93,17 +101,29 @@ void main()
     // Update this sample's information with the propogated object values
     uint topLeftIndex = samples[sampleIndex].boundingBox.x + (samples[sampleIndex].boundingBox.y * sampleSize.x);
     samples[sampleIndex].topLeftSampleIndex = topLeftIndex;
-    uint width = samples[sampleIndex].boundingBox.z - samples[sampleIndex].boundingBox.x;
-    uint height = samples[sampleIndex].boundingBox.w - samples[sampleIndex].boundingBox.y;
+    
+    ivec2 topLeft = ivec2(samples[sampleIndex].boundingBox.x * samplePixelDimensions.x, samples[sampleIndex].boundingBox.y * samplePixelDimensions.y);
+    ivec2 bottomRight = ivec2(samples[sampleIndex].boundingBox.z * samplePixelDimensions.x, samples[sampleIndex].boundingBox.w * samplePixelDimensions.y);
+    uint width = bottomRight.x - topLeft.x;
+    uint height = bottomRight.y - topLeft.y;
     
     uint area = width * height;
     samples[sampleIndex].area = area < threshold ? 0 : area;
     samples[sampleIndex].isPartOfAnObject = area < threshold ? 0 : 1;
+
+    memoryBarrier();
 
     // Only store the final values in one sample so it's quicker to isolate in the next stage
     if (samples[sampleIndex].isPartOfAnObject == 1) {
         samples[topLeftIndex].isObjectTopLeft = 1;
         samples[topLeftIndex].area = area; // This could store an exact number of pixels in the object using the "balance" variable and an atomic add.
         samples[topLeftIndex].boundingBox = samples[sampleIndex].boundingBox;
+
+        vec4 outputColour = vec4(hsv2rgb(normalisedTrackerColour.xyz), 1);
+        for (uint i = sampleColumn * samplePixelDimensions.x; i < (sampleColumn + 1) * samplePixelDimensions.x; i++) {
+            for (uint j = sampleRow * samplePixelDimensions.y; j < (sampleRow + 1) * samplePixelDimensions.y; j++) {
+                imageStore(outputImage, ivec2(i,j), outputColour);
+            }
+        }
     }
 }
