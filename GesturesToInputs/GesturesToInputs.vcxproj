@@ -96,6 +96,7 @@
     <ClInclude Include="glfw\include\GLFW\glfw3.h" />
     <ClInclude Include="glfw\include\GLFW\glfw3native.h" />
     <ClInclude Include="main.h" />
+    <ClInclude Include="MediaFoundationWebcam.h" />
     <ClInclude Include="PerformanceTimer.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Tracker.h" />
@@ -114,6 +115,7 @@
     <ClCompile Include="GestureRule.cpp" />
     <ClCompile Include="glad\glad.c" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MediaFoundationWebcam.cpp" />
     <ClCompile Include="PerformanceTimer.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="TrackerValues.cpp" />

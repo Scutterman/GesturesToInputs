@@ -15,6 +15,7 @@
     <ClCompile Include="Tracker.cpp" />
     <ClCompile Include="Webcam.cpp" />
     <ClCompile Include="Shader.cpp" />
+    <ClCompile Include="MediaFoundationWebcam.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ColourValues.h" />
@@ -37,6 +38,7 @@
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="Shader.h" />
+    <ClInclude Include="MediaFoundationWebcam.h" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="glfw\lib-vc2019\glfw3.lib" />
