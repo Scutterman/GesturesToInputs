@@ -658,25 +658,27 @@ int main(int argc, char** argv)
                     int c = y1 - 16, d = u - 128, e = v - 128, f = y2 - 16;
 
                     int r1 = clip(round((c * cMultiplier) + (e * erMultiplier)));
-                    int g = clip(round((c * cMultiplier) - (d * dgMultiplier) - (e * egMultiplier)));
-                    int b = clip(round((c * cMultiplier) + d * dbMultiplier));
-                    int r2 = clip(round((c * cMultiplier) + (e * erMultiplier)));
+                    int g1 = clip(round((c * cMultiplier) - (d * dgMultiplier) - (e * egMultiplier)));
+                    int b1 = clip(round((c * cMultiplier) + d * dbMultiplier));
+                    int r2 = clip(round((f * cMultiplier) + (e * erMultiplier)));
+                    int g2 = clip(round((f * cMultiplier) - (d * dgMultiplier) - (e * egMultiplier)));
+                    int b2 = clip(round((f * cMultiplier) + d * dbMultiplier));
                     /*
                     // RGB
                     p[destinationIndex + 0] = r1;
-                    p[destinationIndex + 1] = g;
-                    p[destinationIndex + 2] = b;
+                    p[destinationIndex + 1] = g1;
+                    p[destinationIndex + 2] = b1;
                     p[destinationIndex + 3] = r2;
-                    p[destinationIndex + 4] = g;
-                    p[destinationIndex + 5] = b;
+                    p[destinationIndex + 4] = g2;
+                    p[destinationIndex + 5] = b2;
                     */
 
                     // BGR
-                    p[destinationIndex + 0] = b;
-                    p[destinationIndex + 1] = g;
+                    p[destinationIndex + 0] = b1;
+                    p[destinationIndex + 1] = g1;
                     p[destinationIndex + 2] = r1;
-                    p[destinationIndex + 3] = b;
-                    p[destinationIndex + 4] = g;
+                    p[destinationIndex + 3] = b2;
+                    p[destinationIndex + 4] = g2;
                     p[destinationIndex + 5] = r2;
                     destinationIndex += 6;
                 }
