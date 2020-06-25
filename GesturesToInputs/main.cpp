@@ -11,6 +11,7 @@
 #include "Shader.h"
 
 #include <opencv2/highgui.hpp>
+#include "MediaFoundationWebcam.h"
 
 using namespace GesturesToInputs;
 
@@ -140,7 +141,7 @@ void error_callback(int error, const char* description)
 int end(std::string message = "") {
     glfwDestroyWindow(window);
     glfwTerminate();
-    std::cout << message << '\n';
+    std::cout << message << std::endl;
     return 1;
 }
 
@@ -543,90 +544,100 @@ int main(int argc, char** argv)
 {
     // doErrorCheck = true;
     basePath = std::filesystem::path(argv[0]).parent_path();
-    auto cam = Webcam();
-    source = cam.next().source.clone();
-    sourceWidth = source.cols;
-    sourceHeight = source.rows;
-    
+    //auto cam = Webcam();
+    //source = cam.next().source.clone();
+    //sourceWidth = source.cols;
+    //sourceHeight = source.rows;
+    sourceWidth = 640; sourceHeight = 480;
     int status = setup();
     if (status != 0) {
         return status;
     }
 
-    std::vector<ThresholdData> trackers;
-    float low[4] = { 80, 111, 110, 255 };
-    float high[4] = { 95, 255, 255, 255 };
-    float tracker[4] = { 87, 183, 183, 255 };
-    trackers.push_back(ThresholdData(low, high, tracker));
+    //std::vector<ThresholdData> trackers;
+    //float low[4] = { 80, 111, 110, 255 };
+    //float high[4] = { 95, 255, 255, 255 };
+    //float tracker[4] = { 87, 183, 183, 255 };
+    //trackers.push_back(ThresholdData(low, high, tracker));
 
-    float redtracker[4] = { 174, 179, 205, 255 };
-    float red1low[4] = { 169, 104, 151, 255 };
-    float red1high[4] = { 179, 255, 255, 255 };
-    float red2low[4] = { 0, 104, 151, 255 };
-    float red2high[4] = { 10, 255, 255, 255 };
-    trackers.push_back(ThresholdData(red1low, red1high, redtracker));
-    trackers.push_back(ThresholdData(red2low, red2high, redtracker));
+    //float redtracker[4] = { 174, 179, 205, 255 };
+    //float red1low[4] = { 169, 104, 151, 255 };
+    //float red1high[4] = { 179, 255, 255, 255 };
+    //float red2low[4] = { 0, 104, 151, 255 };
+    //float red2high[4] = { 10, 255, 255, 255 };
+    //trackers.push_back(ThresholdData(red1low, red1high, redtracker));
+    //trackers.push_back(ThresholdData(red2low, red2high, redtracker));
 
-    auto trackerColours = std::vector<cv::Scalar> {
-        cv::Scalar(tracker[0], tracker[1], tracker[2], tracker[3]),
-        cv::Scalar(redtracker[0], redtracker[1], redtracker[2], redtracker[3])
-    };
-    
-    PerformanceTimer perf;
-    convertToHSV();
-    threshold(trackers);
-    searchForObjects();
-    displayOutputSetup();
-    
-    while (!glfwWindowShouldClose(window) && !opengl_has_errored)
-    {
-        perf.Start();
-        //trackerObjects.clear();
-        source = cam.next().source.clone();
-        std::cout << "source capture in "; perf.End();
-        
-        perf.Start();
-        hsvShader.use();
-        bindOpenCVImage(inputTextureUnit, source);
-        glMemoryBarrier(GL_ALL_BARRIER_BITS);
-        checkError("Bind source image");
-        glDispatchCompute(sourceWidth, sourceHeight, 1);
-        checkError("After Shader");
-        glMemoryBarrier(GL_ALL_BARRIER_BITS);
-        checkError("After Barrier");
+    //auto trackerColours = std::vector<cv::Scalar> {
+    //    cv::Scalar(tracker[0], tracker[1], tracker[2], tracker[3]),
+    //    cv::Scalar(redtracker[0], redtracker[1], redtracker[2], redtracker[3])
+    //};
+    //
+    //PerformanceTimer perf;
+    //convertToHSV();
+    //threshold(trackers);
+    //searchForObjects();
+    //displayOutputSetup();
+    //
+    //while (!glfwWindowShouldClose(window) && !opengl_has_errored)
+    //{
+    //    perf.Start();
+    //    //trackerObjects.clear();
+    //    source = cam.next().source.clone();
+    //    std::cout << "source capture in "; perf.End();
+    //    
+    //    perf.Start();
+    //    hsvShader.use();
+    //    bindOpenCVImage(inputTextureUnit, source);
+    //    glMemoryBarrier(GL_ALL_BARRIER_BITS);
+    //    checkError("Bind source image");
+    //    glDispatchCompute(sourceWidth, sourceHeight, 1);
+    //    checkError("After Shader");
+    //    glMemoryBarrier(GL_ALL_BARRIER_BITS);
+    //    checkError("After Barrier");
 
-        thresholdShader.use();
-        glDispatchCompute(sourceWidth, sourceHeight, 1);
-        checkError("After Shader");
-        glMemoryBarrier(GL_ALL_BARRIER_BITS);
-        checkError("After Barrier");
+    //    thresholdShader.use();
+    //    glDispatchCompute(sourceWidth, sourceHeight, 1);
+    //    checkError("After Shader");
+    //    glMemoryBarrier(GL_ALL_BARRIER_BITS);
+    //    checkError("After Barrier");
 
-        objectSearchShader.use();
-        for (auto& colour : trackerColours) {
-            float uniformColour[4] = { colour[0], colour[1], colour[2], colour[3] };
-            glUniform4fv(trackerColourLocation, 1, uniformColour);
-            checkError("Set Tracker Colour Location");
-            glDispatchCompute(sampleColumns, sampleRows, 1);
-            checkError("After Shader");
-            glMemoryBarrier(GL_ALL_BARRIER_BITS);
-            checkError("After Barrier");
-            /*
-            DetectedObjects objects;
-            objects.colour = colour;
-            debugBoundingBoxes(&objects);
-            trackerObjects.push_back(objects);
-            */
-        }
-        std::cout << "everything else in "; perf.End();
+    //    objectSearchShader.use();
+    //    for (auto& colour : trackerColours) {
+    //        float uniformColour[4] = { colour[0], colour[1], colour[2], colour[3] };
+    //        glUniform4fv(trackerColourLocation, 1, uniformColour);
+    //        checkError("Set Tracker Colour Location");
+    //        glDispatchCompute(sampleColumns, sampleRows, 1);
+    //        checkError("After Shader");
+    //        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+    //        checkError("After Barrier");
+    //        /*
+    //        DetectedObjects objects;
+    //        objects.colour = colour;
+    //        debugBoundingBoxes(&objects);
+    //        trackerObjects.push_back(objects);
+    //        */
+    //    }
+    //    std::cout << "everything else in "; perf.End();
 
-        perf.Start();
-        displayOutput();
-        std::cout << "output displayed in "; perf.End();
-        std::cout << std::endl << std::endl << std::endl;
+    //    perf.Start();
+    //    displayOutput();
+    //    std::cout << "output displayed in "; perf.End();
+    //    std::cout << std::endl << std::endl << std::endl;
 
+    //    glfwPollEvents();
+    //}
+    PerformanceTimer timer;
+    timer.Start();
+    MediaFoundationWebcam* webcam = new MediaFoundationWebcam();
+    webcam->CreateVideoCaptureDevice();
+    while (!glfwWindowShouldClose(window) && !opengl_has_errored) {
         glfwPollEvents();
     }
-    
+    webcam->Close();
+    std::cout << webcam->framesCollected << "frames collected in "; timer.End();
+    webcam->Release();
+
     return end();
 
     /*try {
