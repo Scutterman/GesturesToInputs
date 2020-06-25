@@ -646,41 +646,45 @@ int main(int argc, char** argv)
             auto bytes = webcam->getData();
             auto length = webcam->getWidth() * webcam->getHeight() * webcam->getBytesPerPixel();
             auto p = cvMat.data;
-            unsigned int index = 0;
-            auto twoPixels = webcam->getBytesPerPixel() * 2;
-            for (unsigned int i = 0; i < length; i += twoPixels) {
-                unsigned char y1 = bytes[i], u = bytes[i + 1], y2 = bytes[i + 1], v = bytes[i + 3];
-                int c = y1 - 16, d = u - 128, e = v - 129, f = y2 - 16;
-                
-                int r1 = clip(round((c * cMultiplier) + (e * erMultiplier)));
-                int g = clip(round((c * cMultiplier) - (d * dgMultiplier) - (e * egMultiplier) ));
-                int b = clip(round((c * cMultiplier) + d * dbMultiplier ));
-                int r2 = clip(round((c * cMultiplier) + (e * erMultiplier)));
-                /*
-                // RGB
-                p[index + 0] = r1;
-                p[index + 1] = g;
-                p[index + 2] = b;
-                p[index + 3] = r2;
-                p[index + 4] = g;
-                p[index + 5] = b;
-                */
+            unsigned int destinationIndex = 0;
+            
+            // YUY2 to RGB conversion from information at [https://docs.microsoft.com/en-us/previous-versions/aa904813(v=vs.80)]
+            for (unsigned int yCoord = 0; yCoord < webcam->getHeight(); yCoord++) {
+                for (unsigned int xCoord = 0; xCoord < webcam->getWidth(); xCoord+=2) {
+                    unsigned int sourceIndex = (xCoord + (yCoord * webcam->getWidth())) * webcam->getBytesPerPixel();
+                    unsigned char y1 = bytes[sourceIndex], u = bytes[sourceIndex + 1], y2 = bytes[sourceIndex + 2], v = bytes[sourceIndex + 3];
+                    int c = y1 - 16, d = u - 128, e = v - 128, f = y2 - 16;
 
-                // BGR
-                p[index + 0] = b;
-                p[index + 1] = g;
-                p[index + 2] = r1;
-                p[index + 3] = b;
-                p[index + 4] = g;
-                p[index + 5] = r2;
-                index += 6;
+                    int r1 = clip(round((c * cMultiplier) + (e * erMultiplier)));
+                    int g = clip(round((c * cMultiplier) - (d * dgMultiplier) - (e * egMultiplier)));
+                    int b = clip(round((c * cMultiplier) + d * dbMultiplier));
+                    int r2 = clip(round((c * cMultiplier) + (e * erMultiplier)));
+                    /*
+                    // RGB
+                    p[destinationIndex + 0] = r1;
+                    p[destinationIndex + 1] = g;
+                    p[destinationIndex + 2] = b;
+                    p[destinationIndex + 3] = r2;
+                    p[destinationIndex + 4] = g;
+                    p[destinationIndex + 5] = b;
+                    */
+
+                    // BGR
+                    p[destinationIndex + 0] = b;
+                    p[destinationIndex + 1] = g;
+                    p[destinationIndex + 2] = r1;
+                    p[destinationIndex + 3] = b;
+                    p[destinationIndex + 4] = g;
+                    p[destinationIndex + 5] = r2;
+                    destinationIndex += 6;
+                }
             }
             cv::imshow("test", cvMat);
         }
         glfwPollEvents();
     }
     webcam->Close();
-    std::cout << webcam->framesCollected << "frames collected in "; timer.End();
+    std::cout << webcam->framesCollected << " frames collected in "; timer.End();
     webcam->Release();
 
     return end();
