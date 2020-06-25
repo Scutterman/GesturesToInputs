@@ -552,6 +552,8 @@ int main(int argc, char** argv)
     //source = cam.next().source.clone();
     //sourceWidth = source.cols;
     //sourceHeight = source.rows;
+
+    Webcam cam;
     MediaFoundationWebcam* webcam = new MediaFoundationWebcam();
     PerformanceTimer timer;
     timer.Start();
@@ -680,6 +682,7 @@ int main(int argc, char** argv)
                 }
             }
             cv::imshow("test", cvMat);
+            cv::imshow("test2", cam.next().source);
         }
         glfwPollEvents();
     }
