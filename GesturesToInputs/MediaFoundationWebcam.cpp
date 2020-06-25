@@ -203,10 +203,75 @@ namespace GesturesToInputs {
         if (FAILED(hr)) { return hr; }
 
         videoFormat = subtype;
-        if (subtype == MFVideoFormat_RGB32 ||  subtype == MFVideoFormat_RGB24)
+        if (subtype == MFVideoFormat_Base) { std::cout << "MFVideoFormat_Base" << std::endl; }
+        if (subtype == MFVideoFormat_RGB32) { std::cout << "MFVideoFormat_RGB32" << std::endl; }
+        if (subtype == MFVideoFormat_ARGB32) { std::cout << "MFVideoFormat_ARGB32" << std::endl; }
+        if (subtype == MFVideoFormat_RGB24) { std::cout << "MFVideoFormat_RGB24" << std::endl; }
+        if (subtype == MFVideoFormat_RGB555) { std::cout << "MFVideoFormat_RGB555" << std::endl; }
+        if (subtype == MFVideoFormat_RGB565) { std::cout << "MFVideoFormat_RGB565" << std::endl; }
+        if (subtype == MFVideoFormat_RGB8) { std::cout << "MFVideoFormat_RGB8" << std::endl; }
+        if (subtype == MFVideoFormat_L8) { std::cout << "MFVideoFormat_L8" << std::endl; }
+        if (subtype == MFVideoFormat_L16) { std::cout << "MFVideoFormat_L16" << std::endl; }
+        if (subtype == MFVideoFormat_D16) { std::cout << "MFVideoFormat_D16" << std::endl; }
+        if (subtype == MFVideoFormat_AI44) { std::cout << "MFVideoFormat_AI44" << std::endl; }
+        if (subtype == MFVideoFormat_AYUV) { std::cout << "MFVideoFormat_AYUV" << std::endl; }
+        if (subtype == MFVideoFormat_YUY2) { std::cout << "MFVideoFormat_YUY2" << std::endl; }
+        if (subtype == MFVideoFormat_YVYU) { std::cout << "MFVideoFormat_YVYU" << std::endl; }
+        if (subtype == MFVideoFormat_YVU9) { std::cout << "MFVideoFormat_YVU9" << std::endl; }
+        if (subtype == MFVideoFormat_UYVY) { std::cout << "MFVideoFormat_UYVY" << std::endl; }
+        if (subtype == MFVideoFormat_NV11) { std::cout << "MFVideoFormat_NV11" << std::endl; }
+        if (subtype == MFVideoFormat_NV12) { std::cout << "MFVideoFormat_NV12" << std::endl; }
+        if (subtype == MFVideoFormat_YV12) { std::cout << "MFVideoFormat_YV12" << std::endl; }
+        if (subtype == MFVideoFormat_I420) { std::cout << "MFVideoFormat_I420" << std::endl; }
+        if (subtype == MFVideoFormat_IYUV) { std::cout << "MFVideoFormat_IYUV" << std::endl; }
+        if (subtype == MFVideoFormat_Y210) { std::cout << "MFVideoFormat_Y210" << std::endl; }
+        if (subtype == MFVideoFormat_Y216) { std::cout << "MFVideoFormat_Y216" << std::endl; }
+        if (subtype == MFVideoFormat_Y410) { std::cout << "MFVideoFormat_Y410" << std::endl; }
+        if (subtype == MFVideoFormat_Y416) { std::cout << "MFVideoFormat_Y416" << std::endl; }
+        if (subtype == MFVideoFormat_Y41P) { std::cout << "MFVideoFormat_Y41P" << std::endl; }
+        if (subtype == MFVideoFormat_Y41T) { std::cout << "MFVideoFormat_Y41T" << std::endl; }
+        if (subtype == MFVideoFormat_Y42T) { std::cout << "MFVideoFormat_Y42T" << std::endl; }
+        if (subtype == MFVideoFormat_P210) { std::cout << "MFVideoFormat_P210" << std::endl; }
+        if (subtype == MFVideoFormat_P216) { std::cout << "MFVideoFormat_P216" << std::endl; }
+        if (subtype == MFVideoFormat_P010) { std::cout << "MFVideoFormat_P010" << std::endl; }
+        if (subtype == MFVideoFormat_P016) { std::cout << "MFVideoFormat_P016" << std::endl; }
+        if (subtype == MFVideoFormat_v210) { std::cout << "MFVideoFormat_v210" << std::endl; }
+        if (subtype == MFVideoFormat_v216) { std::cout << "MFVideoFormat_v216" << std::endl; }
+        if (subtype == MFVideoFormat_v410) { std::cout << "MFVideoFormat_v410" << std::endl; }
+        if (subtype == MFVideoFormat_MP43) { std::cout << "MFVideoFormat_MP43" << std::endl; }
+        if (subtype == MFVideoFormat_MP4S) { std::cout << "MFVideoFormat_MP4S" << std::endl; }
+        if (subtype == MFVideoFormat_M4S2) { std::cout << "MFVideoFormat_M4S2" << std::endl; }
+        if (subtype == MFVideoFormat_MP4V) { std::cout << "MFVideoFormat_MP4V" << std::endl; }
+        if (subtype == MFVideoFormat_WMV1) { std::cout << "MFVideoFormat_WMV1" << std::endl; }
+        if (subtype == MFVideoFormat_WMV2) { std::cout << "MFVideoFormat_WMV2" << std::endl; }
+        if (subtype == MFVideoFormat_WMV3) { std::cout << "MFVideoFormat_WMV3" << std::endl; }
+        if (subtype == MFVideoFormat_WVC1) { std::cout << "MFVideoFormat_WVC1" << std::endl; }
+        if (subtype == MFVideoFormat_MSS1) { std::cout << "MFVideoFormat_MSS1" << std::endl; }
+        if (subtype == MFVideoFormat_MSS2) { std::cout << "MFVideoFormat_MSS2" << std::endl; }
+        if (subtype == MFVideoFormat_MPG1) { std::cout << "MFVideoFormat_MPG1" << std::endl; }
+        if (subtype == MFVideoFormat_DVSL) { std::cout << "MFVideoFormat_DVSL" << std::endl; }
+        if (subtype == MFVideoFormat_DVSD) { std::cout << "MFVideoFormat_DVSD" << std::endl; }
+        if (subtype == MFVideoFormat_DVHD) { std::cout << "MFVideoFormat_DVHD" << std::endl; }
+        if (subtype == MFVideoFormat_DV25) { std::cout << "MFVideoFormat_DV25" << std::endl; }
+        if (subtype == MFVideoFormat_DV50) { std::cout << "MFVideoFormat_DV50" << std::endl; }
+        if (subtype == MFVideoFormat_DVH1) { std::cout << "MFVideoFormat_DVH1" << std::endl; }
+        if (subtype == MFVideoFormat_DVC) { std::cout << "MFVideoFormat_DVC" << std::endl; }
+        if (subtype == MFVideoFormat_H264) { std::cout << "MFVideoFormat_H264" << std::endl; }
+        if (subtype == MFVideoFormat_H265) { std::cout << "MFVideoFormat_H265" << std::endl; }
+        if (subtype == MFVideoFormat_MJPG) { std::cout << "MFVideoFormat_MJPG" << std::endl; }
+        if (subtype == MFVideoFormat_420O) { std::cout << "MFVideoFormat_420O" << std::endl; }
+        if (subtype == MFVideoFormat_HEVC) { std::cout << "MFVideoFormat_HEVC" << std::endl; }
+        if (subtype == MFVideoFormat_HEVC_ES) { std::cout << "MFVideoFormat_HEVC_ES" << std::endl; }
+        if (subtype == MFVideoFormat_VP80) { std::cout << "MFVideoFormat_VP80" << std::endl; }
+        if (subtype == MFVideoFormat_VP90) { std::cout << "MFVideoFormat_VP90" << std::endl; }
+        if (subtype == MFVideoFormat_ORAW) { std::cout << "MFVideoFormat_ORAW" << std::endl; }
+        
+        if (subtype == MFVideoFormat_RGB32 || subtype == MFVideoFormat_RGB24) {
             return S_OK;
-        else
+        }
+        else {
             return S_FALSE;
+        }
 
         return hr;
     }
@@ -303,6 +368,26 @@ namespace GesturesToInputs {
         SafeRelease(&reader);
         LeaveCriticalSection(&critsec);
         return S_OK;
+    }
+
+    unsigned int MediaFoundationWebcam::getWidth()
+    {
+        return width;
+    }
+
+    unsigned int MediaFoundationWebcam::getHeight()
+    {
+        return height;
+    }
+
+    unsigned int MediaFoundationWebcam::getBytesPerPixel()
+    {
+        return bytesPerPixel;
+    }
+
+    GUID MediaFoundationWebcam::getVideoFormat()
+    {
+        return videoFormat;
     }
 
     // IUnknown methods

@@ -540,6 +540,10 @@ void debugDisplayTexture(GLenum textureUnit, std::string windowName) {
     free(gl_texture_bytes);
 }
 
+int clip(int in) {
+    return in < 0 ? 0 : in > 255 ? 255 : in;
+}
+
 int main(int argc, char** argv)
 {
     // doErrorCheck = true;
@@ -548,7 +552,11 @@ int main(int argc, char** argv)
     //source = cam.next().source.clone();
     //sourceWidth = source.cols;
     //sourceHeight = source.rows;
-    sourceWidth = 640; sourceHeight = 480;
+    MediaFoundationWebcam* webcam = new MediaFoundationWebcam();
+    PerformanceTimer timer;
+    timer.Start();
+    webcam->CreateVideoCaptureDevice();
+    sourceWidth = webcam->getWidth(); sourceHeight = webcam->getHeight();
     int status = setup();
     if (status != 0) {
         return status;
@@ -627,11 +635,48 @@ int main(int argc, char** argv)
 
     //    glfwPollEvents();
     //}
-    PerformanceTimer timer;
-    timer.Start();
-    MediaFoundationWebcam* webcam = new MediaFoundationWebcam();
-    webcam->CreateVideoCaptureDevice();
+    const double cMultiplier = 1.164383;
+    const double erMultiplier = 1.596027;
+    const double dgMultiplier = 0.391762;
+    const double egMultiplier = 0.812968;
+    const double dbMultiplier = 2.017232;
     while (!glfwWindowShouldClose(window) && !opengl_has_errored) {
+        if (webcam->newFrameAvailable()) {
+            cv::Mat cvMat = cv::Mat::zeros(cv::Size(sourceWidth, sourceHeight), CV_8UC3);
+            auto bytes = webcam->getData();
+            auto length = webcam->getWidth() * webcam->getHeight() * webcam->getBytesPerPixel();
+            auto p = cvMat.data;
+            unsigned int index = 0;
+            auto twoPixels = webcam->getBytesPerPixel() * 2;
+            for (unsigned int i = 0; i < length; i += twoPixels) {
+                unsigned char y1 = bytes[i], u = bytes[i + 1], y2 = bytes[i + 1], v = bytes[i + 3];
+                int c = y1 - 16, d = u - 128, e = v - 129, f = y2 - 16;
+                
+                int r1 = clip(round((c * cMultiplier) + (e * erMultiplier)));
+                int g = clip(round((c * cMultiplier) - (d * dgMultiplier) - (e * egMultiplier) ));
+                int b = clip(round((c * cMultiplier) + d * dbMultiplier ));
+                int r2 = clip(round((c * cMultiplier) + (e * erMultiplier)));
+                /*
+                // RGB
+                p[index + 0] = r1;
+                p[index + 1] = g;
+                p[index + 2] = b;
+                p[index + 3] = r2;
+                p[index + 4] = g;
+                p[index + 5] = b;
+                */
+
+                // BGR
+                p[index + 0] = b;
+                p[index + 1] = g;
+                p[index + 2] = r1;
+                p[index + 3] = b;
+                p[index + 4] = g;
+                p[index + 5] = r2;
+                index += 6;
+            }
+            cv::imshow("test", cvMat);
+        }
         glfwPollEvents();
     }
     webcam->Close();

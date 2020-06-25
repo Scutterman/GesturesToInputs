@@ -15,6 +15,7 @@ namespace GesturesToInputs {
         long stride = 0;
         int bytesPerPixel = 0;
         bool hasNewFrame = false;
+        GUID videoFormat;
 
         unsigned char* buffer1;
         unsigned char* buffer2;
@@ -28,12 +29,16 @@ namespace GesturesToInputs {
         HRESULT IsMediaTypeSupported(IMFMediaType* pType);
         HRESULT GetDefaultStride(IMFMediaType* type, LONG* stride);
     public:
-        GUID videoFormat;
         int framesCollected = 0;
         MediaFoundationWebcam();
         ~MediaFoundationWebcam();
         HRESULT CreateVideoCaptureDevice();
         HRESULT Close();
+        
+        unsigned int getWidth();
+        unsigned int getHeight();
+        unsigned int getBytesPerPixel();
+        GUID getVideoFormat();
         bool newFrameAvailable();
         unsigned char* getData();
 
