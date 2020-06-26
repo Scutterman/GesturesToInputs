@@ -356,14 +356,12 @@ void bindImageHandle(GLuint* handle, GLenum textureUnit, int format = GL_RGBA32F
 void debugBoundingBoxes(DetectedObjects* objects) {
     auto objectBufferData = (ObjectSearchData*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
 
-    int samplePixelColumns = sourceWidth / sampleColumns;
-    int samplePixelRows = sourceHeight / sampleRows;
     for (int i = 0; i < totalSamples; i++) {
         if (objectBufferData[i].isObjectTopLeft == 1) {
-            auto x = objectBufferData[i].boundingBox[0] * samplePixelColumns;
-            auto y = objectBufferData[i].boundingBox[1] * samplePixelRows;
-            auto width = (objectBufferData[i].boundingBox[2] * samplePixelColumns) - x;
-            auto height = (objectBufferData[i].boundingBox[3] * samplePixelRows) - y;
+            auto x = objectBufferData[i].boundingBox[0];
+            auto y = objectBufferData[i].boundingBox[1];
+            auto width = objectBufferData[i].boundingBox[2] - x;
+            auto height = objectBufferData[i].boundingBox[3] - y;
             objects->boundingBoxes.push_back({ x, y, width, height });
         }
     }
