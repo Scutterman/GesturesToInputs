@@ -30,7 +30,7 @@ void main()
 
     uvec4 Y1U = imageLoad(rawData, ivec2(x1, y));
     uvec4 Y2V = imageLoad(rawData, ivec2(x2, y));
-    uint c = Y1U.r - 16, d = Y1U.g - 128, e = Y2V.g - 128, f = Y2V.r - 16;
+    int c = int(Y1U.r) - 16, d = int(Y1U.g) - 128, e = int(Y2V.g) - 128, f = int(Y2V.r) - 16;
     double r1 = (c * cMultiplier)                        + (e * erMultiplier);
     double g1 = (c * cMultiplier)  - (d * dgMultiplier)  - (e * egMultiplier);
     double b1 = (c * cMultiplier)  + d * dbMultiplier                        ;
