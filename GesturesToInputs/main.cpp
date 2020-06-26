@@ -162,6 +162,14 @@ struct ObjectSearchData {
     GLuint isObjectTopLeft;
 };
 
+struct TrackerData {
+    float colour[4];
+
+    TrackerData(float _colour[4]) {
+        for (int i = 0; i < 4; i++) { colour[i] = _colour[i]; }
+    }
+};
+
 class DetectedObjects {
 public:
     std::vector<cv::Vec4i> boundingBoxes;
@@ -187,10 +195,10 @@ const unsigned int indices[] = { 0, 1, 2, 3, 0, 2 };
 const int INPUT_IMAGE_UNIT = 0;
 const int THRESHOLD_IMAGE_UNIT = 1;
 const int OUTPUT_IMAGE_UNIT = 2;
-const int RAW_DATA_IMAGE_UNIT = 5;
-
 const int SHADER_STORAGE_THRESHOLD = 3;
 const int SHADER_STORAGE_OBJECT_SEARCH = 4;
+const int RAW_DATA_IMAGE_UNIT = 5;
+const int SHADER_STORAGE_TRACKERS = 6;
 
 const unsigned int sampleColumns = 64;
 const unsigned int sampleRows = 48;
@@ -202,7 +210,7 @@ GLuint inputTextureHandle, thresholdTextureHandle, outputTextureHandle, rawDataT
 const GLenum inputTextureUnit = GL_TEXTURE0, thresholdTextureUnit = GL_TEXTURE1, outputTextureUnit = GL_TEXTURE2, rawDataTextureUnit = GL_TEXTURE3;
 int xMaxInstances, yMaxInstances, zMaxInstances, totalMaxInstances;
 
-GLuint thresholdShaderBuffer, computeShaderBuffer;
+GLuint thresholdShaderBuffer, trackerShaderBuffer, computeShaderBuffer;
 
 std::filesystem::path basePath;
 Shader hsvShader, thresholdShader, objectSearchShader, displayShader, yuy2Shader;
@@ -460,7 +468,7 @@ void threshold(std::vector<ThresholdData> items) {
     checkError("After Buffer");
 }
 
-void searchForObjects() {
+void searchForObjects(std::vector<TrackerData> trackers) {
     objectSearchShader.addShader(GL_COMPUTE_SHADER, (basePath / "shaders" / "ObjectBoundingBoxSearch_Pass1.comp").string());
     checkError("object search shader");
     objectSearchShader.compile();
@@ -478,9 +486,7 @@ void searchForObjects() {
     passes_location = objectSearchShader.uniformLocation("numberOfPasses");
     threshold_location = objectSearchShader.uniformLocation("threshold");
 
-    int samplePixelDimensions[2];
-    samplePixelDimensions[0] = sourceWidth / sampleColumns;
-    samplePixelDimensions[1] = sourceHeight / sampleRows;
+    int samplePixelDimensions[] = { sourceWidth / sampleColumns, sourceHeight / sampleRows };
     glUniform2iv(samplePixelDimensions_location, 1, samplePixelDimensions);
 
     int sampleSize[2];
@@ -508,8 +514,19 @@ void searchForObjects() {
 
     checkError("After Buffer");
 
-    trackerColourLocation = objectSearchShader.uniformLocation("trackerColour");
-    checkError("Get Tracker Colour Location");
+    glGenBuffers(1, &trackerShaderBuffer);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, trackerShaderBuffer);
+
+    uint trackerDataSize = sizeof(TrackerData) * trackers.size();
+    TrackerData* bufferItems;
+    bufferItems = (TrackerData*)malloc(trackerDataSize);
+    int i = 0;
+    for (auto& tracker : trackers) { bufferItems[i] = tracker; i++; }
+    glBufferData(GL_SHADER_STORAGE_BUFFER, trackerDataSize, bufferItems, GL_STATIC_COPY);
+    free(bufferItems);
+
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_TRACKERS, trackerShaderBuffer);
+    checkError("After Buffer");
 }
 
 void displayOutputSetup() {
@@ -654,31 +671,28 @@ int main(int argc, char** argv)
         return status;
     }
 
-    std::vector<ThresholdData> trackers;
+    std::vector<ThresholdData> thresholdData;
     float low[4] = { 80, 111, 110, 255 };
     float high[4] = { 95, 255, 255, 255 };
     float tracker[4] = { 87, 183, 183, 255 };
-    trackers.push_back(ThresholdData(low, high, tracker));
+    thresholdData.push_back(ThresholdData(low, high, tracker));
 
     float redtracker[4] = { 174, 179, 205, 255 };
     float red1low[4] = { 169, 104, 151, 255 };
     float red1high[4] = { 179, 255, 255, 255 };
     float red2low[4] = { 0, 104, 151, 255 };
     float red2high[4] = { 10, 255, 255, 255 };
-    trackers.push_back(ThresholdData(red1low, red1high, redtracker));
-    trackers.push_back(ThresholdData(red2low, red2high, redtracker));
+    thresholdData.push_back(ThresholdData(red1low, red1high, redtracker));
+    thresholdData.push_back(ThresholdData(red2low, red2high, redtracker));
 
-    auto trackerColours = std::vector<cv::Scalar> {
-        cv::Scalar(tracker[0], tracker[1], tracker[2], tracker[3]),
-        cv::Scalar(redtracker[0], redtracker[1], redtracker[2], redtracker[3])
-    };
-    
+    std::vector<TrackerData> trackers = { TrackerData(tracker), TrackerData(redtracker) };
+
     PerformanceTimer perf;
     bindInput();
     convertYUY2ToRGB();
     convertToHSV();
-    threshold(trackers);
-    searchForObjects();
+    threshold(thresholdData);
+    searchForObjects(trackers);
     displayOutputSetup();
     
     while (!glfwWindowShouldClose(window) && !opengl_has_errored)
@@ -687,10 +701,12 @@ int main(int argc, char** argv)
             continue;
         }
         
+        std::cout << "DEAD TIME: "; perf.End();
+
         perf.Start();
         auto bytes = webcam->getData();
         auto length = webcam->getWidth() * webcam->getHeight() * webcam->getBytesPerPixel();
-        //trackerObjects.clear();
+        trackerObjects.clear();
         
         yuy2Shader.use();
         bindImageData(rawDataTextureUnit, bytes, GL_RG_INTEGER);
@@ -741,6 +757,7 @@ int main(int argc, char** argv)
         std::cout << std::endl << std::endl << std::endl;
 
         glfwPollEvents();
+        perf.Start();
     }
     
     webcam->Close();

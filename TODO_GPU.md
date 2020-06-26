@@ -2,6 +2,9 @@
 - Get gpu to calculate and store box positions
 - Store gesture data using tracker indexes instead of tracker names
 
+# Improvements
+Move the main loop into a function. Webcam will notify main program when it has a frame and the function will be called.
+
 # Each Frame
 All Shaders:
 - Use local groups instead of global
