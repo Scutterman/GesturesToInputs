@@ -158,7 +158,7 @@ struct ObjectSearchData {
     GLint boundingBox[4];
     GLuint area;
     GLuint topLeftSampleIndex;
-    GLuint isPartOfAnObject;
+    GLuint objectTrackerIndex;
     GLuint isObjectTopLeft;
 };
 
@@ -214,7 +214,6 @@ GLuint thresholdShaderBuffer, trackerShaderBuffer, computeShaderBuffer;
 
 std::filesystem::path basePath;
 Shader hsvShader, thresholdShader, objectSearchShader, displayShader, yuy2Shader;
-int trackerColourLocation;
 
 cv::Mat source;
 int sourceWidth, sourceHeight;
@@ -664,6 +663,7 @@ int main(int argc, char** argv)
     timer.Start();
     webcam->CreateVideoCaptureDevice();
     sourceWidth = webcam->getWidth(); sourceHeight = webcam->getHeight();
+
     int status = setup();
     if (status != 0) {
         return status;
@@ -731,22 +731,18 @@ int main(int argc, char** argv)
         glMemoryBarrier(GL_ALL_BARRIER_BITS);
         checkError("After threshold Barrier");
 
+        debugDisplayTexture(thresholdTextureUnit, "threshold");
+
         objectSearchShader.use();
-        for (auto& colour : trackerColours) {
-            float uniformColour[4] = { colour[0], colour[1], colour[2], colour[3] };
-            glUniform4fv(trackerColourLocation, 1, uniformColour);
-            checkError("Set Tracker Colour Location");
-            glDispatchCompute(sampleColumns, sampleRows, 1);
-            checkError("After detection compute");
-            glMemoryBarrier(GL_ALL_BARRIER_BITS);
-            checkError("After detection Barrier");
-            /*
-            DetectedObjects objects;
-            objects.colour = colour;
-            debugBoundingBoxes(&objects);
-            trackerObjects.push_back(objects);
-            */
-        }
+        glDispatchCompute(sampleColumns, sampleRows, trackers.size());
+        checkError("After detection compute");
+        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        checkError("After detection Barrier");
+            
+        //DetectedObjects objects;
+        //objects.colour = colour;
+        //debugBoundingBoxes(&objects);
+        //trackerObjects.push_back(objects);
         std::cout << "Captured & Processed frame in "; perf.End();
 
         perf.Start();
