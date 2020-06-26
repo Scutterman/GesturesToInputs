@@ -276,14 +276,12 @@ int setup() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    window = glfwCreateWindow(sourceWidth, sourceHeight, "My Code - OpenGL", NULL, NULL);
+    window = glfwCreateWindow(sourceWidth, sourceHeight, "Tracked Objects", NULL, NULL);
     if (!window)
     {
         return end("GLFW could not create a window");
     }
     
-    glfwSetWindowPos(window, 0, 32);
-
     glfwSetKeyCallback(window, key_callback);
     glfwMakeContextCurrent(window);
     
@@ -562,8 +560,7 @@ void displayOutputSetup() {
 
     auto outputImageTextureLocation = displayShader.uniformLocation("outputImage");
     checkError("Get Output Image Location");
-    //glUniform1i(outputImageTextureLocation, OUTPUT_IMAGE_UNIT);
-    glUniform1i(outputImageTextureLocation, INPUT_IMAGE_UNIT);
+    glUniform1i(outputImageTextureLocation, OUTPUT_IMAGE_UNIT);
     checkError("Set Output Image Location");
 
     int width, height;
@@ -575,12 +572,7 @@ void displayOutputSetup() {
 
 void displayOutput() {
     displayShader.use();
-    checkError("use program");
-    glBindVertexArray(vertex_array);
-    checkError("bind array");
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
-    checkError("draw");
-
     glfwSwapBuffers(window);
 }
 
@@ -684,9 +676,9 @@ int main(int argc, char** argv)
     PerformanceTimer perf;
     bindInput();
     convertYUY2ToRGB();
-    /*convertToHSV();
+    convertToHSV();
     threshold(trackers);
-    searchForObjects();*/
+    searchForObjects();
     displayOutputSetup();
     
     while (!glfwWindowShouldClose(window) && !opengl_has_errored)
@@ -695,62 +687,58 @@ int main(int argc, char** argv)
             continue;
         }
         
-        //perf.Start();
+        perf.Start();
         auto bytes = webcam->getData();
         auto length = webcam->getWidth() * webcam->getHeight() * webcam->getBytesPerPixel();
         //trackerObjects.clear();
-        //std::cout << "source capture in "; perf.End();
         
-        //perf.Start();
         yuy2Shader.use();
         bindImageData(rawDataTextureUnit, bytes, GL_RG_INTEGER);
         glMemoryBarrier(GL_ALL_BARRIER_BITS);
         checkError("Bind raw image data");
         glDispatchCompute(sourceWidth / 2, sourceHeight, 1);
-        checkError("After yuy2");
+        checkError("After yuy2 compute");
         glMemoryBarrier(GL_ALL_BARRIER_BITS);
         checkError("After yuy2 Barrier");
         
-        debugYUY2Bytes(bytes, "My Code - C++");
-        debugYUY2Texture();
-
-        //hsvShader.use();
-        ////bindImageData(inputTextureUnit, source.ptr(), GL_BGR);
+        hsvShader.use();
+        // TODO:: Allow more formats. If YUY2 it can be converted, if it's a format GLTexSubImage2D knows about it can be uploaded directly
+        //bindImageData(inputTextureUnit, source.ptr(), GL_BGR);
         //glMemoryBarrier(GL_ALL_BARRIER_BITS);
         //checkError("Bind source image");
-        //glDispatchCompute(sourceWidth, sourceHeight, 1);
-        //checkError("After Shader");
-        //glMemoryBarrier(GL_ALL_BARRIER_BITS);
-        //checkError("After Barrier");
+        glDispatchCompute(sourceWidth, sourceHeight, 1);
+        checkError("After hsv compute");
+        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        checkError("After hsv Barrier");
 
-        //thresholdShader.use();
-        //glDispatchCompute(sourceWidth, sourceHeight, 1);
-        //checkError("After Shader");
-        //glMemoryBarrier(GL_ALL_BARRIER_BITS);
-        //checkError("After Barrier");
+        thresholdShader.use();
+        glDispatchCompute(sourceWidth, sourceHeight, 1);
+        checkError("After threshold compute");
+        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        checkError("After threshold Barrier");
 
-        //objectSearchShader.use();
-        //for (auto& colour : trackerColours) {
-        //    float uniformColour[4] = { colour[0], colour[1], colour[2], colour[3] };
-        //    glUniform4fv(trackerColourLocation, 1, uniformColour);
-        //    checkError("Set Tracker Colour Location");
-        //    glDispatchCompute(sampleColumns, sampleRows, 1);
-        //    checkError("After Shader");
-        //    glMemoryBarrier(GL_ALL_BARRIER_BITS);
-        //    checkError("After Barrier");
-        //    /*
-        //    DetectedObjects objects;
-        //    objects.colour = colour;
-        //    debugBoundingBoxes(&objects);
-        //    trackerObjects.push_back(objects);
-        //    */
-        //}
-        //std::cout << "everything else in "; perf.End();
+        objectSearchShader.use();
+        for (auto& colour : trackerColours) {
+            float uniformColour[4] = { colour[0], colour[1], colour[2], colour[3] };
+            glUniform4fv(trackerColourLocation, 1, uniformColour);
+            checkError("Set Tracker Colour Location");
+            glDispatchCompute(sampleColumns, sampleRows, 1);
+            checkError("After detection compute");
+            glMemoryBarrier(GL_ALL_BARRIER_BITS);
+            checkError("After detection Barrier");
+            /*
+            DetectedObjects objects;
+            objects.colour = colour;
+            debugBoundingBoxes(&objects);
+            trackerObjects.push_back(objects);
+            */
+        }
+        std::cout << "Captured & Processed frame in "; perf.End();
 
-        //perf.Start();
+        perf.Start();
         displayOutput();
-        //std::cout << "output displayed in "; perf.End();
-        //std::cout << std::endl << std::endl << std::endl;
+        std::cout << "Output displayed in "; perf.End();
+        std::cout << std::endl << std::endl << std::endl;
 
         glfwPollEvents();
     }
