@@ -1,0 +1,44 @@
+#version 430 core
+
+layout(local_size_x=1, local_size_y=1, local_size_z=1) in;
+
+uniform layout(binding=5,rg8ui) uimage2D rawData;
+uniform layout(binding=0,rgba32f) image2D inputImage;
+
+const double cMultiplier = 1.164383;
+const double erMultiplier = 1.596027;
+const double dgMultiplier = 0.391762;
+const double egMultiplier = 0.812968;
+const double dbMultiplier = 2.017232;
+
+uint clip(uint num) {
+    return num < 0 ? 0 : num > 255 ? 255 : num;
+}
+
+void main()
+{
+    uint x1 = gl_WorkGroupID.x * 2;
+    uint x2 = x1 + 1;
+    uint y = gl_WorkGroupID.y;
+
+    uvec4 Y1U = imageLoad(rawData, ivec2(x1, y));
+    uvec4 Y2V = imageLoad(rawData, ivec2(x2, y));
+    uint c = Y1U.r - 16, d = Y1U.g - 128, e = Y2V.g - 128, f = Y2V.r - 16;
+    double r1Double = round((c * cMultiplier) + (e * erMultiplier));
+    double g1Double = round((c * cMultiplier) - (d * dgMultiplier) - (e * egMultiplier));
+    double b1Double = round((c * cMultiplier) + d * dbMultiplier);
+    double r2Double = round((f * cMultiplier) + (e * erMultiplier));
+    double g2Double = round((f * cMultiplier) - (d * dgMultiplier) - (e * egMultiplier));
+    double b2Double = round((f * cMultiplier) + d * dbMultiplier);
+//    uint r1 = clip(uint());
+//    uint g1 = clip(uint());
+//    uint b1 = clip(uint());
+//    uint r2 = clip(uint());
+//    uint g2 = clip(uint());
+//    uint b2 = clip(uint());
+   
+//    imageStore(inputImage, ivec2(x1, y), uvec4(r1 / 255, g1 / 255, b1 / 255, 1));
+//    imageStore(inputImage, ivec2(x2, y), uvec4(r2 / 255, g2 / 255, b2 / 255, 1));
+    imageStore(inputImage, ivec2(x1, y), uvec4(r1Double / 255, g1Double / 255, b1Double / 255, 1));
+    imageStore(inputImage, ivec2(x2, y), uvec4(r2Double / 255, g2Double / 255, b2Double / 255, 1));
+}

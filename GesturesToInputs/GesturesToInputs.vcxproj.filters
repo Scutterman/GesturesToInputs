@@ -69,7 +69,7 @@
     <None Include="shaders\ConvertToHSV.comp">
       <Filter>shaders</Filter>
     </None>
-    <None Include="shaders\AddBoundingBoxes.comp">
+    <None Include="shaders\Convert_YUY2.comp">
       <Filter>shaders</Filter>
     </None>
   </ItemGroup>

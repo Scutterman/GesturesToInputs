@@ -137,7 +137,7 @@
   <ItemGroup>
     <None Include="glfw\lib-vc2019\glfw3.dll" />
     <None Include="glfw\LICENSE.md" />
-    <None Include="shaders\AddBoundingBoxes.comp" />
+    <None Include="shaders\Convert_YUY2.comp" />
     <None Include="shaders\ObjectBoundingBoxSearch_Pass1.comp" />
     <None Include="shaders\test.frag" />
     <None Include="shaders\test.vert" />
@@ -158,7 +158,7 @@
     <Content Include="shaders\Threshold.comp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="shaders\AddBoundingBoxes.comp">
+    <Content Include="shaders\Convert_YUY2.comp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
