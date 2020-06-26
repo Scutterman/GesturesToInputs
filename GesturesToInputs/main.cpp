@@ -187,6 +187,7 @@ const unsigned int indices[] = { 0, 1, 2, 3, 0, 2 };
 const int INPUT_IMAGE_UNIT = 0;
 const int THRESHOLD_IMAGE_UNIT = 1;
 const int OUTPUT_IMAGE_UNIT = 2;
+const int RAW_DATA_IMAGE_UNIT = 5;
 
 const int SHADER_STORAGE_THRESHOLD = 3;
 const int SHADER_STORAGE_OBJECT_SEARCH = 4;
@@ -197,14 +198,14 @@ const unsigned int totalSamples = sampleColumns * sampleRows;
 
 bool opengl_has_errored = false;
 GLuint vertex_array;
-GLuint inputTextureHandle, thresholdTextureHandle, outputTextureHandle;
-const GLenum inputTextureUnit = GL_TEXTURE0, thresholdTextureUnit = GL_TEXTURE1, outputTextureUnit = GL_TEXTURE2;
+GLuint inputTextureHandle, thresholdTextureHandle, outputTextureHandle, rawDataTextureHandle;
+const GLenum inputTextureUnit = GL_TEXTURE0, thresholdTextureUnit = GL_TEXTURE1, outputTextureUnit = GL_TEXTURE2, rawDataTextureUnit = GL_TEXTURE3;
 int xMaxInstances, yMaxInstances, zMaxInstances, totalMaxInstances;
 
 GLuint thresholdShaderBuffer, computeShaderBuffer;
 
 std::filesystem::path basePath;
-Shader hsvShader, thresholdShader, objectSearchShader, displayShader;
+Shader hsvShader, thresholdShader, objectSearchShader, displayShader, yuy2Shader;
 int trackerColourLocation;
 
 cv::Mat source;
@@ -312,21 +313,27 @@ int setup() {
 
     std::cout << std::endl << "(" << xMaxInstances << ", " << yMaxInstances << ", " << zMaxInstances << ") = " << totalMaxInstances << std::endl;
 
+    int maxUnits;
+    glGetIntegerv(GL_MAX_IMAGE_UNITS, &maxUnits);
+    int maxComputeUnits;
+    glGetIntegerv(GL_MAX_COMPUTE_IMAGE_UNIFORMS, &maxComputeUnits);
+    std::cout << "Units " << maxUnits << " & Uniforms " << maxComputeUnits << std::endl;
+
     return 0;
 }
 
-void bindOpenCVImage(GLenum textureUnit, cv::Mat image) {
+void bindImageData(GLenum textureUnit, unsigned char *image, int format) {
     glActiveTexture(textureUnit);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, sourceWidth, sourceHeight, GL_BGR, GL_UNSIGNED_BYTE, image.ptr());
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, sourceWidth, sourceHeight, format, GL_UNSIGNED_BYTE, image);
     checkError("sending data");
 }
 
-void bindImageHandle(GLuint* handle, GLenum textureUnit) {
+void bindImageHandle(GLuint* handle, GLenum textureUnit, int format = GL_RGBA32F) {
     glActiveTexture(textureUnit);
     glGenTextures(1, handle);
     glBindTexture(GL_TEXTURE_2D, GLuint(*handle));
     checkError("generating textures");
-    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, sourceWidth, sourceHeight);
+    glTexStorage2D(GL_TEXTURE_2D, 1, format, sourceWidth, sourceHeight);
     checkError("texture storage");
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -355,6 +362,35 @@ void debugBoundingBoxes(DetectedObjects* objects) {
     glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 }
 
+void bindInput() {
+    bindImageHandle(&inputTextureHandle, inputTextureUnit);
+    glBindImageTexture(INPUT_IMAGE_UNIT, inputTextureHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+    checkError("Bind input image");
+}
+
+void convertYUY2ToRGB() {
+    yuy2Shader.addShader(GL_COMPUTE_SHADER, (basePath / "shaders" / "Convert_YUY2.comp").string());
+    checkError("yuy2 shader");
+    yuy2Shader.compile();
+    checkError("yuy2 shader compile");
+    yuy2Shader.use();
+
+    auto inputTextureLocation = yuy2Shader.uniformLocation("inputImage");
+    checkError("Get Input Texture Location");
+    glUniform1i(inputTextureLocation, INPUT_IMAGE_UNIT);
+    checkError("Set Input Texture Location");
+
+    auto rawDataTextureLocation = yuy2Shader.uniformLocation("rawData");
+    checkError("Get Raw Data Texture Location");
+
+    glUniform1i(rawDataTextureLocation, RAW_DATA_IMAGE_UNIT);
+    checkError("Set Raw Data Texture Location");
+    
+    bindImageHandle(&rawDataTextureHandle, rawDataTextureUnit, GL_RG8UI);
+    glBindImageTexture(RAW_DATA_IMAGE_UNIT, rawDataTextureHandle, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RG8UI);
+    checkError("Bind Raw Data Image");
+}
+
 void convertToHSV() {
     hsvShader.addShader(GL_COMPUTE_SHADER, (basePath / "shaders" / "ConvertToHSV.comp").string());
     checkError("hsv shader");
@@ -365,9 +401,6 @@ void convertToHSV() {
     auto inputTextureLocation = hsvShader.uniformLocation("inputImage");
     checkError("Get Input Texture Location");
     
-    bindImageHandle(&inputTextureHandle, inputTextureUnit);
-    glBindImageTexture(INPUT_IMAGE_UNIT, inputTextureHandle, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-    checkError("Bind input image");
     glUniform1i(inputTextureLocation, INPUT_IMAGE_UNIT);
     checkError("Set Texture Location");
 
@@ -527,7 +560,8 @@ void displayOutputSetup() {
 
     auto outputImageTextureLocation = displayShader.uniformLocation("outputImage");
     checkError("Get Output Image Location");
-    glUniform1i(outputImageTextureLocation, OUTPUT_IMAGE_UNIT);
+    //glUniform1i(outputImageTextureLocation, OUTPUT_IMAGE_UNIT);
+    glUniform1i(outputImageTextureLocation, INPUT_IMAGE_UNIT);
     checkError("Set Output Image Location");
 
     int width, height;
@@ -558,20 +592,70 @@ void debugDisplayTexture(GLenum textureUnit, std::string windowName) {
     free(gl_texture_bytes);
 }
 
+const double cMultiplier = 1.164383;
+const double erMultiplier = 1.596027;
+const double dgMultiplier = 0.391762;
+const double egMultiplier = 0.812968;
+const double dbMultiplier = 2.017232;
+
 int clip(int in) {
     return in < 0 ? 0 : in > 255 ? 255 : in;
 }
 
+void debugYUY2Texture() {
+
+    glActiveTexture(rawDataTextureUnit);
+    checkError("raw image display texture bind");
+    unsigned char* gl_texture_bytes = (unsigned char*)malloc(sizeof(unsigned char) * sourceWidth * sourceHeight * 2);
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RG_INTEGER, GL_UNSIGNED_BYTE, gl_texture_bytes);
+    checkError("raw image display texture get");
+    cv::Mat cvMat = cv::Mat::zeros(cv::Size(sourceWidth, sourceHeight), CV_8UC3);
+    auto p = cvMat.data;
+    unsigned int destinationIndex = 0;
+
+    // YUY2 to RGB conversion from information at [https://docs.microsoft.com/en-us/previous-versions/aa904813(v=vs.80)]
+    for (unsigned int yCoord = 0; yCoord < sourceHeight; yCoord++) {
+        for (unsigned int xCoord = 0; xCoord < sourceWidth; xCoord += 2) {
+            unsigned int sourceIndex = (xCoord + (yCoord * sourceWidth)) * 2;
+            unsigned char y1 = gl_texture_bytes[sourceIndex], u = gl_texture_bytes[sourceIndex + 1], y2 = gl_texture_bytes[sourceIndex + 2], v = gl_texture_bytes[sourceIndex + 3];
+            int c = y1 - 16, d = u - 128, e = v - 128, f = y2 - 16;
+
+            int r1 = clip(round((c * cMultiplier) + (e * erMultiplier)));
+            int g1 = clip(round((c * cMultiplier) - (d * dgMultiplier) - (e * egMultiplier)));
+            int b1 = clip(round((c * cMultiplier) + d * dbMultiplier));
+            int r2 = clip(round((f * cMultiplier) + (e * erMultiplier)));
+            int g2 = clip(round((f * cMultiplier) - (d * dgMultiplier) - (e * egMultiplier)));
+            int b2 = clip(round((f * cMultiplier) + d * dbMultiplier));
+            /*
+            // RGB
+            p[destinationIndex + 0] = r1;
+            p[destinationIndex + 1] = g1;
+            p[destinationIndex + 2] = b1;
+            p[destinationIndex + 3] = r2;
+            p[destinationIndex + 4] = g2;
+            p[destinationIndex + 5] = b2;
+            */
+
+            // BGR
+            p[destinationIndex + 0] = b1;
+            p[destinationIndex + 1] = g1;
+            p[destinationIndex + 2] = r1;
+            p[destinationIndex + 3] = b2;
+            p[destinationIndex + 4] = g2;
+            p[destinationIndex + 5] = r2;
+            destinationIndex += 6;
+        }
+    }
+
+    cv::imshow("raw image", cvMat);
+    free(gl_texture_bytes);
+}
+
 int main(int argc, char** argv)
 {
-    // doErrorCheck = true;
+    doErrorCheck = true;
     basePath = std::filesystem::path(argv[0]).parent_path();
-    //auto cam = Webcam();
-    //source = cam.next().source.clone();
-    //sourceWidth = source.cols;
-    //sourceHeight = source.rows;
-
-    Webcam cam;
+    
     MediaFoundationWebcam* webcam = new MediaFoundationWebcam();
     PerformanceTimer timer;
     timer.Start();
@@ -582,130 +666,99 @@ int main(int argc, char** argv)
         return status;
     }
 
-    //std::vector<ThresholdData> trackers;
-    //float low[4] = { 80, 111, 110, 255 };
-    //float high[4] = { 95, 255, 255, 255 };
-    //float tracker[4] = { 87, 183, 183, 255 };
-    //trackers.push_back(ThresholdData(low, high, tracker));
+    std::vector<ThresholdData> trackers;
+    float low[4] = { 80, 111, 110, 255 };
+    float high[4] = { 95, 255, 255, 255 };
+    float tracker[4] = { 87, 183, 183, 255 };
+    trackers.push_back(ThresholdData(low, high, tracker));
 
-    //float redtracker[4] = { 174, 179, 205, 255 };
-    //float red1low[4] = { 169, 104, 151, 255 };
-    //float red1high[4] = { 179, 255, 255, 255 };
-    //float red2low[4] = { 0, 104, 151, 255 };
-    //float red2high[4] = { 10, 255, 255, 255 };
-    //trackers.push_back(ThresholdData(red1low, red1high, redtracker));
-    //trackers.push_back(ThresholdData(red2low, red2high, redtracker));
+    float redtracker[4] = { 174, 179, 205, 255 };
+    float red1low[4] = { 169, 104, 151, 255 };
+    float red1high[4] = { 179, 255, 255, 255 };
+    float red2low[4] = { 0, 104, 151, 255 };
+    float red2high[4] = { 10, 255, 255, 255 };
+    trackers.push_back(ThresholdData(red1low, red1high, redtracker));
+    trackers.push_back(ThresholdData(red2low, red2high, redtracker));
 
-    //auto trackerColours = std::vector<cv::Scalar> {
-    //    cv::Scalar(tracker[0], tracker[1], tracker[2], tracker[3]),
-    //    cv::Scalar(redtracker[0], redtracker[1], redtracker[2], redtracker[3])
-    //};
-    //
-    //PerformanceTimer perf;
-    //convertToHSV();
-    //threshold(trackers);
-    //searchForObjects();
-    //displayOutputSetup();
-    //
-    //while (!glfwWindowShouldClose(window) && !opengl_has_errored)
-    //{
-    //    perf.Start();
-    //    //trackerObjects.clear();
-    //    source = cam.next().source.clone();
-    //    std::cout << "source capture in "; perf.End();
-    //    
-    //    perf.Start();
-    //    hsvShader.use();
-    //    bindOpenCVImage(inputTextureUnit, source);
-    //    glMemoryBarrier(GL_ALL_BARRIER_BITS);
-    //    checkError("Bind source image");
-    //    glDispatchCompute(sourceWidth, sourceHeight, 1);
-    //    checkError("After Shader");
-    //    glMemoryBarrier(GL_ALL_BARRIER_BITS);
-    //    checkError("After Barrier");
-
-    //    thresholdShader.use();
-    //    glDispatchCompute(sourceWidth, sourceHeight, 1);
-    //    checkError("After Shader");
-    //    glMemoryBarrier(GL_ALL_BARRIER_BITS);
-    //    checkError("After Barrier");
-
-    //    objectSearchShader.use();
-    //    for (auto& colour : trackerColours) {
-    //        float uniformColour[4] = { colour[0], colour[1], colour[2], colour[3] };
-    //        glUniform4fv(trackerColourLocation, 1, uniformColour);
-    //        checkError("Set Tracker Colour Location");
-    //        glDispatchCompute(sampleColumns, sampleRows, 1);
-    //        checkError("After Shader");
-    //        glMemoryBarrier(GL_ALL_BARRIER_BITS);
-    //        checkError("After Barrier");
-    //        /*
-    //        DetectedObjects objects;
-    //        objects.colour = colour;
-    //        debugBoundingBoxes(&objects);
-    //        trackerObjects.push_back(objects);
-    //        */
-    //    }
-    //    std::cout << "everything else in "; perf.End();
-
-    //    perf.Start();
-    //    displayOutput();
-    //    std::cout << "output displayed in "; perf.End();
-    //    std::cout << std::endl << std::endl << std::endl;
-
-    //    glfwPollEvents();
-    //}
-    const double cMultiplier = 1.164383;
-    const double erMultiplier = 1.596027;
-    const double dgMultiplier = 0.391762;
-    const double egMultiplier = 0.812968;
-    const double dbMultiplier = 2.017232;
-    while (!glfwWindowShouldClose(window) && !opengl_has_errored) {
-        if (webcam->newFrameAvailable()) {
-            cv::Mat cvMat = cv::Mat::zeros(cv::Size(sourceWidth, sourceHeight), CV_8UC3);
-            auto bytes = webcam->getData();
-            auto length = webcam->getWidth() * webcam->getHeight() * webcam->getBytesPerPixel();
-            auto p = cvMat.data;
-            unsigned int destinationIndex = 0;
-            
-            // YUY2 to RGB conversion from information at [https://docs.microsoft.com/en-us/previous-versions/aa904813(v=vs.80)]
-            for (unsigned int yCoord = 0; yCoord < webcam->getHeight(); yCoord++) {
-                for (unsigned int xCoord = 0; xCoord < webcam->getWidth(); xCoord+=2) {
-                    unsigned int sourceIndex = (xCoord + (yCoord * webcam->getWidth())) * webcam->getBytesPerPixel();
-                    unsigned char y1 = bytes[sourceIndex], u = bytes[sourceIndex + 1], y2 = bytes[sourceIndex + 2], v = bytes[sourceIndex + 3];
-                    int c = y1 - 16, d = u - 128, e = v - 128, f = y2 - 16;
-
-                    int r1 = clip(round((c * cMultiplier) + (e * erMultiplier)));
-                    int g1 = clip(round((c * cMultiplier) - (d * dgMultiplier) - (e * egMultiplier)));
-                    int b1 = clip(round((c * cMultiplier) + d * dbMultiplier));
-                    int r2 = clip(round((f * cMultiplier) + (e * erMultiplier)));
-                    int g2 = clip(round((f * cMultiplier) - (d * dgMultiplier) - (e * egMultiplier)));
-                    int b2 = clip(round((f * cMultiplier) + d * dbMultiplier));
-                    /*
-                    // RGB
-                    p[destinationIndex + 0] = r1;
-                    p[destinationIndex + 1] = g1;
-                    p[destinationIndex + 2] = b1;
-                    p[destinationIndex + 3] = r2;
-                    p[destinationIndex + 4] = g2;
-                    p[destinationIndex + 5] = b2;
-                    */
-
-                    // BGR
-                    p[destinationIndex + 0] = b1;
-                    p[destinationIndex + 1] = g1;
-                    p[destinationIndex + 2] = r1;
-                    p[destinationIndex + 3] = b2;
-                    p[destinationIndex + 4] = g2;
-                    p[destinationIndex + 5] = r2;
-                    destinationIndex += 6;
-                }
-            }
-            cv::imshow("test", cvMat);
-            cv::imshow("test2", cam.next().source);
+    auto trackerColours = std::vector<cv::Scalar> {
+        cv::Scalar(tracker[0], tracker[1], tracker[2], tracker[3]),
+        cv::Scalar(redtracker[0], redtracker[1], redtracker[2], redtracker[3])
+    };
+    
+    PerformanceTimer perf;
+    bindInput();
+    convertYUY2ToRGB();
+    /*convertToHSV();
+    threshold(trackers);
+    searchForObjects();*/
+    displayOutputSetup();
+    
+    while (!glfwWindowShouldClose(window) && !opengl_has_errored)
+    {
+        if (!webcam->newFrameAvailable()) {
+            continue;
         }
+        
+        //perf.Start();
+        auto bytes = webcam->getData();
+        auto length = webcam->getWidth() * webcam->getHeight() * webcam->getBytesPerPixel();
+        //trackerObjects.clear();
+        //std::cout << "source capture in "; perf.End();
+        
+        //perf.Start();
+        yuy2Shader.use();
+        bindImageData(rawDataTextureUnit, bytes, GL_RG_INTEGER);
+        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        checkError("Bind raw image data");
+        glDispatchCompute(sourceWidth / 2, sourceHeight, 1);
+        checkError("After yuy2");
+        glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        checkError("After yuy2 Barrier");
+        
+        debugDisplayTexture(inputTextureUnit, "INPUT TEXTURE");
+        debugYUY2Texture();
+
+        //hsvShader.use();
+        ////bindImageData(inputTextureUnit, source.ptr(), GL_BGR);
+        //glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        //checkError("Bind source image");
+        //glDispatchCompute(sourceWidth, sourceHeight, 1);
+        //checkError("After Shader");
+        //glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        //checkError("After Barrier");
+
+        //thresholdShader.use();
+        //glDispatchCompute(sourceWidth, sourceHeight, 1);
+        //checkError("After Shader");
+        //glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        //checkError("After Barrier");
+
+        //objectSearchShader.use();
+        //for (auto& colour : trackerColours) {
+        //    float uniformColour[4] = { colour[0], colour[1], colour[2], colour[3] };
+        //    glUniform4fv(trackerColourLocation, 1, uniformColour);
+        //    checkError("Set Tracker Colour Location");
+        //    glDispatchCompute(sampleColumns, sampleRows, 1);
+        //    checkError("After Shader");
+        //    glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        //    checkError("After Barrier");
+        //    /*
+        //    DetectedObjects objects;
+        //    objects.colour = colour;
+        //    debugBoundingBoxes(&objects);
+        //    trackerObjects.push_back(objects);
+        //    */
+        //}
+        //std::cout << "everything else in "; perf.End();
+
+        //perf.Start();
+        displayOutput();
+        //std::cout << "output displayed in "; perf.End();
+        //std::cout << std::endl << std::endl << std::endl;
+
         glfwPollEvents();
     }
+    
     webcam->Close();
     std::cout << webcam->framesCollected << " frames collected in "; timer.End();
     webcam->Release();
