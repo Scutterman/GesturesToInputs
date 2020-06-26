@@ -173,7 +173,6 @@ struct TrackerData {
 class DetectedObjects {
 public:
     std::vector<cv::Vec4i> boundingBoxes;
-    cv::Scalar colour;
 };
 
 std::vector<DetectedObjects> trackerObjects;
@@ -352,7 +351,7 @@ void bindImageHandle(GLuint* handle, GLenum textureUnit, int format = GL_RGBA32F
     checkError("texture options");
 }
 
-void debugBoundingBoxes(DetectedObjects* objects) {
+void debugBoundingBoxes() {
     auto objectBufferData = (ObjectSearchData*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
 
     for (int i = 0; i < totalSamples; i++) {
@@ -361,7 +360,7 @@ void debugBoundingBoxes(DetectedObjects* objects) {
             auto y = objectBufferData[i].boundingBox[1];
             auto width = objectBufferData[i].boundingBox[2] - x;
             auto height = objectBufferData[i].boundingBox[3] - y;
-            objects->boundingBoxes.push_back({ x, y, width, height });
+            trackerObjects.at(objectBufferData[i].objectTrackerIndex).boundingBoxes.push_back({ x, y, width, height });
         }
     }
     glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
@@ -685,6 +684,8 @@ int main(int argc, char** argv)
 
     std::vector<TrackerData> trackers = { TrackerData(tracker), TrackerData(redtracker) };
 
+    for (auto& t : trackers) { trackerObjects.push_back(DetectedObjects()); }
+
     PerformanceTimer perf;
     bindInput();
     convertYUY2ToRGB();
@@ -704,7 +705,7 @@ int main(int argc, char** argv)
         perf.Start();
         auto bytes = webcam->getData();
         auto length = webcam->getWidth() * webcam->getHeight() * webcam->getBytesPerPixel();
-        trackerObjects.clear();
+        for (auto& t : trackerObjects) { t.boundingBoxes.clear(); }
         
         yuy2Shader.use();
         bindImageData(rawDataTextureUnit, bytes, GL_RG_INTEGER);
@@ -731,7 +732,7 @@ int main(int argc, char** argv)
         glMemoryBarrier(GL_ALL_BARRIER_BITS);
         checkError("After threshold Barrier");
 
-        debugDisplayTexture(thresholdTextureUnit, "threshold");
+        // debugDisplayTexture(thresholdTextureUnit, "threshold");
 
         objectSearchShader.use();
         glDispatchCompute(sampleColumns, sampleRows, trackers.size());
@@ -739,10 +740,7 @@ int main(int argc, char** argv)
         glMemoryBarrier(GL_ALL_BARRIER_BITS);
         checkError("After detection Barrier");
             
-        //DetectedObjects objects;
-        //objects.colour = colour;
-        //debugBoundingBoxes(&objects);
-        //trackerObjects.push_back(objects);
+        // debugBoundingBoxes();
         std::cout << "Captured & Processed frame in "; perf.End();
 
         perf.Start();
