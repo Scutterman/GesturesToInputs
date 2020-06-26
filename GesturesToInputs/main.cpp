@@ -133,24 +133,6 @@ std::list<GestureInput> justCause2Gestures() {
 
 GLFWwindow* window;
 
-void error_callback(int error, const char* description)
-{
-    fprintf(stderr, "GLFW Error: %s\n", description);
-}
-
-int end(std::string message = "") {
-    glfwDestroyWindow(window);
-    glfwTerminate();
-    std::cout << message << std::endl;
-    return 1;
-}
-
-static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
-}
-
 struct ThresholdData {
     float lowColour[4];
     float highColour[4];
@@ -228,6 +210,31 @@ int trackerColourLocation;
 cv::Mat source;
 int sourceWidth, sourceHeight;
 
+void error_callback(int error, const char* description)
+{
+    fprintf(stderr, "GLFW Error: %s\n", description);
+}
+
+int end(std::string message = "") {
+    glfwDestroyWindow(window);
+    glfwTerminate();
+    std::cout << message << std::endl;
+    return 1;
+}
+
+static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
+}
+
+static void MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* userParam) {
+    opengl_has_errored = true;
+    fprintf(stderr, "GL CALLBACK: %s type = 0x%x, severity = 0x%x, message = %s\n",
+        (type == GL_DEBUG_TYPE_ERROR ? "** GL ERROR **" : ""),
+        type, severity, message);
+}
+
 void checkError(std::string stage) {
     if (!doErrorCheck) { return; }
     GLenum err;
@@ -241,6 +248,8 @@ void checkError(std::string stage) {
         case GL_INVALID_ENUM:           error = "INVALID_ENUM";           break;
         case GL_INVALID_VALUE:          error = "INVALID_VALUE";          break;
         case GL_OUT_OF_MEMORY:          error = "OUT_OF_MEMORY";          break;
+        case GL_STACK_OVERFLOW:         error = "GL_STACK_OVERFLOW";      break;
+        case GL_STACK_UNDERFLOW:        error = "GL_STACK_UNDERFLOW";     break;
         case GL_INVALID_FRAMEBUFFER_OPERATION:  error = "INVALID_FRAMEBUFFER_OPERATION";  break;
         default: error = "No message programmed";
         }
@@ -251,13 +260,16 @@ void checkError(std::string stage) {
 int setup() {
     // TODO:: If no GPU or opengl version < 4.3 then fall back to cpu method.
     // TODO:: Cpu method may be optimisable since we only need rough bounding box. Moments can certainly be removed, and perhaps more optimisaitons.
-    glfwSetErrorCallback(error_callback);
 
     if (!glfwInit())
     {
         // Initialization failed
         return end("GLFW could not initialise OpenGL");
     }
+
+    glfwSetErrorCallback(error_callback);
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+    glfwWindowHint(GLFW_CONTEXT_ROBUSTNESS, GLFW_LOSE_CONTEXT_ON_RESET);
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -271,11 +283,17 @@ int setup() {
 
     glfwSetKeyCallback(window, key_callback);
     glfwMakeContextCurrent(window);
+    
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
         return end("Could not set up GLAD");
     }
-    
+
+    glDebugMessageCallback(MessageCallback, NULL);
+    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_FALSE);
+    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_HIGH, 0, NULL, GL_TRUE);
+    glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_MEDIUM, 0, NULL, GL_TRUE);
+
     glfwSwapInterval(1);
 
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -291,7 +309,7 @@ int setup() {
     zMaxInstances = work_group_size[2];
     glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &totalMaxInstances);
     checkError("total size");
-    
+
     std::cout << std::endl << "(" << xMaxInstances << ", " << yMaxInstances << ", " << zMaxInstances << ") = " << totalMaxInstances << std::endl;
 
     return 0;

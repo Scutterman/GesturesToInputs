@@ -310,7 +310,7 @@ namespace GesturesToInputs {
 
     STDMETHODIMP MediaFoundationWebcam::OnReadSample(HRESULT status, DWORD dwStreamIndex, DWORD dwStreamFlags, LONGLONG llTimestamp, IMFSample* sample)
     {
-        timer.Start();
+        //timer.Start();
         HRESULT hr = S_OK;
         IMFMediaBuffer* mediaBuffer = NULL;
 
@@ -338,7 +338,7 @@ namespace GesturesToInputs {
                 // TODO:: Raise an event that notifies of a new frame.
                 // If there wasn't a new frame last time the program checked it will need a hint to check again.
                 framesCollected++;
-                timer.End();
+                //timer.End();
             }
         }
         
