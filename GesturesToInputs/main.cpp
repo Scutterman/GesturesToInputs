@@ -276,11 +276,13 @@ int setup() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    window = glfwCreateWindow(sourceWidth, sourceHeight, "Output", NULL, NULL);
+    window = glfwCreateWindow(sourceWidth, sourceHeight, "My Code - OpenGL", NULL, NULL);
     if (!window)
     {
         return end("GLFW could not create a window");
     }
+    
+    glfwSetWindowPos(window, 0, 32);
 
     glfwSetKeyCallback(window, key_callback);
     glfwMakeContextCurrent(window);
@@ -602,13 +604,7 @@ int clip(int in) {
     return in < 0 ? 0 : in > 255 ? 255 : in;
 }
 
-void debugYUY2Texture() {
-
-    glActiveTexture(rawDataTextureUnit);
-    checkError("raw image display texture bind");
-    unsigned char* gl_texture_bytes = (unsigned char*)malloc(sizeof(unsigned char) * sourceWidth * sourceHeight * 2);
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_RG_INTEGER, GL_UNSIGNED_BYTE, gl_texture_bytes);
-    checkError("raw image display texture get");
+void debugYUY2Bytes(unsigned char* gl_texture_bytes, std::string windowName) {
     cv::Mat cvMat = cv::Mat::zeros(cv::Size(sourceWidth, sourceHeight), CV_8UC3);
     auto p = cvMat.data;
     unsigned int destinationIndex = 0;
@@ -626,15 +622,6 @@ void debugYUY2Texture() {
             int r2 = clip(round((f * cMultiplier) + (e * erMultiplier)));
             int g2 = clip(round((f * cMultiplier) - (d * dgMultiplier) - (e * egMultiplier)));
             int b2 = clip(round((f * cMultiplier) + d * dbMultiplier));
-            /*
-            // RGB
-            p[destinationIndex + 0] = r1;
-            p[destinationIndex + 1] = g1;
-            p[destinationIndex + 2] = b1;
-            p[destinationIndex + 3] = r2;
-            p[destinationIndex + 4] = g2;
-            p[destinationIndex + 5] = b2;
-            */
 
             // BGR
             p[destinationIndex + 0] = b1;
@@ -647,7 +634,16 @@ void debugYUY2Texture() {
         }
     }
 
-    cv::imshow("raw image", cvMat);
+    cv::imshow(windowName, cvMat);
+}
+
+void debugYUY2Texture() {
+    glActiveTexture(rawDataTextureUnit);
+    checkError("raw image display texture bind");
+    unsigned char* gl_texture_bytes = (unsigned char*)malloc(sizeof(unsigned char) * sourceWidth * sourceHeight * 2);
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RG_INTEGER, GL_UNSIGNED_BYTE, gl_texture_bytes);
+    checkError("raw image display texture get");
+    debugYUY2Bytes(gl_texture_bytes, "raw image");
     free(gl_texture_bytes);
 }
 
@@ -715,7 +711,7 @@ int main(int argc, char** argv)
         glMemoryBarrier(GL_ALL_BARRIER_BITS);
         checkError("After yuy2 Barrier");
         
-        debugDisplayTexture(inputTextureUnit, "INPUT TEXTURE");
+        debugYUY2Bytes(bytes, "My Code - C++");
         debugYUY2Texture();
 
         //hsvShader.use();
