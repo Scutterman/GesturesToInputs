@@ -4,6 +4,7 @@
 
 # Improvements
 Move the main loop into a function. Webcam will notify main program when it has a frame and the function will be called.
+An std::condition_variable can probably help with this.
 
 # Each Frame
 All Shaders:
