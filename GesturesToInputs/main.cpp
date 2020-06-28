@@ -6,6 +6,7 @@
 
 #include <iostream>
 #include <filesystem>
+#include <thread>
 
 #include "GesturesToInputs.h"
 #include "Shader.h"
@@ -166,7 +167,10 @@ struct TrackerData {
     float colour[4];
 
     TrackerData(float _colour[4]) {
-        for (int i = 0; i < 4; i++) { colour[i] = _colour[i]; }
+        colour[0] = _colour[0];
+        colour[1] = _colour[1];
+        colour[2] = _colour[2];
+        colour[3] = _colour[3];
     }
 };
 
@@ -660,7 +664,10 @@ int main(int argc, char** argv)
     MediaFoundationWebcam* webcam = new MediaFoundationWebcam();
     PerformanceTimer timer;
     timer.Start();
-    webcam->CreateVideoCaptureDevice();
+    std::thread t1(&MediaFoundationWebcam::CreateVideoCaptureDevice, webcam);
+    t1.detach();
+
+    webcam->wait();
     sourceWidth = webcam->getWidth(); sourceHeight = webcam->getHeight();
 
     int status = setup();
@@ -696,11 +703,7 @@ int main(int argc, char** argv)
     
     while (!glfwWindowShouldClose(window) && !opengl_has_errored)
     {
-        if (!webcam->newFrameAvailable()) {
-            continue;
-        }
-        
-        std::cout << "DEAD TIME: "; perf.End();
+        webcam->wait();
 
         perf.Start();
         auto bytes = webcam->getData();
@@ -749,7 +752,6 @@ int main(int argc, char** argv)
         std::cout << std::endl << std::endl << std::endl;
 
         glfwPollEvents();
-        perf.Start();
     }
     
     webcam->Close();

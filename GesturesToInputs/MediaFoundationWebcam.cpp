@@ -51,7 +51,7 @@ namespace GesturesToInputs {
         DeleteCriticalSection(&critsec);
     }
 
-    HRESULT MediaFoundationWebcam::CreateVideoCaptureDevice()
+    void MediaFoundationWebcam::CreateVideoCaptureDevice()
     {
         HRESULT hr = S_OK;
 
@@ -103,7 +103,6 @@ namespace GesturesToInputs {
         }
 
         CoTaskMemFree(devices);
-        return hr;
     }
 
     HRESULT MediaFoundationWebcam::InitialiseReader(IMFActivate* device)
@@ -334,11 +333,13 @@ namespace GesturesToInputs {
                     CopyMemory(buffer2, data, width * height * bytesPerPixel);
                 }
                 readFromBuffer1 = !readFromBuffer1;
-                hasNewFrame = true;
-                // TODO:: Raise an event that notifies of a new frame.
-                // If there wasn't a new frame last time the program checked it will need a hint to check again.
-                framesCollected++;
-                //timer.End();
+                {
+                    framesCollected++;
+                    std::cout << "DEAD TIME: "; timer.End();
+                    std::lock_guard<std::mutex> lck(cv_m);
+                    hasNewFrame = true;
+                }
+                cv.notify_one();
             }
         }
         
@@ -351,9 +352,10 @@ namespace GesturesToInputs {
         return hr;
     }
 
-    bool MediaFoundationWebcam::newFrameAvailable()
+    void MediaFoundationWebcam::wait()
     {
-        return hasNewFrame;
+        std::unique_lock<std::mutex> lk(cv_m);
+        cv.wait(lk, [this] { return hasNewFrame; });
     }
 
     unsigned char* MediaFoundationWebcam::getData()
@@ -370,22 +372,22 @@ namespace GesturesToInputs {
         return S_OK;
     }
 
-    unsigned int MediaFoundationWebcam::getWidth()
+    unsigned int MediaFoundationWebcam::getWidth() const
     {
         return width;
     }
 
-    unsigned int MediaFoundationWebcam::getHeight()
+    unsigned int MediaFoundationWebcam::getHeight() const
     {
         return height;
     }
 
-    unsigned int MediaFoundationWebcam::getBytesPerPixel()
+    unsigned int MediaFoundationWebcam::getBytesPerPixel() const
     {
         return bytesPerPixel;
     }
 
-    GUID MediaFoundationWebcam::getVideoFormat()
+    GUID MediaFoundationWebcam::getVideoFormat() const
     {
         return videoFormat;
     }

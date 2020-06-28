@@ -3,6 +3,7 @@
 #include <mfidl.h>
 #include <mfapi.h>
 #include <Mfreadwrite.h>
+#include <mutex>
 
 namespace GesturesToInputs {
     class MediaFoundationWebcam : IMFSourceReaderCallback
@@ -21,6 +22,9 @@ namespace GesturesToInputs {
         unsigned char* buffer2;
         bool readFromBuffer1 = false;
         
+        std::mutex cv_m;
+        std::condition_variable cv;
+
         PerformanceTimer timer;
         CRITICAL_SECTION critsec;
         long refCount = 0;
@@ -32,15 +36,15 @@ namespace GesturesToInputs {
         int framesCollected = 0;
         MediaFoundationWebcam();
         ~MediaFoundationWebcam();
-        HRESULT CreateVideoCaptureDevice();
+        void CreateVideoCaptureDevice();
         HRESULT Close();
         
-        unsigned int getWidth();
-        unsigned int getHeight();
-        unsigned int getBytesPerPixel();
-        GUID getVideoFormat();
-        bool newFrameAvailable();
+        unsigned int getWidth() const;
+        unsigned int getHeight() const;
+        unsigned int getBytesPerPixel() const;
+        GUID getVideoFormat() const;
         unsigned char* getData();
+        void wait();
 
         // Inherited via IMFSourceReaderCallback        
         STDMETHODIMP QueryInterface(REFIID riid, void** ppvObject) override;
