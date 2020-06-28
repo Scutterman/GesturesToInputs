@@ -29,7 +29,7 @@ namespace GesturesToInputs {
         CRITICAL_SECTION critsec;
         long refCount = 0;
 
-        HRESULT InitialiseReader(IMFActivate* device);
+        bool InitialiseReader(IMFActivate* device);
         HRESULT IsMediaTypeSupported(IMFMediaType* pType);
         HRESULT GetDefaultStride(IMFMediaType* type, LONG* stride);
     public:

@@ -85,14 +85,13 @@ namespace GesturesToInputs {
         {
             if (count > 0)
             {
-                hr = InitialiseReader(devices[0]);
-                if (SUCCEEDED(hr))
+                bool initialised = InitialiseReader(devices[0]);
+                if (initialised)
                 {
                     bytesPerPixel = abs(stride) / width;
                     buffer1 = new unsigned char[width * height * bytesPerPixel];
                     buffer2 = new unsigned char[width * height * bytesPerPixel];
                 }
-                //hr = ->ActivateObject(IID_PPV_ARGS(ppSource));
             }
         }
 
@@ -105,13 +104,14 @@ namespace GesturesToInputs {
         CoTaskMemFree(devices);
     }
 
-    HRESULT MediaFoundationWebcam::InitialiseReader(IMFActivate* device)
+    bool MediaFoundationWebcam::InitialiseReader(IMFActivate* device)
     {
         HRESULT hr = S_OK;
 
         IMFMediaSource* source = NULL;
         IMFAttributes* attributes = NULL;
         IMFMediaType* mediaType = NULL;
+        bool setMediaType = false;
 
         EnterCriticalSection(&critsec);
         hr = device->ActivateObject(__uuidof(IMFMediaSource), (void**)&source);
@@ -147,30 +147,31 @@ namespace GesturesToInputs {
         for (DWORD i = 0; ; i++)
         {
             hr = reader->GetNativeMediaType((DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM, i, &mediaType);
+            if (hr == MF_E_NO_MORE_TYPES) { break; }
             if (FAILED(hr)) { break; }
 
             hr = IsMediaTypeSupported(mediaType);
             if (FAILED(hr)) { break; }
             
-            //Get width and height
-            MFGetAttributeSize(mediaType, MF_MT_FRAME_SIZE, &width, &height);
             if (mediaType)
             {
                 mediaType->Release(); mediaType = NULL;
             }
 
             if (SUCCEEDED(hr)) {
+                setMediaType = true;
+                reader->SetCurrentMediaType((DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM, NULL, mediaType);
                 // Found an output type.
                 break;
             }
         }
 
-        if (SUCCEEDED(hr))
+        if (setMediaType)
         {
+            timer.Start();
             hr = reader->ReadSample((DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM, 0, NULL, NULL, NULL, NULL);
         }
-
-        if (FAILED(hr))
+        else
         {
             if (source)
             {
@@ -183,25 +184,21 @@ namespace GesturesToInputs {
         SafeRelease(&attributes);
         SafeRelease(&mediaType);
         LeaveCriticalSection(&critsec);
-        return hr;
+        return setMediaType;
     }
 
     HRESULT MediaFoundationWebcam::IsMediaTypeSupported(IMFMediaType* pType)
     {
-        HRESULT hr = S_OK;
-
-        BOOL bFound = FALSE;
         GUID subtype = { 0 };
 
         //Get the stride for this format so we can calculate the number of bytes per pixel
-        GetDefaultStride(pType, &stride);
+        HRESULT hr = GetDefaultStride(pType, &stride);
 
         if (FAILED(hr)) { return hr; }
         hr = pType->GetGUID(MF_MT_SUBTYPE, &subtype);
 
         if (FAILED(hr)) { return hr; }
 
-        videoFormat = subtype;
         if (subtype == MFVideoFormat_Base) { std::cout << "MFVideoFormat_Base" << std::endl; }
         if (subtype == MFVideoFormat_RGB32) { std::cout << "MFVideoFormat_RGB32" << std::endl; }
         if (subtype == MFVideoFormat_ARGB32) { std::cout << "MFVideoFormat_ARGB32" << std::endl; }
@@ -264,15 +261,25 @@ namespace GesturesToInputs {
         if (subtype == MFVideoFormat_VP80) { std::cout << "MFVideoFormat_VP80" << std::endl; }
         if (subtype == MFVideoFormat_VP90) { std::cout << "MFVideoFormat_VP90" << std::endl; }
         if (subtype == MFVideoFormat_ORAW) { std::cout << "MFVideoFormat_ORAW" << std::endl; }
-        
-        if (subtype == MFVideoFormat_RGB32 || subtype == MFVideoFormat_RGB24) {
+
+        UINT32 frameRateMin = 0;
+        UINT32 denominator = 0;
+        hr = MFGetAttributeRatio(pType, MF_MT_FRAME_RATE_RANGE_MIN, &frameRateMin, &denominator);
+        if ((subtype == MFVideoFormat_RGB32 || subtype == MFVideoFormat_RGB24 || subtype == MFVideoFormat_YUY2) && frameRateMin >= 30) {
+            PROPVARIANT val;
+            pType->GetItem(MF_MT_FRAME_RATE_RANGE_MIN, &val);
+            auto setHR = pType->SetItem(MF_MT_FRAME_RATE, val);
+            std::cout << "SET framerate to " << frameRateMin << ": " << setHR << std::endl;
+            PropVariantClear(&val);
+            
+            //Get width and height
+            MFGetAttributeSize(pType, MF_MT_FRAME_SIZE, &width, &height);
+            videoFormat = subtype;
             return S_OK;
         }
         else {
             return S_FALSE;
         }
-
-        return hr;
     }
     
     HRESULT MediaFoundationWebcam::GetDefaultStride(IMFMediaType* type, LONG* stride)
@@ -309,7 +316,6 @@ namespace GesturesToInputs {
 
     STDMETHODIMP MediaFoundationWebcam::OnReadSample(HRESULT status, DWORD dwStreamIndex, DWORD dwStreamFlags, LONGLONG llTimestamp, IMFSample* sample)
     {
-        //timer.Start();
         HRESULT hr = S_OK;
         IMFMediaBuffer* mediaBuffer = NULL;
 
@@ -344,6 +350,7 @@ namespace GesturesToInputs {
         }
         
         if (SUCCEEDED(hr)) {
+            timer.Start();
             hr = reader->ReadSample((DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM, 0, NULL, NULL, NULL, NULL);
         }
         
