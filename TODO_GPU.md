@@ -3,8 +3,7 @@
 - Store gesture data using tracker indexes instead of tracker names
 
 # Improvements
-Move the main loop into a function. Webcam will notify main program when it has a frame and the function will be called.
-An std::condition_variable can probably help with this.
+See if Media Foundation can disable webcam features such as "low light compensation" that kill the framerate.
 
 # Each Frame
 All Shaders:
