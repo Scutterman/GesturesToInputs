@@ -63,3 +63,6 @@ A window that allows better control of the program
 - Allow custom gesture inputs to be added with one or more rules, including position of named marker and relation between two named markers (horizontally or vertically less than, equal, more than)
 - Allow for "gesture profiles" to be saved so different games can have their own set of inputs and can be chosen from a dropdown list
 - Switching between a DirectInput / DirectX target and a normal keyboard target
+- Keyboard localisation
+- "No GPU" mode for when the GPU isn't very powerful or the game makes high demands of it
+    - Will need to replace all OpenCV code with custom code working on bytes from the MediaFoundationWebcam class because the OpenCV methods in Tracker::isolateColours() run extremely slowly (8ms - 15ms for each of six methods means the method takes ~65ms)
