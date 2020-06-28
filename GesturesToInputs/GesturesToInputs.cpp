@@ -23,7 +23,7 @@ namespace GesturesToInputs {
         for (;;) {
             perf.Start();
             auto frame = cam.next();
-            for (auto& tracker : trackers) { tracker.second->track(frame.source); }
+            for (auto& tracker : trackers) { tracker.second->track(&frame.source); }
 
             gesture.calculateInstructions(trackers);
 

@@ -75,14 +75,16 @@ namespace GesturesToInputs {
         orientation = width <= height ? MARKER_ORIENTATION::PORTRAIT : MARKER_ORIENTATION::LANDSCAPE;
     }
 
-    void Tracker::track(cv::Mat frame) {
+    void Tracker::track(cv::Mat* frame) {
         if (!gridInitialised) {
-            setupGrid(frame.size());
+            setupGrid(frame->size());
             gridInitialised = true;
         }
 
         std::vector<std::vector<cv::Point>> contours;
-        cv::findContours(isolateColours(frame), contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+        cv::Mat threshold = cv::Mat::zeros(frame->size(), CV_8U);
+        isolateColours(frame, &threshold);
+        cv::findContours(threshold, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
         detected = false;
         for (auto& contour :contours) {
@@ -95,7 +97,7 @@ namespace GesturesToInputs {
 
             int centreX = imageMoments.m10 / area;
             int centreY = imageMoments.m01 / area;
-            setOrientation(contour, frame.size());
+            setOrientation(contour, frame->size());
 
             if (centreY <= topThird) { lastVerticalPosition = VERTICAL_POSITION::TOP; }
             else if (centreY >= bottomThird) { lastVerticalPosition = VERTICAL_POSITION::BOTTOM; }
@@ -118,10 +120,9 @@ namespace GesturesToInputs {
         }
     }
 
-    cv::Mat Tracker::isolateColours(cv::Mat frame) {
+    void Tracker::isolateColours(cv::Mat* frame, cv::Mat* threshold) {
         cv::Mat imageAsHSV;
-        cv::cvtColor(frame, imageAsHSV, cv::COLOR_BGR2HSV);
-        cv::Mat threshold = cv::Mat::zeros(frame.size(), CV_8U);
+        cv::cvtColor(*frame, imageAsHSV, cv::COLOR_BGR2HSV);
 
         for (auto& values : trackedColours) {
             cv::Mat imageWithThreshold;
@@ -134,11 +135,10 @@ namespace GesturesToInputs {
             //morphological closing (removes small holes from the foreground)
             dilate(imageWithThreshold, imageWithThreshold, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5)));
             erode(imageWithThreshold, imageWithThreshold, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5)));
-            threshold += imageWithThreshold;
+            *threshold += imageWithThreshold;
         }
 
-        cv::imshow(name + " threshold value", threshold);
-        return threshold;
+        cv::imshow(name + " threshold value", *threshold);
     }
     
     MARKER_ORIENTATION Tracker::getOrientation()

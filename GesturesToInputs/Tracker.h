@@ -37,11 +37,11 @@ namespace GesturesToInputs {
         void setupGrid(cv::Size size);
         void setOrientation(std::vector<cv::Point>& contour, cv::Size size);
     public:
-        cv::Mat isolateColours(cv::Mat frame);
+        void isolateColours(cv::Mat* frame, cv::Mat* threshold);
         cv::Mat lines;
         Tracker(std::string trackerName, std::list<TrackerValues> trackedColours,  cv::Scalar lineColour, bool drawTrackingLine = false);
 
-        void track(cv::Mat frame);
+        void track(cv::Mat* frame);
         MARKER_ORIENTATION getOrientation();
         VERTICAL_POSITION getVerticalPosition();
         HORIZONTAL_POSITION getHorizontalPosition();
