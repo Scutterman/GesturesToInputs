@@ -37,7 +37,7 @@ namespace GesturesToInputs {
         t1.detach();
     }
     
-    void Gesture::calculateInstructions(std::map<std::string, Tracker> trackers) {
+    void Gesture::calculateInstructions(std::map<std::string, Tracker*> trackers) {
         text.setTo(0);
         textLine = 40;
         int x = 0, y = 0;

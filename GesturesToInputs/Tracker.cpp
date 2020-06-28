@@ -28,7 +28,7 @@ namespace GesturesToInputs {
 
     void Tracker::addControlWindows() {
         int i = 1;
-        for (auto &initialValues : trackedColours) {
+        for (auto& initialValues : trackedColours) {
             auto windowName = name + " colour #" + std::to_string(i);
             cv::namedWindow(windowName, cv::WINDOW_AUTOSIZE);
 

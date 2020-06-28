@@ -18,56 +18,56 @@ namespace GesturesToInputs {
         this->_isComparingTwoTrackers = true;
     }
 
-    bool GestureRule::compare(Tracker tracker)
+    bool GestureRule::compare(Tracker* tracker)
     {
         // TODO:: throw exception
-        if (tracker.getName() != trackerName) {
+        if (tracker->getName() != trackerName) {
             return false;
         }
         
-        if (!tracker.isDetected()) {
+        if (!tracker->isDetected()) {
             return false;
         }
 
         switch (type) {
         case GESTURE_RULE_TYPE::ORIENTATION:
-            return compare((int)tracker.getOrientation());
+            return compare((int)tracker->getOrientation());
         case GESTURE_RULE_TYPE::HORIZONTAL_COMPARE:
-            return compare((int)tracker.getHorizontalPosition());
+            return compare((int)tracker->getHorizontalPosition());
         case GESTURE_RULE_TYPE::VERTICAL_COMPARE:
-            return compare((int)tracker.getVerticalPosition());
+            return compare((int)tracker->getVerticalPosition());
         default:
             // TODO:: throw exception
             return false;
         }
     }
 
-    bool GestureRule::compare(Tracker tracker, Tracker trackerToCompare)
+    bool GestureRule::compare(Tracker* tracker, Tracker* trackerToCompare)
     {
         // TODO:: throw exception
-        if (tracker.getName() != trackerName) {
+        if (tracker->getName() != trackerName) {
             return false;
         }
     
         // TODO:: throw exception
-        if (trackerToCompare.getName() != comparisonTrackerName) {
+        if (trackerToCompare->getName() != comparisonTrackerName) {
             return false;
         }
 
-        if (!tracker.isDetected() || !trackerToCompare.isDetected()) {
+        if (!tracker->isDetected() || !trackerToCompare->isDetected()) {
             return false;
         }
 
         switch (type) {
         case GESTURE_RULE_TYPE::ORIENTATION:
-            expectedValue = (int)trackerToCompare.getOrientation();
-            return compare((int)tracker.getOrientation());
+            expectedValue = (int)trackerToCompare->getOrientation();
+            return compare((int)tracker->getOrientation());
         case GESTURE_RULE_TYPE::HORIZONTAL_COMPARE:
-            expectedValue = (int)trackerToCompare.getHorizontalPosition();
-            return compare((int)tracker.getHorizontalPosition());
+            expectedValue = (int)trackerToCompare->getHorizontalPosition();
+            return compare((int)tracker->getHorizontalPosition());
         case GESTURE_RULE_TYPE::VERTICAL_COMPARE:
-            expectedValue = (int)trackerToCompare.getVerticalPosition();
-            return compare((int)tracker.getVerticalPosition());
+            expectedValue = (int)trackerToCompare->getVerticalPosition();
+            return compare((int)tracker->getVerticalPosition());
         default:
             // TODO:: throw exception
             return false;

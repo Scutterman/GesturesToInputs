@@ -3,7 +3,7 @@
 #include <opencv2/highgui.hpp>
 
 namespace GesturesToInputs {
-    GesturesToInputsProcessor::GesturesToInputsProcessor(std::map<std::string, Tracker> trackers, std::list<GestureInput> gestures)
+    GesturesToInputsProcessor::GesturesToInputsProcessor(std::map<std::string, Tracker*> trackers, std::list<GestureInput> gestures)
     {
         this->trackers = trackers;
         gesture.setGestures(gestures);
@@ -23,7 +23,7 @@ namespace GesturesToInputs {
         for (;;) {
             perf.Start();
             auto frame = cam.next();
-            for (auto& tracker : trackers) { tracker.second.track(frame.source); }
+            for (auto& tracker : trackers) { tracker.second->track(frame.source); }
 
             gesture.calculateInstructions(trackers);
 
@@ -31,7 +31,7 @@ namespace GesturesToInputs {
             
             cv::Mat output = cv::Mat::zeros(frame.source.size(), CV_8UC3);
             output += frame.source;
-            for (auto& tracker : trackers) { output += tracker.second.lines; }
+            for (auto& tracker : trackers) { output += tracker.second->lines; }
             cv::imshow("Original", output);
 
             perf.End();

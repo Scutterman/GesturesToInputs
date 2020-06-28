@@ -15,7 +15,7 @@ namespace GesturesToInputs {
         Gesture();
         ~Gesture();
         void setGestures(std::list<GestureInput> gestures);
-        void calculateInstructions(std::map<std::string, Tracker> trackers);
+        void calculateInstructions(std::map<std::string, Tracker*> trackers);
     private:
         ContinuousMouseMovement mouseMovement;
         std::list<GestureInput> gestures;
