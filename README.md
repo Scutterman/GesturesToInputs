@@ -56,6 +56,7 @@ If this happens to be a game, the result is that a gesture controls the game jus
 A window that allows better control of the program
 - Adjusting the size of the erode / dilate, and the minimum area allowed for  tracking
 - Choosing a webcam from a list
+- Webcam settings such as low light compensation, autofocus, image levels, etc.
 - Selecting a target window & subwindow so input is not sent if it is not in focus ([see here](https://docs.microsoft.com/en-gb/windows/win32/api/winuser/nf-winuser-getforegroundwindow))
 - Adding an arbritary number of markers (with distinct names) and chosing one or more colour ranges per marker, with inline threshold box
 - Auto-configuring a marker by prompting it to be positioned inside outlines placed at each corner and the centre and then auto-adjusting the inputs until just before the outline is not filled with white. Determine whether the inputs overlap sufficiently to allow a single range or whether several ranges are required
