@@ -170,12 +170,14 @@ struct TrackerData {
     uint verticalPosition = 0;
     uint orientation = 0;
     uint isVisibleInFrame = 0;
+    uint padding[3];
     
     TrackerData(float _colour[4]) {
         colour[0] = _colour[0];
         colour[1] = _colour[1];
         colour[2] = _colour[2];
         colour[3] = _colour[3];
+        padding[0] = padding[1] = padding[2] = 0;
     }
 };
 
