@@ -52,6 +52,30 @@ If this happens to be a game, the result is that a gesture controls the game jus
     - An equilateral triangle in one hand and two equilateral triangles at right-angles for the other hand should allow each hand to detect four distinct rotations. These can be combined with position on screen to vastly increase the number of gestures, and can be easily printed out and taped to a pen for easy holding.
     - Perhaps a square can be stuck to one side of a hat and a set of four triangles pointing in different directions can be stuck to the other side. The position of the shapes can be tracked and rotation of the head can be calculated because one shape will not be visible to the webcam when the head turns far enough.
 
+## Webcam
+- See if we can detect when a camera disconnects and reconnects - look into exception "The video recording device is no longer present"
+- See if Media Foundation can disable webcam features such as "low light compensation" that kill the framerate.
+- More conversions - eventually all formats returned by Media Foundation should be usable
+- Intelligently picking the best webcam format from all available options instead of picking the first that matches
+
+## Shaders
+Use local groups instead of global
+- *MaxInstances variables can be used to calculate appropriate values for local x, y, and z to ensure they don't overflow allowed invocations
+- prepend a string containing #DEFINE macros to the beginning of each shader to "dynamically" set the local x, y, and z values
+- Each shader may need to put loops in place to ensure all work gets executed
+    - e.g: in a 64x64 image with 1024 max executions, local_size_x=32, local_size_y=32, local_size_z=1, xRepeat = 2, xRepeatOffset = 32, yRepeat = 2, yRepeatOffset = 2
+    ```
+        for (int xOffset = 0; xOffset < xRepeat * xRepeatOffset; xOffset += xRepeatOffset) {
+            for (int yOffset = 0; yOffset < yRepeat * yRepeatOffset; yOffset += yRepeatOffset) {
+                ivec2 coords = ivec2(gl_LocalInvocationID.x + xOffset, gl_LocalInvocationID.y + yOffset)
+                /** Now process the pixel **/
+            }
+        }
+    ```
+    - This should ensure that gl_LocalInvocationID(0,0,0) will process pixel (0,0), (0,32), (32,0), and finally (32, 32)
+    - gl_LocalInvocationID(31,31,0) will process pixel (31,31), (31,63), (63,0), and finally (63, 63)
+    - All of the in-between invocations will process the pixels in between
+
 ## Configuration Window
 A window that allows better control of the program
 - User input adjustments to the webcam red/green/blue/lightness levels
