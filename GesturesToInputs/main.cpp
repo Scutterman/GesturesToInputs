@@ -534,8 +534,7 @@ void searchForObjects(std::vector<TrackerData> trackers) {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, trackerShaderBuffer);
 
     uint trackerDataSize = sizeof(TrackerData) * trackers.size();
-    TrackerData* bufferItems;
-    bufferItems = (TrackerData*)malloc(trackerDataSize);
+    auto bufferItems = (TrackerData*)malloc(trackerDataSize);
     int i = 0;
     for (auto& tracker : trackers) { bufferItems[i] = tracker; i++; }
     glBufferData(GL_SHADER_STORAGE_BUFFER, trackerDataSize, bufferItems, GL_STATIC_COPY);
@@ -694,20 +693,20 @@ int main(int argc, char** argv)
         }
 
         std::vector<ThresholdData> thresholdData;
-         float low[4] = { 80, 111, 110, 255 };
-         float high[4] = { 95, 255, 255, 255 };
-         float tracker[4] = { 87, 183, 183, 255 };
-         //thresholdData.push_back(ThresholdData(low, high, tracker));
+        float low[4] = { 80, 111, 110, 255 };
+        float high[4] = { 95, 255, 255, 255 };
+        float tracker[4] = { 87, 183, 183, 255 };
+        thresholdData.push_back(ThresholdData(low, high, tracker));
 
-         float redtracker[4] = { 174, 179, 205, 255 };
-         float red1low[4] = { 167, 159, 45, 255 };
-         float red1high[4] = { 179, 240, 246, 255 };
-         float red2low[4] = { 0, 104, 151, 255 };
-         float red2high[4] = { 10, 255, 255, 255 };
-         thresholdData.push_back(ThresholdData(red1low, red1high, redtracker));
-         //thresholdData.push_back(ThresholdData(red2low, red2high, redtracker));
+        float redtracker[4] = { 174, 179, 205, 255 };
+        float red1low[4] = { 167, 159, 45, 255 };
+        float red1high[4] = { 179, 240, 246, 255 };
+        float red2low[4] = { 0, 104, 151, 255 };
+        float red2high[4] = { 10, 255, 255, 255 };
+        thresholdData.push_back(ThresholdData(red1low, red1high, redtracker));
+        thresholdData.push_back(ThresholdData(red2low, red2high, redtracker));
 
-        std::vector<TrackerData> trackers = { /*TrackerData(tracker),*/ TrackerData(redtracker) };
+        std::vector<TrackerData> trackers = { TrackerData(tracker), TrackerData(redtracker) };
 
         for (auto& t : trackers) { trackerObjects.push_back(DetectedObjects()); }
 
@@ -761,7 +760,6 @@ int main(int argc, char** argv)
             glMemoryBarrier(GL_ALL_BARRIER_BITS);
             checkError("After detection Barrier");
 
-            // debugBoundingBoxes();
             std::cout << "Captured & Processed frame in "; perf.End();
 
             perf.Start();
