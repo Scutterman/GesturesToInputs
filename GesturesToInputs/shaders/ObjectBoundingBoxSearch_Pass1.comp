@@ -1,7 +1,7 @@
 #version 430 core
 
 struct ObjectSearchData {
-    ivec4 boundingBox; // minimum left and minimum top, maximum right and maximum bottom of all contiguous areas
+    uvec4 boundingBox; // minimum left and minimum top, maximum right and maximum bottom of all contiguous areas
     uint area; // Number of pixels inside the bounding box
     uint topLeftSampleIndex;
     uint objectTrackerIndex;
@@ -10,6 +10,10 @@ struct ObjectSearchData {
 
 struct TrackerData {
     vec4 colour;
+    uint horizontalPosition;
+    uint verticalPosition;
+    uint orientation;
+    uint isVisibleInFrame;
 };
 
 layout(std430, binding=4) buffer data {

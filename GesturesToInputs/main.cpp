@@ -155,8 +155,11 @@ struct ThresholdData {
     }
 };
 
+// This could probably be passed to the SSBO and shader as uint[] or uint* with a size of sizeof(uint) * 8 * sampleCount
+// but I would have to use the indexes instead of the variable names
+// It's possible passing uint[] instead of struct has performance advantages but I haven't tested it.
 struct ObjectSearchData {
-    GLint boundingBox[4];
+    GLuint boundingBox[4];
     GLuint area;
     GLuint topLeftSampleIndex;
     GLuint objectTrackerIndex;
@@ -165,7 +168,11 @@ struct ObjectSearchData {
 
 struct TrackerData {
     float colour[4];
-
+    uint horizontalPosition = 0;
+    uint verticalPosition = 0;
+    uint orientation = 0;
+    uint isVisibleInFrame = 0;
+    
     TrackerData(float _colour[4]) {
         colour[0] = _colour[0];
         colour[1] = _colour[1];
@@ -174,9 +181,25 @@ struct TrackerData {
     }
 };
 
+// This could probably be passed to the SSBO and shader as GLubyte[] or GLubyte*
+struct GestureData {
+    GLubyte found = 2;     // 0 = not found, 1 = found, 2 = awaiting value
+};
+
+struct GestureRuleData {
+    uint type = 0;
+    int operation = 0;
+    int expectedValue = 0;
+    uint compareTwoTrackers = 0;
+    uint trackerIndex = 0;
+    uint comparisonTrackerIndex = 0;
+};
+
+typedef cv::Vec<uint, 4> Vec4ui;
+
 class DetectedObjects {
 public:
-    std::vector<cv::Vec4i> boundingBoxes;
+    std::vector<Vec4ui> boundingBoxes;
 };
 
 std::vector<DetectedObjects> trackerObjects;
