@@ -160,14 +160,12 @@ struct ThresholdData {
 // It's possible passing uint[] instead of struct has performance advantages but I haven't tested it.
 struct ObjectSearchData {
     GLuint boundingBox[4];
-    GLuint area;
-    GLuint topLeftSampleIndex;
     GLuint objectTrackerIndex;
-    GLuint isObjectTopLeft;
 };
 
 struct TrackerData {
     float colour[4];
+    uint area = 0;
     uint horizontalPosition = 0;
     uint verticalPosition = 0;
     uint orientation = 0;
@@ -376,21 +374,6 @@ void bindImageHandle(GLuint* handle, GLenum textureUnit, int format = GL_RGBA32F
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     checkError("texture options");
-}
-
-void debugBoundingBoxes() {
-    auto objectBufferData = (ObjectSearchData*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
-
-    for (int i = 0; i < totalSamples; i++) {
-        if (objectBufferData[i].isObjectTopLeft == 1) {
-            auto x = objectBufferData[i].boundingBox[0];
-            auto y = objectBufferData[i].boundingBox[1];
-            auto width = objectBufferData[i].boundingBox[2] - x;
-            auto height = objectBufferData[i].boundingBox[3] - y;
-            trackerObjects.at(objectBufferData[i].objectTrackerIndex).boundingBoxes.push_back({ x, y, width, height });
-        }
-    }
-    glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 }
 
 void bindInput() {

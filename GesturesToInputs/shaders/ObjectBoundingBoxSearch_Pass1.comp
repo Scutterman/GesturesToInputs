@@ -2,14 +2,12 @@
 
 struct ObjectSearchData {
     uvec4 boundingBox; // minimum left and minimum top, maximum right and maximum bottom of all contiguous areas
-    uint area; // Number of pixels inside the bounding box
-    uint topLeftSampleIndex;
     uint objectTrackerIndex;
-    uint isObjectTopLeft;
 };
 
 struct TrackerData {
     vec4 colour;
+    uint area;
     uint horizontalPosition;
     uint verticalPosition;
     uint orientation;
@@ -59,18 +57,22 @@ void main()
     uint sampleRow = gl_WorkGroupID.y;
     uint sampleIndex = sampleColumn + (sampleRow * sampleSize.x);
     uint tracker = gl_WorkGroupID.z;
-    
+
     // Reset sample data
-    samples[sampleIndex].isObjectTopLeft = 0;
     samples[sampleIndex].objectTrackerIndex = -1; // this should be UINT_MAX
-    samples[sampleIndex].area = 0;
-    samples[sampleIndex].topLeftSampleIndex = sampleIndex;
     samples[sampleIndex].boundingBox = ivec4(sampleColumn, sampleRow, sampleColumn+1, sampleRow+1);
+
+    // reset tracker data
+    trackers[tracker].area = 0;
+    trackers[tracker].horizontalPosition = 0;
+    trackers[tracker].verticalPosition = 0;
+    trackers[tracker].orientation = 0;
+    trackers[tracker].isVisibleInFrame = 0;
 
     memoryBarrier();
 
     vec4 normalisedTrackerColour = vec4(trackers[tracker].colour.x / 179, trackers[tracker].colour.y / 255, trackers[tracker].colour.z / 255, trackers[tracker].colour.w / 255);
-        
+
     // Determine whether sample has enough pixels to be part of an object
     uint balance = 0;
     uint target = (samplePixelDimensions.x * samplePixelDimensions.y) / 2;
@@ -94,51 +96,63 @@ void main()
         if (hasSufficientMatchingPixels && leftIndex > 0 && samples[leftIndex].objectTrackerIndex == tracker) {
             atomicBoundingBoxUpdate(sampleIndex, leftIndex);
         }
-        
+
         int topIndex = int(sampleIndex) - sampleSize.x;
         if (hasSufficientMatchingPixels && topIndex > 0 && samples[topIndex].objectTrackerIndex == tracker) {
             atomicBoundingBoxUpdate(sampleIndex, topIndex);
         }
-        
+
         int topLeftIndex = (int(sampleIndex) - sampleSize.x) - 1;
         if (hasSufficientMatchingPixels && topLeftIndex > 0 && samples[topLeftIndex].objectTrackerIndex == tracker) {
             atomicBoundingBoxUpdate(sampleIndex, topLeftIndex);
         }
-        
+
         int bottomLeftIndex = (int(sampleIndex) + sampleSize.x) - 1;
         if (hasSufficientMatchingPixels && bottomLeftIndex > 0 && samples[bottomLeftIndex].objectTrackerIndex == tracker) {
             atomicBoundingBoxUpdate(sampleIndex, bottomLeftIndex);
         }
-        
+
         // Unfortunately need to wait and make sure all samples have finished their checks this pass before the next iteration
         memoryBarrier();
     }
 
-    // Update this sample's information with the propogated object values
-    uint topLeftIndex = samples[sampleIndex].boundingBox.x + (samples[sampleIndex].boundingBox.y * sampleSize.x);
-    samples[sampleIndex].topLeftSampleIndex = topLeftIndex;
-    
     ivec2 topLeft = ivec2(samples[sampleIndex].boundingBox.x * samplePixelDimensions.x, samples[sampleIndex].boundingBox.y * samplePixelDimensions.y);
     ivec2 bottomRight = ivec2(samples[sampleIndex].boundingBox.z * samplePixelDimensions.x, samples[sampleIndex].boundingBox.w * samplePixelDimensions.y);
     uint width = bottomRight.x - topLeft.x;
     uint height = bottomRight.y - topLeft.y;
-    
+
     uint area = width * height;
-    if (hasSufficientMatchingPixels && area < threshold) {
-        samples[sampleIndex].area = 0;
-        samples[sampleIndex].objectTrackerIndex = -1; // Should be UINT_MAX
-    } else if (hasSufficientMatchingPixels) {
-        samples[sampleIndex].area = area;
-    }
+    area = hasSufficientMatchingPixels && area < threshold ? 0 : area;
 
     memoryBarrier();
 
-    // Only store the final values in one sample so it's quicker to isolate in the next stage
-    if (samples[sampleIndex].objectTrackerIndex == tracker) {
-        samples[topLeftIndex].isObjectTopLeft = 1;
-        samples[topLeftIndex].objectTrackerIndex = tracker; // Assume only one tracker has this sample as its top-left corner.
-        samples[topLeftIndex].area = area; // This could store an exact number of pixels in the object using the "balance" variable and an atomic add.
-        samples[topLeftIndex].boundingBox = samples[sampleIndex].boundingBox;
+    atomicMax(trackers[tracker].area, area);
+
+    memoryBarrier();
+
+    uint farLeft = imageDimensions.x / 5;
+    uint middleLeft = farLeft * 2;
+    uint middleRight = farLeft * 3;
+    uint farRight = farLeft * 4;
+
+    // Origin is top left so higher y value is actually lower down in the image.
+    uint topThird = imageDimensions.y / 3;
+    uint bottomThird = topThird * 2;
+
+    uvec2 centre = uvec2(topLeft.x + width / 2, topLeft.y + height / 2);
+
+    if (trackers[tracker].area == area && area > 0) {
+        trackers[tracker].isVisibleInFrame = 1;
+        trackers[tracker].orientation = width <= height ? 0 : 1;
+
+        // higher y is lower down
+        trackers[tracker].verticalPosition = centre.y >= bottomThird ? 0 : centre.y <= topThird ? 2 : 1;
+
+        trackers[tracker].horizontalPosition =
+            centre.x <= farLeft ? 0 :
+            centre.x <= middleLeft ? 1 :
+            centre.x <= middleRight ? 2 :
+            centre.x <= farRight ? 3 : 4;
 
         vec4 outputColour = vec4(hsv2rgb(normalisedTrackerColour.xyz), 1);
         for (uint i = sampleColumn * samplePixelDimensions.x; i < (sampleColumn + 1) * samplePixelDimensions.x; i++) {
