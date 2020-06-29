@@ -161,6 +161,7 @@ struct ThresholdData {
 struct ObjectSearchData {
     GLuint boundingBox[4];
     GLuint objectTrackerIndex;
+    GLuint padding[3];
 };
 
 struct TrackerData {
@@ -183,7 +184,8 @@ struct TrackerData {
 
 // This could probably be passed to the SSBO and shader as GLubyte[] or GLubyte*
 struct GestureData {
-    GLubyte found = 2;     // 0 = not found, 1 = found, 2 = awaiting value
+    GLuint found = 2;     // 0 = not found, 1 = found, 2 = awaiting value
+    GLuint padding[3];
 };
 
 struct GestureRuleData {
@@ -193,6 +195,7 @@ struct GestureRuleData {
     uint compareTwoTrackers = 0;
     uint trackerIndex = 0;
     uint comparisonTrackerIndex = 0;
+    uint padding[2];
 };
 
 typedef cv::Vec<uint, 4> Vec4ui;

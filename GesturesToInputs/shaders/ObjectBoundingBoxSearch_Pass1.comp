@@ -3,6 +3,7 @@
 struct ObjectSearchData {
     uvec4 boundingBox; // minimum left and minimum top, maximum right and maximum bottom of all contiguous areas
     uint objectTrackerIndex;
+    uvec2 padding;
 };
 
 struct TrackerData {
