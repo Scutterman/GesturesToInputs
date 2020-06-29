@@ -674,131 +674,135 @@ void debugYUY2Texture() {
 
 int main(int argc, char** argv)
 {
+    bool useGPU = true;
     //doErrorCheck = true;
     basePath = std::filesystem::path(argv[0]).parent_path();
 
-    MediaFoundationWebcam* webcam = new MediaFoundationWebcam();
-    PerformanceTimer timer;
-    timer.Start();
-    std::thread t1(&MediaFoundationWebcam::CreateVideoCaptureDevice, webcam);
-    t1.detach();
+    if (useGPU) {
+        MediaFoundationWebcam* webcam = new MediaFoundationWebcam();
+        PerformanceTimer timer;
+        timer.Start();
+        std::thread t1(&MediaFoundationWebcam::CreateVideoCaptureDevice, webcam);
+        t1.detach();
 
-    webcam->wait();
-    sourceWidth = webcam->getWidth(); sourceHeight = webcam->getHeight();
-
-    int status = setup();
-    if (status != 0) {
-        return status;
-    }
-
-    std::vector<ThresholdData> thresholdData;
-    float low[4] = { 80, 111, 110, 255 };
-    float high[4] = { 95, 255, 255, 255 };
-    float tracker[4] = { 87, 183, 183, 255 };
-    thresholdData.push_back(ThresholdData(low, high, tracker));
-
-    float redtracker[4] = { 174, 179, 205, 255 };
-    float red1low[4] = { 169, 104, 151, 255 };
-    float red1high[4] = { 179, 255, 255, 255 };
-    float red2low[4] = { 0, 104, 151, 255 };
-    float red2high[4] = { 10, 255, 255, 255 };
-    thresholdData.push_back(ThresholdData(red1low, red1high, redtracker));
-    thresholdData.push_back(ThresholdData(red2low, red2high, redtracker));
-
-    std::vector<TrackerData> trackers = { TrackerData(tracker), TrackerData(redtracker) };
-
-    for (auto& t : trackers) { trackerObjects.push_back(DetectedObjects()); }
-
-    PerformanceTimer perf;
-    bindInput();
-    convertYUY2ToRGB();
-    convertToHSV();
-    threshold(thresholdData);
-    searchForObjects(trackers);
-    displayOutputSetup();
-    
-    while (!glfwWindowShouldClose(window) && !opengl_has_errored)
-    {
         webcam->wait();
+        sourceWidth = webcam->getWidth(); sourceHeight = webcam->getHeight();
 
-        perf.Start();
-        auto bytes = webcam->getData();
-        auto length = webcam->getWidth() * webcam->getHeight() * webcam->getBytesPerPixel();
-        for (auto& t : trackerObjects) { t.boundingBoxes.clear(); }
+        int status = setup();
+        if (status != 0) {
+            return status;
+        }
 
-        yuy2Shader.use();
-        bindImageData(rawDataTextureUnit, bytes, GL_RG_INTEGER);
-        glMemoryBarrier(GL_ALL_BARRIER_BITS);
-        checkError("Bind raw image data");
-        glDispatchCompute(sourceWidth / 2, sourceHeight, 1);
-        checkError("After yuy2 compute");
-        glMemoryBarrier(GL_ALL_BARRIER_BITS);
-        checkError("After yuy2 Barrier");
+        std::vector<ThresholdData> thresholdData;
+         float low[4] = { 80, 111, 110, 255 };
+         float high[4] = { 95, 255, 255, 255 };
+         float tracker[4] = { 87, 183, 183, 255 };
+         //thresholdData.push_back(ThresholdData(low, high, tracker));
 
-        hsvShader.use();
-        // TODO:: Allow more formats. If YUY2 it can be converted, if it's a format GLTexSubImage2D knows about it can be uploaded directly
-        //bindImageData(inputTextureUnit, source.ptr(), GL_BGR);
-        //glMemoryBarrier(GL_ALL_BARRIER_BITS);
-        //checkError("Bind source image");
-        glDispatchCompute(sourceWidth, sourceHeight, 1);
-        checkError("After hsv compute");
-        glMemoryBarrier(GL_ALL_BARRIER_BITS);
-        checkError("After hsv Barrier");
+         float redtracker[4] = { 174, 179, 205, 255 };
+         float red1low[4] = { 167, 159, 45, 255 };
+         float red1high[4] = { 179, 240, 246, 255 };
+         float red2low[4] = { 0, 104, 151, 255 };
+         float red2high[4] = { 10, 255, 255, 255 };
+         thresholdData.push_back(ThresholdData(red1low, red1high, redtracker));
+         //thresholdData.push_back(ThresholdData(red2low, red2high, redtracker));
 
-        thresholdShader.use();
-        glDispatchCompute(sourceWidth, sourceHeight, 1);
-        checkError("After threshold compute");
-        glMemoryBarrier(GL_ALL_BARRIER_BITS);
-        checkError("After threshold Barrier");
+        std::vector<TrackerData> trackers = { /*TrackerData(tracker),*/ TrackerData(redtracker) };
 
-        // debugDisplayTexture(thresholdTextureUnit, "threshold");
+        for (auto& t : trackers) { trackerObjects.push_back(DetectedObjects()); }
 
-        objectSearchShader.use();
-        glDispatchCompute(sampleColumns, sampleRows, trackers.size());
-        checkError("After detection compute");
-        glMemoryBarrier(GL_ALL_BARRIER_BITS);
-        checkError("After detection Barrier");
+        PerformanceTimer perf;
+        bindInput();
+        convertYUY2ToRGB();
+        convertToHSV();
+        threshold(thresholdData);
+        searchForObjects(trackers);
+        displayOutputSetup();
 
-        // debugBoundingBoxes();
-        std::cout << "Captured & Processed frame in "; perf.End();
+        while (!glfwWindowShouldClose(window) && !opengl_has_errored)
+        {
+            webcam->wait();
 
-        perf.Start();
-        displayOutput();
-        std::cout << "Output displayed in "; perf.End();
-        std::cout << std::endl << std::endl << std::endl;
+            perf.Start();
+            auto bytes = webcam->getData();
+            auto length = webcam->getWidth() * webcam->getHeight() * webcam->getBytesPerPixel();
+            for (auto& t : trackerObjects) { t.boundingBoxes.clear(); }
 
-        glfwPollEvents();
+            yuy2Shader.use();
+            bindImageData(rawDataTextureUnit, bytes, GL_RG_INTEGER);
+            glMemoryBarrier(GL_ALL_BARRIER_BITS);
+            checkError("Bind raw image data");
+            glDispatchCompute(sourceWidth / 2, sourceHeight, 1);
+            checkError("After yuy2 compute");
+            glMemoryBarrier(GL_ALL_BARRIER_BITS);
+            checkError("After yuy2 Barrier");
+
+            hsvShader.use();
+            // TODO:: Allow more formats. If YUY2 it can be converted, if it's a format GLTexSubImage2D knows about it can be uploaded directly
+            //bindImageData(inputTextureUnit, source.ptr(), GL_BGR);
+            //glMemoryBarrier(GL_ALL_BARRIER_BITS);
+            //checkError("Bind source image");
+            glDispatchCompute(sourceWidth, sourceHeight, 1);
+            checkError("After hsv compute");
+            glMemoryBarrier(GL_ALL_BARRIER_BITS);
+            checkError("After hsv Barrier");
+
+            thresholdShader.use();
+            glDispatchCompute(sourceWidth, sourceHeight, 1);
+            checkError("After threshold compute");
+            glMemoryBarrier(GL_ALL_BARRIER_BITS);
+            checkError("After threshold Barrier");
+
+            debugDisplayTexture(thresholdTextureUnit, "threshold");
+
+            objectSearchShader.use();
+            glDispatchCompute(sampleColumns, sampleRows, trackers.size());
+            checkError("After detection compute");
+            glMemoryBarrier(GL_ALL_BARRIER_BITS);
+            checkError("After detection Barrier");
+
+            // debugBoundingBoxes();
+            std::cout << "Captured & Processed frame in "; perf.End();
+
+            perf.Start();
+            displayOutput();
+            std::cout << "Output displayed in "; perf.End();
+            std::cout << std::endl << std::endl << std::endl;
+
+            glfwPollEvents();
+        }
+
+        webcam->Close();
+        std::cout << webcam->framesCollected << " frames collected in "; timer.End();
+        webcam->Release();
+
+        return end();
     }
+    else {
+        try {
+            Webcam cam;
+            auto frame = cam.next();
+            sourceWidth = frame.source.cols; sourceHeight = frame.source.rows;
+
+            auto redTrackerValues = std::list<TrackerValues> { TrackerValues(0, 57, 71, 109, 35, 60), TrackerValues(167, 179, 0, 255, 0, 255) };
+            auto greenTrackerValues = std::list<TrackerValues> { TrackerValues(80, 95, 75, 213, 39, 171) };
+        
+            auto redTracker = new Tracker("Red", redTrackerValues, cv::Scalar(0, 0, 255));
+            auto greenTracker = new Tracker("Green", greenTrackerValues, cv::Scalar(0, 255, 0));
+            std::map<std::string, Tracker*> trackers = {
+                { "Red",  redTracker },
+                { "Green", greenTracker }
+            };
+
+            auto processor = GesturesToInputsProcessor(trackers, justCause2Gestures());
+            processor.webcamIndex = 0;
+            processor.webcamMirrored = true;
+            processor.run();
+        }
+        catch (int e) {
+            std::cout << "An exception occurred. Exception Nr. " << e << '\n';
+        }
     
-    webcam->Close();
-    std::cout << webcam->framesCollected << " frames collected in "; timer.End();
-    webcam->Release();
-
-    return end();
-
-    //try {
-    //    Webcam cam;
-    //    auto frame = cam.next();
-    //    sourceWidth = frame.source.cols; sourceHeight = frame.source.rows;
-
-    //    auto redTrackerValues = std::list<TrackerValues> { TrackerValues(0, 57, 71, 109, 35, 60), TrackerValues(167, 179, 0, 255, 0, 255) };
-    //    auto greenTrackerValues = std::list<TrackerValues> { TrackerValues(80, 95, 75, 213, 39, 171) };
-    //    
-    //    auto redTracker = new Tracker("Red", redTrackerValues, cv::Scalar(0, 0, 255));
-    //    auto greenTracker = new Tracker("Green", greenTrackerValues, cv::Scalar(0, 255, 0));
-    //    std::map<std::string, Tracker*> trackers = {
-    //        { "Red",  redTracker },
-    //        { "Green", greenTracker }
-    //    };
-
-    //    auto processor = GesturesToInputsProcessor(trackers, justCause2Gestures());
-    //    processor.webcamIndex = 0;
-    //    processor.webcamMirrored = true;
-    //    processor.run();
-    //}
-    //catch (int e) {
-    //    std::cout << "An exception occurred. Exception Nr. " << e << '\n';
-    //}
-    //
-    //return 0;
+        return 0;
+    }
 }
