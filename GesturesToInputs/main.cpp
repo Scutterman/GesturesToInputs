@@ -205,8 +205,6 @@ public:
     std::vector<Vec4ui> boundingBoxes;
 };
 
-std::vector<DetectedObjects> trackerObjects;
-
 static const struct
 {
     float x, y;
@@ -713,8 +711,6 @@ int main(int argc, char** argv)
 
         std::vector<TrackerData> trackers = { TrackerData(tracker), TrackerData(redtracker) };
 
-        for (auto& t : trackers) { trackerObjects.push_back(DetectedObjects()); }
-
         PerformanceTimer perf;
         bindInput();
         convertYUY2ToRGB();
@@ -723,14 +719,13 @@ int main(int argc, char** argv)
         searchForObjects(trackers);
         displayOutputSetup();
 
+        auto length = webcam->getWidth() * webcam->getHeight() * webcam->getBytesPerPixel();
         while (!glfwWindowShouldClose(window) && !opengl_has_errored)
         {
             webcam->wait();
 
             perf.Start();
             auto bytes = webcam->getData();
-            auto length = webcam->getWidth() * webcam->getHeight() * webcam->getBytesPerPixel();
-            for (auto& t : trackerObjects) { t.boundingBoxes.clear(); }
 
             yuy2Shader.use();
             bindImageData(rawDataTextureUnit, bytes, GL_RG_INTEGER);
