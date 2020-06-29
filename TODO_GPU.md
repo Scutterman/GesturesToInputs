@@ -10,28 +10,11 @@ Shader 2: Thresholding
 - morphological opening
 - morphological closing
 
-Shader 3: Blob detection
+Shader 3: Largest blob position detection
 - Prevent Susurration indexes from wrapping around to the right-hand side of the grid
 - Ensure bottomLeft Susurration index does not go beyond the bottom of the grid
 
-Shader 4: Marker calculations
-- INPUT: ivec2 imageDimensions
-- INPUT: SSBO containing array of ObjectSearchData
-- INPUT: SSBO containing array of TrackerData
-- Process one tracker per thread (global_work_group.x = tracker)
-    - calculate pixels for grid square boundaries based on image width / height (topThird, bottomThird, farLeft, middleLeft, middleRight, farRight)
-    - all values start out as zero
-    - find largest blob
-        - if there's no blobs for this tracker then skip all further steps
-    - set isVisibleInFrame to 1
-    - find width and height (furthest right point - furthest left point, uppermost point - lowest point)
-    - find centre (half width and height added to top-left)
-    - calculate horizontal / vertical / orientation values as uints
-        - horizontal grid square 0 (farLeft), 1 (middleLeft), 2 (centre), 3 (middleRight), 4 (farRight)
-        - vertical grid square 0 (bottom), 1 (middle), 2 (top)
-        - orientation 0 (portrait), 1 (landscape)
-
-Shader 5: Gesture detection
+Shader 4: Gesture detection
 - INPUT: SSBO containing GestureData
 - INPUT: SSBO containing array of GestureRuleData
 - INPUT: SSBO containing array of TrackerData
