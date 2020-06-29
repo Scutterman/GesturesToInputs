@@ -43,14 +43,9 @@ The Windows Development Kit "SendInput" method is used by Gesture._SendInput to 
 If this happens to be a game, the result is that a gesture controls the game just like a direct keyboard input would.
 
 # Roadmap
-## Miscellaneous
-- Look into whether Tensorflow can run on the gpu, consider using that for marker tracking or gesture processing
-    - If Tensorflow is not suitable, see whether gpu can be used for gesture processing. A shader could be generated when the gestures are first loaded so only tracker positions would need to be sent to the gpu every frame - maybe as little as an array index to identify the tracker and then a vec3 with 0-2 for vertical position, 0-4 for horizontal position, and 0-1 for orientation.
+## Profiles
 - Allow saving the current marker colour values to disk so they can be used next time the program is run
 - Allow saving gesture profiles to disk so different games can have different profiles
-- Shape tracking to augment or replace colour tracking
-    - An equilateral triangle in one hand and two equilateral triangles at right-angles for the other hand should allow each hand to detect four distinct rotations. These can be combined with position on screen to vastly increase the number of gestures, and can be easily printed out and taped to a pen for easy holding.
-    - Perhaps a square can be stuck to one side of a hat and a set of four triangles pointing in different directions can be stuck to the other side. The position of the shapes can be tracked and rotation of the head can be calculated because one shape will not be visible to the webcam when the head turns far enough.
 
 ## Webcam
 - See if we can detect when a camera disconnects and reconnects - look into exception "The video recording device is no longer present"
@@ -91,3 +86,10 @@ A window that allows better control of the program
 - Keyboard localisation
 - "No GPU" mode for when the GPU isn't very powerful or the game makes high demands of it
     - Will need to replace all OpenCV code with custom code working on bytes from the MediaFoundationWebcam class because the OpenCV methods in Tracker::isolateColours() run extremely slowly (8ms - 15ms for each of six methods means the method takes ~65ms)
+
+## Android App
+Investigate whether it would be possible to port this code to a mobile app.
+OpenGL ES is much more resource limited (particularly how many textures / buffers can be bound at once) so it might be tricky.
+The program on the PC would create a local web server that the app connects to.
+When the phone connects, it receives a list of markers and gestures.
+The app would send over a list of detected gesture indexes after processing each frame so the PC can send the correct inputs to the game.
