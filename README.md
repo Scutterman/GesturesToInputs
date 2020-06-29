@@ -54,6 +54,7 @@ If this happens to be a game, the result is that a gesture controls the game jus
 
 ## Configuration Window
 A window that allows better control of the program
+- User input adjustments to the webcam red/green/blue/lightness levels
 - Adjusting the size of the erode / dilate, and the minimum area allowed for  tracking
 - Choosing a webcam from a list
 - Webcam settings such as low light compensation, autofocus, image levels, etc.

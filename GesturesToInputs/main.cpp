@@ -434,6 +434,16 @@ void convertToHSV() {
     checkError("Get isMirrored Location");
     glUniform1ui(isMirroredLocation, 1);
     checkError("Set isMirrored");
+    
+    auto rgbCorrectionsLocation = hsvShader.uniformLocation("rgbCorrections");
+    checkError("Get rgbCorrections Location");
+    glUniform3fv(rgbCorrectionsLocation, 1, new float[3]{ 0.0f, 0.05f, 0.0f });
+    checkError("Set rgbCorrections");
+
+    auto lightenAmountLocation = hsvShader.uniformLocation("lightenAmount");
+    checkError("Get lightenAmount Location");
+    glUniform1f(lightenAmountLocation, 0.5);
+    checkError("Set lightenAmount");
 }
 
 void threshold(std::vector<ThresholdData> items) {
