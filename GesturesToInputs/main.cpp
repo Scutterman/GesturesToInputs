@@ -752,7 +752,7 @@ int main(int argc, char** argv)
             glMemoryBarrier(GL_ALL_BARRIER_BITS);
             checkError("After threshold Barrier");
 
-            debugDisplayTexture(thresholdTextureUnit, "threshold");
+            //debugDisplayTexture(thresholdTextureUnit, "threshold");
 
             objectSearchShader.use();
             glDispatchCompute(sampleColumns, sampleRows, trackers.size());
@@ -760,7 +760,7 @@ int main(int argc, char** argv)
             glMemoryBarrier(GL_ALL_BARRIER_BITS);
             checkError("After detection Barrier");
 
-            std::cout << "Captured & Processed frame in "; perf.End();
+            std::cout << "Processed frame in "; perf.End();
 
             perf.Start();
             displayOutput();
