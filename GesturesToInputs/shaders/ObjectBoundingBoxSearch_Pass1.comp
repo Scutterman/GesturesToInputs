@@ -122,7 +122,7 @@ void main()
     uint height = bottomRight.y - topLeft.y;
 
     uint area = width * height;
-    area = hasSufficientMatchingPixels && area < threshold ? 0 : area;
+    area = !hasSufficientMatchingPixels || area < threshold ? 0 : area;
 
     memoryBarrier();
 
