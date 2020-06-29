@@ -265,7 +265,7 @@ namespace GesturesToInputs {
         UINT32 frameRateMin = 0;
         UINT32 denominator = 0;
         hr = MFGetAttributeRatio(pType, MF_MT_FRAME_RATE_RANGE_MIN, &frameRateMin, &denominator);
-        if ((subtype == MFVideoFormat_RGB32 || subtype == MFVideoFormat_RGB24 || subtype == MFVideoFormat_YUY2) && frameRateMin >= 30) {
+        if ((subtype == MFVideoFormat_YUY2) && frameRateMin >= 30) {
             PROPVARIANT val;
             pType->GetItem(MF_MT_FRAME_RATE_RANGE_MIN, &val);
             auto setHR = pType->SetItem(MF_MT_FRAME_RATE, val);
