@@ -72,6 +72,9 @@
     <None Include="shaders\Convert_YUY2.comp">
       <Filter>shaders</Filter>
     </None>
+    <None Include="shaders\DetectGestures.comp">
+      <Filter>shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="shaders">

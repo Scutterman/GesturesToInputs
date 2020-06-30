@@ -182,20 +182,15 @@ struct TrackerData {
     }
 };
 
-// This could probably be passed to the SSBO and shader as GLubyte[] or GLubyte*
-struct GestureData {
-    GLuint found = 2;     // 0 = not found, 1 = found, 2 = awaiting value
-    GLuint padding[3];
-};
-
 struct GestureRuleData {
+    uint gestureIndex = 0;
     uint type = 0;
     int operation = 0;
-    int expectedValue = 0;
+    uint expectedValue = 0;
     uint compareTwoTrackers = 0;
     uint trackerIndex = 0;
     uint comparisonTrackerIndex = 0;
-    uint padding[2];
+    uint padding = 0;
 };
 
 typedef cv::Vec<uint, 4> Vec4ui;
@@ -226,6 +221,8 @@ const int SHADER_STORAGE_THRESHOLD = 3;
 const int SHADER_STORAGE_OBJECT_SEARCH = 4;
 const int RAW_DATA_IMAGE_UNIT = 5;
 const int SHADER_STORAGE_TRACKERS = 6;
+const int SHADER_STORAGE_GESTURE = 7;
+const int SHADER_STORAGE_GESTURE_RULE = 8;
 
 const unsigned int sampleColumns = 64;
 const unsigned int sampleRows = 48;
