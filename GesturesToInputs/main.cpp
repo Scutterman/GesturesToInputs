@@ -703,6 +703,24 @@ void debugYUY2Texture() {
     free(gl_texture_bytes);
 }
 
+void getRulesFromGestures(std::list<GestureInput> gestures, std::map<std::string, uint>* trackerNameIndexMap, std::vector<GestureRuleData>* out) {
+    uint gestureIndex = 0;
+    for (auto& gesture : gestures) {
+        for (auto& rule : gesture.getRules()) {
+            GestureRuleData ruleData;
+            ruleData.gestureIndex = gestureIndex;
+            ruleData.type = uint(rule.getType());
+            ruleData.operation = int(rule.getOperation());
+            ruleData.expectedValue = rule.getExpectedValue();
+            ruleData.compareTwoTrackers = rule.isComparingTwoTrackers() ? 1 : 0;
+            ruleData.trackerIndex = trackerNameIndexMap->at(rule.trackerName);
+            ruleData.comparisonTrackerIndex = rule.isComparingTwoTrackers() ? trackerNameIndexMap->at(rule.comparisonTrackerName) : 0;
+            out->push_back(ruleData);
+        }
+        gestureIndex++;
+    }
+}
+
 int main(int argc, char** argv)
 {
     bool useGPU = true;
@@ -740,12 +758,20 @@ int main(int argc, char** argv)
 
         std::vector<TrackerData> trackers = { TrackerData(tracker), TrackerData(redtracker) };
 
+        auto gestures = justCause2Gestures();
+        uint gestureCount = gestures.size();
+        std::vector<GLuint> gestureData(gestureCount);
+        std::map<std::string, uint> namesToIndex = { {"Red", 0}, {"Green", 1} };
+        auto rules = new std::vector<GestureRuleData>;
+        getRulesFromGestures(gestures, &namesToIndex, rules);
+
         PerformanceTimer perf;
         bindInput();
         convertYUY2ToRGB();
         convertToHSV();
         threshold(thresholdData);
         searchForObjects(trackers);
+        detectGesturesSetup(gestureCount, rules);
         displayOutputSetup();
 
         auto length = webcam->getWidth() * webcam->getHeight() * webcam->getBytesPerPixel();
