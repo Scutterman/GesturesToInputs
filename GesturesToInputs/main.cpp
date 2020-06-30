@@ -477,7 +477,7 @@ void threshold(std::vector<ThresholdData> items) {
     bufferItems = (ThresholdData*)malloc(thresholdDataSize);
     int i = 0;
     for (auto& item : items) { bufferItems[i] = item; i++; }
-    glBufferData(GL_SHADER_STORAGE_BUFFER, thresholdDataSize, bufferItems, GL_STATIC_COPY);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, thresholdDataSize, bufferItems, GL_STATIC_DRAW);
     free(bufferItems);
     
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_THRESHOLD, thresholdShaderBuffer);
@@ -525,7 +525,7 @@ void searchForObjects(std::vector<TrackerData> trackers) {
 
     glGenBuffers(1, &computeShaderBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, computeShaderBuffer);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, objectDataSize, NULL, GL_DYNAMIC_COPY);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, objectDataSize, NULL, GL_STATIC_COPY);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_OBJECT_SEARCH, computeShaderBuffer);
 
     checkError("After Buffer");
@@ -537,7 +537,7 @@ void searchForObjects(std::vector<TrackerData> trackers) {
     auto bufferItems = (TrackerData*)malloc(trackerDataSize);
     int i = 0;
     for (auto& tracker : trackers) { bufferItems[i] = tracker; i++; }
-    glBufferData(GL_SHADER_STORAGE_BUFFER, trackerDataSize, bufferItems, GL_STATIC_COPY);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, trackerDataSize, bufferItems, GL_STATIC_DRAW);
     free(bufferItems);
 
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_TRACKERS, trackerShaderBuffer);
