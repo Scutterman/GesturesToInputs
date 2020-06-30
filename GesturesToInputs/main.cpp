@@ -575,8 +575,9 @@ void detectGesturesSetup(unsigned int numberOfGestures, std::vector<GestureRuleD
 
     checkError("After gestureRule buffer");
 
-    //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_TRACKERS, trackerShaderBuffer);
-    //checkError("After Buffer");
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, trackerShaderBuffer);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_TRACKERS, trackerShaderBuffer);
+    checkError("After Buffer");
 }
 
 void displayOutputSetup() {
