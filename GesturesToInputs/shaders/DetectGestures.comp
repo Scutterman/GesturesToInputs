@@ -49,9 +49,16 @@ void main() {
     bool trackersOkay = t1Index <= trackerLength && (useBoth == false || t2Index <= trackerLength);
 
     TrackerData dummy = TrackerData(vec4(0,0,0,0),0,0,0,0,0);
-    TrackerData t1 = trackersOkay ? trackers[t1Index] : dummy;
-    TrackerData t2 = trackersOkay && useBoth ? trackers[t2Index] : dummy;
-    
+    TrackerData t1 = dummy;
+    if (trackersOkay) {
+        t1 = trackers[t1Index];
+    }
+
+    TrackerData t2 = dummy;
+    if (trackersOkay && useBoth) {
+        t2 = trackers[t2Index];
+    }
+
     uint actualValue =
         rule.type == 0 ? t1.orientation :
         rule.type == 1 ? t1.horizontalPosition : t1.verticalPosition;
