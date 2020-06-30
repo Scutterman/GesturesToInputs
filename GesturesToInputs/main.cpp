@@ -234,10 +234,10 @@ GLuint inputTextureHandle, thresholdTextureHandle, outputTextureHandle, rawDataT
 const GLenum inputTextureUnit = GL_TEXTURE0, thresholdTextureUnit = GL_TEXTURE1, outputTextureUnit = GL_TEXTURE2, rawDataTextureUnit = GL_TEXTURE3;
 int xMaxInstances, yMaxInstances, zMaxInstances, totalMaxInstances;
 
-GLuint thresholdShaderBuffer, trackerShaderBuffer, computeShaderBuffer;
+GLuint thresholdShaderBuffer, trackerShaderBuffer, computeShaderBuffer, gestureFoundShaderBuffer, gestureRuleShaderBuffer;
 
 std::filesystem::path basePath;
-Shader hsvShader, thresholdShader, objectSearchShader, displayShader, yuy2Shader;
+Shader hsvShader, thresholdShader, objectSearchShader, detectGesturesShader, displayShader, yuy2Shader;
 
 cv::Mat source;
 int sourceWidth, sourceHeight;
@@ -542,6 +542,38 @@ void searchForObjects(std::vector<TrackerData> trackers) {
 
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_TRACKERS, trackerShaderBuffer);
     checkError("After Buffer");
+}
+
+void detectGesturesSetup(unsigned int numberOfGestures, std::vector<GestureRuleData>* rules) {
+    detectGesturesShader.addShader(GL_COMPUTE_SHADER, (basePath / "shaders" / "DetectGestures.comp").string());
+    checkError("detect gestures shader");
+    detectGesturesShader.compile();
+    checkError("detect gestures shader compile");
+    detectGesturesShader.use();
+
+    glGenBuffers(1, &gestureFoundShaderBuffer);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, gestureFoundShaderBuffer);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, numberOfGestures * sizeof(uint), NULL, GL_STATIC_READ);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_GESTURE, gestureFoundShaderBuffer);
+
+    checkError("After gestureFound buffer");
+
+    glGenBuffers(1, &gestureRuleShaderBuffer);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, gestureRuleShaderBuffer);
+
+    uint rulesDataSize = sizeof(GestureRuleData) * rules->size();
+    auto bufferItems = (GestureRuleData*)malloc(rulesDataSize);
+    int i = 0;
+    for (auto& rule : *rules) { bufferItems[i] = rule; i++; }
+    glBufferData(GL_SHADER_STORAGE_BUFFER, rulesDataSize, bufferItems, GL_STATIC_DRAW);
+    free(bufferItems);
+
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_GESTURE_RULE, gestureRuleShaderBuffer);
+
+    checkError("After gestureRule buffer");
+
+    //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_TRACKERS, trackerShaderBuffer);
+    //checkError("After Buffer");
 }
 
 void displayOutputSetup() {
