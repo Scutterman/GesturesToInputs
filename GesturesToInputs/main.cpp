@@ -132,6 +132,17 @@ std::list<GestureInput> justCause2Gestures() {
     };
 }
 
+std::list<GestureInput> testGestures() {
+    return std::list<GestureInput>{
+        GestureInput(std::list<GestureRule>{
+            GestureRule(GESTURE_RULE_TYPE::VERTICAL_COMPARE, "Red", 2),
+        }, DIK_F, "BOOST"),
+        GestureInput(std::list<GestureRule>{
+            GestureRule(GESTURE_RULE_TYPE::VERTICAL_COMPARE, "Green", 2),
+        }, DIK_F, "BOOST")
+    };
+}
+
 GLFWwindow* window;
 
 struct ThresholdData {
@@ -155,9 +166,6 @@ struct ThresholdData {
     }
 };
 
-// This could probably be passed to the SSBO and shader as uint[] or uint* with a size of sizeof(uint) * 8 * sampleCount
-// but I would have to use the indexes instead of the variable names
-// It's possible passing uint[] instead of struct has performance advantages but I haven't tested it.
 struct ObjectSearchData {
     GLuint boundingBox[4];
     GLuint objectTrackerIndex;
@@ -194,11 +202,6 @@ struct GestureRuleData {
 };
 
 typedef cv::Vec<uint, 4> Vec4ui;
-
-class DetectedObjects {
-public:
-    std::vector<Vec4ui> boundingBoxes;
-};
 
 static const struct
 {
@@ -553,7 +556,7 @@ void detectGesturesSetup(unsigned int numberOfGestures, std::vector<GestureRuleD
 
     glGenBuffers(1, &gestureFoundShaderBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, gestureFoundShaderBuffer);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, numberOfGestures * sizeof(uint), NULL, GL_STATIC_READ);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, numberOfGestures * sizeof(unsigned int), NULL, GL_DYNAMIC_READ);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_GESTURE, gestureFoundShaderBuffer);
 
     checkError("After gestureFound buffer");
@@ -758,10 +761,10 @@ int main(int argc, char** argv)
 
         std::vector<TrackerData> trackers = { TrackerData(tracker), TrackerData(redtracker) };
 
-        auto gestures = justCause2Gestures();
-        uint gestureCount = gestures.size();
-        std::vector<GLuint> gestureData(gestureCount);
-        std::map<std::string, uint> namesToIndex = { {"Red", 0}, {"Green", 1} };
+        auto gestures = testGestures();
+        unsigned int gestureCount = gestures.size();
+        std::vector<unsigned int> gestureData(gestureCount);
+        std::map<std::string, unsigned int> namesToIndex = { {"Red", 0}, {"Green", 1} };
         auto rules = new std::vector<GestureRuleData>;
         getRulesFromGestures(gestures, &namesToIndex, rules);
 
