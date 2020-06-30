@@ -764,7 +764,7 @@ int main(int argc, char** argv)
         auto gestures = testGestures();
         unsigned int gestureCount = gestures.size();
         std::vector<unsigned int> gestureData(gestureCount);
-        std::map<std::string, unsigned int> namesToIndex = { {"Red", 0}, {"Green", 1} };
+        std::map<std::string, unsigned int> namesToIndex = { {"Green", 0}, {"Red", 1} };
         auto rules = new std::vector<GestureRuleData>;
         getRulesFromGestures(gestures, &namesToIndex, rules);
 
