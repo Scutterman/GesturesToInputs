@@ -135,10 +135,10 @@ std::list<GestureInput> justCause2Gestures() {
 std::list<GestureInput> testGestures() {
     return std::list<GestureInput>{
         GestureInput(std::list<GestureRule>{
-            GestureRule(GESTURE_RULE_TYPE::VERTICAL_COMPARE, "Red", 2),
+            GestureRule(GESTURE_RULE_TYPE::VERTICAL_COMPARE, "Green", uint(VERTICAL_POSITION::BOTTOM)),
         }, DIK_F, "BOOST"),
         GestureInput(std::list<GestureRule>{
-            GestureRule(GESTURE_RULE_TYPE::VERTICAL_COMPARE, "Green", 2),
+            GestureRule(GESTURE_RULE_TYPE::VERTICAL_COMPARE, "Red", uint(VERTICAL_POSITION::BOTTOM)),
         }, DIK_F, "BOOST")
     };
 }
