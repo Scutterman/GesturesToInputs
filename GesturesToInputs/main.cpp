@@ -815,7 +815,27 @@ int main(int argc, char** argv)
             glMemoryBarrier(GL_ALL_BARRIER_BITS);
             checkError("After detection Barrier");
 
+            detectGesturesShader.use();
+            glDispatchCompute(sampleColumns, sampleRows, trackers.size());
+            checkError("After gesture detection compute");
+            glMemoryBarrier(GL_ALL_BARRIER_BITS);
+            checkError("After gesture detection Barrier");
+
             std::cout << "Processed frame in "; perf.End();
+
+            perf.Start();
+            GLuint* ptr;
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_GESTURE);
+            ptr = (GLuint*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
+            gestureData.clear();
+
+            for (int i = 0; i < gestureCount; i++) {
+                gestureData.push_back(ptr[i]);
+            }
+
+            glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+
+            std::cout << "Gestures read in "; perf.End();
 
             perf.Start();
             displayOutput();
