@@ -132,14 +132,14 @@ std::list<GestureInput> justCause2Gestures() {
     };
 }
 
-std::list<GestureInput> testGestures() {
-    return std::list<GestureInput>{
+std::vector<GestureInput> testGestures() {
+    return std::vector<GestureInput>{
         GestureInput(std::list<GestureRule>{
             GestureRule(GESTURE_RULE_TYPE::VERTICAL_COMPARE, "Green", uint(VERTICAL_POSITION::BOTTOM)),
-        }, DIK_F, "BOOST"),
+        }, DIK_G, "GREEN"),
         GestureInput(std::list<GestureRule>{
             GestureRule(GESTURE_RULE_TYPE::VERTICAL_COMPARE, "Red", uint(VERTICAL_POSITION::BOTTOM)),
-        }, DIK_F, "BOOST")
+        }, DIK_R, "RED")
     };
 }
 
@@ -707,9 +707,9 @@ void debugYUY2Texture() {
     free(gl_texture_bytes);
 }
 
-void getRulesFromGestures(std::list<GestureInput> gestures, std::map<std::string, unsigned int>* trackerNameIndexMap, std::vector<GestureRuleData>* out) {
+void getRulesFromGestures(std::vector<GestureInput>* gestures, std::map<std::string, unsigned int>* trackerNameIndexMap, std::vector<GestureRuleData>* out) {
     unsigned int gestureIndex = 0;
-    for (auto& gesture : gestures) {
+    for (auto& gesture : *gestures) {
         for (auto& rule : gesture.getRules()) {
             GestureRuleData ruleData;
             ruleData.gestureIndex = gestureIndex;
@@ -767,7 +767,7 @@ int main(int argc, char** argv)
         std::vector<unsigned int> gestureData(gestureCount);
         std::map<std::string, unsigned int> namesToIndex = { {"Green", 0}, {"Red", 1} };
         auto rules = new std::vector<GestureRuleData>;
-        getRulesFromGestures(gestures, &namesToIndex, rules);
+        getRulesFromGestures(&gestures, &namesToIndex, rules);
 
         PerformanceTimer perf;
         bindInput();
@@ -841,7 +841,9 @@ int main(int argc, char** argv)
             std::cout << std::endl << "=========" << std::endl;
             unsigned int i = 0;
             for (auto& g : gestureData) {
-                std::cout << "Gesture " << i << ": " << g << std::endl;
+                if (g == 1) {
+                    std::cout << gestures.at(i).getDebugMessage() << std::endl;
+                }
                 i++;
             }
             std::cout << "=========" << std::endl;
