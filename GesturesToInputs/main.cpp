@@ -819,7 +819,7 @@ int main(int argc, char** argv)
             checkError("After detection Barrier");
 
             detectGesturesShader.use();
-            glDispatchCompute(sampleColumns, sampleRows, trackers.size());
+            glDispatchCompute(rules->size(), 1, 1);
             checkError("After gesture detection compute");
             glMemoryBarrier(GL_ALL_BARRIER_BITS);
             checkError("After gesture detection Barrier");
