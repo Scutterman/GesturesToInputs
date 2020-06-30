@@ -827,16 +827,23 @@ int main(int argc, char** argv)
             std::cout << "Processed frame in "; perf.End();
 
             perf.Start();
-            GLuint* ptr;
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_GESTURE);
-            ptr = (GLuint*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
-            gestureData.clear();
+            unsigned int* ptr;
+            glBindBuffer(GL_SHADER_STORAGE_BUFFER, gestureFoundShaderBuffer);
+            ptr = (unsigned int*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
 
             for (int i = 0; i < gestureCount; i++) {
-                gestureData.push_back(ptr[i]);
+                gestureData[i] = ptr[i];
             }
 
             glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+
+            std::cout << std::endl << "=========" << std::endl;
+            unsigned int i = 0;
+            for (auto& g : gestureData) {
+                std::cout << "Gesture " << i << ": " << g << std::endl;
+                i++;
+            }
+            std::cout << "=========" << std::endl;
 
             std::cout << "Gestures read in "; perf.End();
 
