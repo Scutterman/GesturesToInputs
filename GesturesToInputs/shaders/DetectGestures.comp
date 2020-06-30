@@ -73,7 +73,13 @@ void main() {
         trackersOkay &&
         t1.isVisibleInFrame == 1 && (useBoth == false || t2.isVisibleInFrame == 1) &&
         relativity == rule.operation;
-    
+
+    /*
+    - If the first gesture to finish processing is detected, atomicMin will set gestureFound[gestureIndex] from 2 to 1
+    - atomicMin for all other gestures detected before a failed detection will keep gestureFound[gestureIndex] at 1
+    - If a gesture is not detected, atomicMin will set gestureFound[gestureIndex] from either 2 or 1 to 0
+    - For all gestures after a failure, atomicMin will keep gestureFound[gestureIndex] at 0
+    */
     uint foundValue = detected ? 1 : 0;
     atomicMin(gestureFound[gestureIndex], foundValue);
 }
