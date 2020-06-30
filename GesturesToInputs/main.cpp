@@ -706,13 +706,13 @@ void debugYUY2Texture() {
     free(gl_texture_bytes);
 }
 
-void getRulesFromGestures(std::list<GestureInput> gestures, std::map<std::string, uint>* trackerNameIndexMap, std::vector<GestureRuleData>* out) {
-    uint gestureIndex = 0;
+void getRulesFromGestures(std::list<GestureInput> gestures, std::map<std::string, unsigned int>* trackerNameIndexMap, std::vector<GestureRuleData>* out) {
+    unsigned int gestureIndex = 0;
     for (auto& gesture : gestures) {
         for (auto& rule : gesture.getRules()) {
             GestureRuleData ruleData;
             ruleData.gestureIndex = gestureIndex;
-            ruleData.type = uint(rule.getType());
+            ruleData.type = unsigned int(rule.getType());
             ruleData.operation = int(rule.getOperation());
             ruleData.expectedValue = rule.getExpectedValue();
             ruleData.compareTwoTrackers = rule.isComparingTwoTrackers() ? 1 : 0;
