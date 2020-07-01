@@ -547,7 +547,7 @@ void searchForObjects(std::vector<TrackerData> trackers) {
     checkError("After Buffer");
 }
 
-void detectGesturesSetup(unsigned int numberOfGestures, std::vector<GestureRuleData>* rules) {
+unsigned int* detectGesturesSetup(unsigned int numberOfGestures, std::vector<GestureRuleData>* rules) {
     detectGesturesShader.addShader(GL_COMPUTE_SHADER, (basePath / "shaders" / "DetectGestures.comp").string());
     checkError("detect gestures shader");
     detectGesturesShader.compile();
@@ -556,7 +556,11 @@ void detectGesturesSetup(unsigned int numberOfGestures, std::vector<GestureRuleD
 
     glGenBuffers(1, &gestureFoundShaderBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, gestureFoundShaderBuffer);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, numberOfGestures * sizeof(unsigned int), NULL, GL_DYNAMIC_READ);
+    auto flags = GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT;
+    glBufferStorage(GL_SHADER_STORAGE_BUFFER, numberOfGestures * sizeof(unsigned int), NULL, flags);
+    checkError("After gestureFound buffer storage");
+    unsigned int* gestureFoundDataPointer;
+    gestureFoundDataPointer = (unsigned int*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, numberOfGestures * sizeof(unsigned int), flags);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_GESTURE, gestureFoundShaderBuffer);
 
     checkError("After gestureFound buffer");
@@ -578,6 +582,7 @@ void detectGesturesSetup(unsigned int numberOfGestures, std::vector<GestureRuleD
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, trackerShaderBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_TRACKERS, trackerShaderBuffer);
     checkError("After Buffer");
+    return gestureFoundDataPointer;
 }
 
 void displayOutputSetup() {
@@ -775,7 +780,7 @@ int main(int argc, char** argv)
         convertToHSV();
         threshold(thresholdData);
         searchForObjects(trackers);
-        detectGesturesSetup(gestureCount, rules);
+        unsigned int* gestureFoundDataPointer = detectGesturesSetup(gestureCount, rules);
         displayOutputSetup();
 
         auto length = webcam->getWidth() * webcam->getHeight() * webcam->getBytesPerPixel();
@@ -825,20 +830,9 @@ int main(int argc, char** argv)
             glMemoryBarrier(GL_ALL_BARRIER_BITS);
             checkError("After gesture detection Barrier");
 
-            std::cout << "Processed frame in "; perf.End();
+            glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+            memcpy(gestureData.data(), gestureFoundDataPointer, gestureCount * sizeof(unsigned int));
 
-            perf.Start();
-            unsigned int* ptr;
-            glBindBuffer(GL_SHADER_STORAGE_BUFFER, gestureFoundShaderBuffer);
-            ptr = (unsigned int*)glMapBuffer(GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY);
-
-            for (int i = 0; i < gestureCount; i++) {
-                gestureData[i] = ptr[i];
-            }
-
-            glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-
-            std::cout << std::endl << "=========" << std::endl;
             unsigned int i = 0;
             for (auto& g : gestureData) {
                 if (g == 1) {
@@ -846,9 +840,8 @@ int main(int argc, char** argv)
                 }
                 i++;
             }
-            std::cout << "=========" << std::endl;
 
-            std::cout << "Gestures read in "; perf.End();
+            std::cout << "Processed Frame: ";  perf.End(); std::cout << std::endl;
 
             perf.Start();
             displayOutput();
@@ -857,6 +850,9 @@ int main(int argc, char** argv)
 
             glfwPollEvents();
         }
+
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, gestureFoundShaderBuffer);
+        glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 
         webcam->Close();
         std::cout << webcam->framesCollected << " frames collected in "; timer.End();
