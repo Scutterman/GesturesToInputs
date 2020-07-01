@@ -5,7 +5,6 @@
     <ClCompile Include="ContinuousMouseMovement.cpp" />
     <ClCompile Include="GestureInput.cpp" />
     <ClCompile Include="GestureRule.cpp" />
-    <ClCompile Include="glad\glad.c" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="PerformanceTimer.cpp" />
     <ClCompile Include="TrackerValues.cpp" />
@@ -16,6 +15,9 @@
     <ClCompile Include="Webcam.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="MediaFoundationWebcam.cpp" />
+    <ClCompile Include="glad\glad.c">
+      <Filter>glad</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ColourValues.h" />
@@ -23,8 +25,6 @@
     <ClInclude Include="Gesture.h" />
     <ClInclude Include="GestureInput.h" />
     <ClInclude Include="GestureRule.h" />
-    <ClInclude Include="glad\glad.h" />
-    <ClInclude Include="glad\khrplatform.h" />
     <ClInclude Include="glfw\include\GLFW\glfw3.h" />
     <ClInclude Include="glfw\include\GLFW\glfw3native.h" />
     <ClInclude Include="main.h" />
@@ -39,6 +39,12 @@
     <ClInclude Include="targetver.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="MediaFoundationWebcam.h" />
+    <ClInclude Include="glad\glad.h">
+      <Filter>glad</Filter>
+    </ClInclude>
+    <ClInclude Include="glad\khrplatform.h">
+      <Filter>glad</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Library Include="glfw\lib-vc2019\glfw3.lib" />
@@ -80,6 +86,9 @@
     <Filter Include="shaders">
       <UniqueIdentifier>{b203a952-2539-4e4e-b482-d1e97f6d5015}</UniqueIdentifier>
       <Extensions>vert;frag</Extensions>
+    </Filter>
+    <Filter Include="glad">
+      <UniqueIdentifier>{e3ead592-58fe-4b28-97fe-81841e0d8ac4}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

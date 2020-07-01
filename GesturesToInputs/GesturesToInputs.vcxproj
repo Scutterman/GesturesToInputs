@@ -144,6 +144,15 @@
     <None Include="shaders\test.vert" />
     <None Include="shaders\ConvertToHSV.comp" />
     <None Include="shaders\Threshold.comp" />
+    <Content Include="glad\glad.h">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="glad\glad.c">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="glad\khrplatform.h">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="shaders\test.frag">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
