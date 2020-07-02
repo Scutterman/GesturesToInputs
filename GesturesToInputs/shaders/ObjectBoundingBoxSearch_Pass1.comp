@@ -92,24 +92,31 @@ void main()
 
     // Susurration - lowest values for top & left / highest values for right & bottom will propogate through the whole object
     // Only need to check certain directions because other samples will update our values for the other direction when they make their checks
+    uint furthestLeft = sampleRow * sampleSize.x;
+    uint furthestTopLeft = sampleRow > 0 ? (sampleRow - 1) * sampleSize.x : 0;
+    uint lastRow = sampleSize.y - 1;
+    uint furthestBottomLeft = sampleRow < lastRow ? (sampleRow + 1) * sampleSize.x : lastRow * sampleSize.x;
+    
     for (uint i = 0; i < numberOfPasses; i++) {
         int leftIndex = int(sampleIndex) - 1;
-        if (hasSufficientMatchingPixels && leftIndex > 0 && samples[leftIndex].objectTrackerIndex == tracker) {
+        if (hasSufficientMatchingPixels && leftIndex >= furthestLeft && samples[leftIndex].objectTrackerIndex == tracker) {
             atomicBoundingBoxUpdate(sampleIndex, leftIndex);
         }
 
         int topIndex = int(sampleIndex) - sampleSize.x;
-        if (hasSufficientMatchingPixels && topIndex > 0 && samples[topIndex].objectTrackerIndex == tracker) {
+        if (hasSufficientMatchingPixels && topIndex >= 0 && samples[topIndex].objectTrackerIndex == tracker) {
             atomicBoundingBoxUpdate(sampleIndex, topIndex);
         }
 
         int topLeftIndex = (int(sampleIndex) - sampleSize.x) - 1;
-        if (hasSufficientMatchingPixels && topLeftIndex > 0 && samples[topLeftIndex].objectTrackerIndex == tracker) {
+        if (hasSufficientMatchingPixels && topLeftIndex >= furthestTopLeft && samples[topLeftIndex].objectTrackerIndex == tracker) {
             atomicBoundingBoxUpdate(sampleIndex, topLeftIndex);
         }
 
         int bottomLeftIndex = (int(sampleIndex) + sampleSize.x) - 1;
-        if (hasSufficientMatchingPixels && bottomLeftIndex > 0 && samples[bottomLeftIndex].objectTrackerIndex == tracker) {
+        if (hasSufficientMatchingPixels && bottomLeftIndex >= furthestBottomLeft &&
+            samples[bottomLeftIndex].objectTrackerIndex == tracker
+        ) {
             atomicBoundingBoxUpdate(sampleIndex, bottomLeftIndex);
         }
 
