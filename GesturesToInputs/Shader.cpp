@@ -118,3 +118,10 @@ void Shader::setUniform3(const GLchar* name, float value[3])
     use();
     glUniform3fv(uniformLocation(name), 1, value);
 }
+
+void Shader::compute(unsigned int x, unsigned int y, unsigned int z)
+{
+    use();
+    glDispatchCompute(x, y, z);
+    glMemoryBarrier(GL_ALL_BARRIER_BITS);
+}

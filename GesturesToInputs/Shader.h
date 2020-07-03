@@ -24,8 +24,8 @@ public:
     void setUniform(const GLchar* name, int value);
     void setUniform(const GLchar* name, unsigned int value);
     void setUniform(const GLchar* name, float value);
-
     void setUniform2(const GLchar* name, unsigned int value[2]);
-
     void setUniform3(const GLchar* name, float value[3]);
+
+    void compute(unsigned int x, unsigned int y, unsigned int z);
 };

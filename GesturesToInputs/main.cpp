@@ -608,7 +608,11 @@ int main(int argc, char** argv)
         unsigned int* gestureFoundDataPointer = detectGesturesSetup(gestureCount, rules);
         displayOutputSetup();
 
-        auto length = webcam->getWidth() * webcam->getHeight() * webcam->getBytesPerPixel();
+        // TODO:: Allow more formats. If YUY2 it can be converted, if it's a format GLTexSubImage2D knows about it can be uploaded directly
+        //bindImageData(inputTextureUnit, source.ptr(), GL_BGR);
+        //glMemoryBarrier(GL_ALL_BARRIER_BITS);
+        auto gestureDataLength = gestureCount * sizeof(unsigned int);
+        auto gesture = Gesture::getInstance();
         while (!glfwWindowShouldClose(window) && !opengl_has_errored)
         {
             webcam->wait();
@@ -616,38 +620,19 @@ int main(int argc, char** argv)
             perf.Start();
             auto bytes = webcam->getData();
 
-            yuy2Shader.use();
             bindImageData(rawDataTextureUnit, bytes, GL_RG_INTEGER);
             glMemoryBarrier(GL_ALL_BARRIER_BITS);
-            glDispatchCompute(sourceWidth / 2, sourceHeight, 1);
-            glMemoryBarrier(GL_ALL_BARRIER_BITS);
-
-            hsvShader.use();
-            // TODO:: Allow more formats. If YUY2 it can be converted, if it's a format GLTexSubImage2D knows about it can be uploaded directly
-            //bindImageData(inputTextureUnit, source.ptr(), GL_BGR);
-            //glMemoryBarrier(GL_ALL_BARRIER_BITS);
-            glDispatchCompute(sourceWidth, sourceHeight, 1);
-            glMemoryBarrier(GL_ALL_BARRIER_BITS);
-
-            thresholdShader.use();
-            glDispatchCompute(sourceWidth, sourceHeight, 1);
-            glMemoryBarrier(GL_ALL_BARRIER_BITS);
-
+            yuy2Shader.compute(sourceWidth / 2, sourceHeight, 1);
+            hsvShader.compute(sourceWidth, sourceHeight, 1);
+            thresholdShader.compute(sourceWidth, sourceHeight, 1);
             //debugDisplayTexture(thresholdTextureUnit, "threshold");
+            objectSearchShader.compute(sampleColumns, sampleRows, trackers.size());
+            detectGesturesShader.compute(rules->size(), 1, 1);
 
-            objectSearchShader.use();
-            glDispatchCompute(sampleColumns, sampleRows, trackers.size());
-            glMemoryBarrier(GL_ALL_BARRIER_BITS);
-
-            detectGesturesShader.use();
-            glDispatchCompute(rules->size(), 1, 1);
-            glMemoryBarrier(GL_ALL_BARRIER_BITS);
-
-            memcpy(gestureData.data(), gestureFoundDataPointer, gestureCount * sizeof(unsigned int));
+            memcpy(gestureData.data(), gestureFoundDataPointer, gestureDataLength);
             std::cout << "Processed Frame: ";  perf.End();
 
             perf.Start();
-            auto gesture = Gesture::getInstance();
             gesture->reset();
             unsigned int i = 0;
             for (auto& g : gestureData) {
@@ -673,7 +658,6 @@ int main(int argc, char** argv)
         glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 
         webcam->Close();
-        std::cout << webcam->framesCollected << " frames collected in "; timer.End();
         webcam->Release();
 
         return end();
