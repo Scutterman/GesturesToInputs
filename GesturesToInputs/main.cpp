@@ -544,26 +544,15 @@ int main(int argc, char** argv)
         if (status != 0) { return end(); }
 
         std::vector<ThresholdData> thresholdData;
-        float low[4] = { 80, 111, 110, 255 };
-        float high[4] = { 95, 255, 255, 255 };
-        float tracker[4] = { 87, 183, 183, 255 };
-        thresholdData.push_back(ThresholdData(low, high, tracker));
-
-        float redtracker[4] = { 174, 179, 205, 255 };
-        float red1low[4] = { 167, 159, 45, 255 };
-        float red1high[4] = { 179, 240, 246, 255 };
-        float red2low[4] = { 0, 104, 151, 255 };
-        float red2high[4] = { 10, 255, 255, 255 };
-        thresholdData.push_back(ThresholdData(red1low, red1high, redtracker));
-        thresholdData.push_back(ThresholdData(red2low, red2high, redtracker));
-
-        std::vector<TrackerData> trackers = { TrackerData(tracker), TrackerData(redtracker) };
+        float greenTracker[4] = { 87, 183, 183, 255 }; float redTracker[4] = { 174, 179, 205, 255 };
+        thresholdData.push_back(ThresholdData(new float[4] { 80, 111, 110, 255 }, new float[4]{ 95, 255, 255, 255 }, greenTracker));
+        thresholdData.push_back(ThresholdData(new float[4]{ 167, 159, 45, 255 }, new float[4]{ 179, 240, 246, 255 }, redTracker));
+        thresholdData.push_back(ThresholdData(new float[4]{ 0, 104, 151, 255 }, new float[4]{ 10, 255, 255, 255 }, redTracker));
+        std::vector<TrackerData> trackers = { TrackerData(greenTracker), TrackerData(redTracker) };
 
         auto gestures = testGestures();
-        unsigned int gestureCount = gestures.size();
-        std::map<std::string, unsigned int> namesToIndex = { {"Green", 0}, {"Red", 1} };
         auto rules = new std::vector<GestureRuleData>;
-        getRulesFromGestures(&gestures, &namesToIndex, rules);
+        getRulesFromGestures(&gestures, new std::map<std::string, unsigned int>{ {"Green", 0}, {"Red", 1} }, rules);
 
         PerformanceTimer perf;
         bindInput();
@@ -571,13 +560,12 @@ int main(int argc, char** argv)
         convertToHSV();
         threshold(&thresholdData);
         searchForObjects(&trackers);
-        unsigned int* gestureFoundDataPointer = detectGesturesSetup(gestureCount, rules);
+        unsigned int* gestureFoundDataPointer = detectGesturesSetup(gestures.size(), rules);
         displayOutputSetup();
 
         // TODO:: Allow more formats. If YUY2 it can be converted, if it's a format GLTexSubImage2D knows about it can be uploaded directly
         //bindImageData(inputTextureUnit, source.ptr(), GL_BGR);
         //glMemoryBarrier(GL_ALL_BARRIER_BITS);
-        auto gestureDataLength = gestureCount * sizeof(unsigned int);
         auto gesture = Gesture::getInstance();
         while (!glfwWindowShouldClose(window) && !opengl_has_errored)
         {
@@ -585,9 +573,9 @@ int main(int argc, char** argv)
 
             perf.Start();
             auto bytes = webcam->getData();
-
             bindImageData(rawDataTextureUnit, bytes, GL_RG_INTEGER);
             glMemoryBarrier(GL_ALL_BARRIER_BITS);
+
             yuy2Shader.compute(sourceWidth / 2, sourceHeight, 1);
             hsvShader.compute(sourceWidth, sourceHeight, 1);
             thresholdShader.compute(sourceWidth, sourceHeight, 1);
@@ -599,7 +587,7 @@ int main(int argc, char** argv)
 
             perf.Start();
             gesture->reset();
-            for (unsigned int i = 0; i < gestureCount; i++) {
+            for (unsigned int i = 0; i < gestures.size(); i++) {
                 gesture->handleInput(&gestures.at(i), gestureFoundDataPointer[i] == 1);
             }
             gesture->complete();
