@@ -548,7 +548,7 @@ int main(int argc, char** argv)
         bindImageHandle(&inputTextureHandle, inputTextureUnit, INPUT_IMAGE_UNIT);
         convertYUY2ToRGB();
         convertToHSV();
-        threshold(getThresholdData(redTracker, greenTracker));
+        threshold(getThresholdData(greenTracker, redTracker));
         searchForObjects(new std::vector<TrackerData>{ TrackerData(greenTracker), TrackerData(redTracker) });
         auto gestureFoundDataPointer = detectGesturesSetup(gestures.size(), getRulesFromGestures(&gestures, new std::map<std::string, unsigned int>{ {"Green", 0}, {"Red", 1} }));
         displayOutputSetup();
