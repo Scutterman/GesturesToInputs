@@ -18,6 +18,7 @@
     <ClCompile Include="glad\glad.c">
       <Filter>glad</Filter>
     </ClCompile>
+    <ClCompile Include="GestureDetection.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ColourValues.h" />
@@ -45,6 +46,7 @@
     <ClInclude Include="glad\khrplatform.h">
       <Filter>glad</Filter>
     </ClInclude>
+    <ClInclude Include="GestureDetection.h" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="glfw\lib-vc2019\glfw3.lib" />

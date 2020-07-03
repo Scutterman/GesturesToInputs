@@ -91,6 +91,7 @@
     <ClInclude Include="ColourValues.h" />
     <ClInclude Include="ContinuousMouseMovement.h" />
     <ClInclude Include="Gesture.h" />
+    <ClInclude Include="GestureDetection.h" />
     <ClInclude Include="GestureInput.h" />
     <ClInclude Include="GestureRule.h" />
     <ClInclude Include="glad\glad.h" />
@@ -113,6 +114,7 @@
   <ItemGroup>
     <ClCompile Include="ColourValues.cpp" />
     <ClCompile Include="ContinuousMouseMovement.cpp" />
+    <ClCompile Include="GestureDetection.cpp" />
     <ClCompile Include="GestureInput.cpp" />
     <ClCompile Include="GestureRule.cpp" />
     <ClCompile Include="glad\glad.c" />
