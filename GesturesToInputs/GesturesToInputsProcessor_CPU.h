@@ -1,6 +1,7 @@
 #pragma once
 #include "GesturesToInputs.h"
 #include <opencv2\highgui.hpp>
+#include "Webcam.h"
 
 namespace GesturesToInputs {
     class GesturesToInputsProcessor_CPU : public GesturesToInputsProcessor
