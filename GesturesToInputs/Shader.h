@@ -10,6 +10,7 @@ private:
     GLuint programHandle;
     std::string getShaderContents(std::string shaderPath);
 public:
+    GLuint getHandle();
     bool addShader(int shaderType, std::string pathName);
     bool compile();
     void use();

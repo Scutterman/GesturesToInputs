@@ -14,6 +14,11 @@ std::string Shader::getShaderContents(std::string shaderPath)
     return shaderStream.str();
 }
 
+GLuint Shader::getHandle()
+{
+    return programHandle;
+}
+
 bool Shader::addShader(int shaderType, std::string shaderPath)
 {
     GLuint shaderHandle;
@@ -52,7 +57,7 @@ bool Shader::compile()
         return false;
     }
 
-    for (auto& shaderHandle : shaderHandles) { glDeleteShader(shaderHandle); }
+    for (auto& shaderHandle : shaderHandles) { glDetachShader(programHandle, shaderHandle); glDeleteShader(shaderHandle); }
     return true;
 }
 

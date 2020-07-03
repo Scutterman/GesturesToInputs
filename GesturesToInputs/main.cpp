@@ -233,6 +233,9 @@ const unsigned int totalSamples = sampleColumns * sampleRows;
 
 bool opengl_has_errored = false;
 GLuint vertex_array;
+GLuint vertex_buffer, element_buffer;
+GLint vpos_location, tex_location;
+
 GLuint inputTextureHandle, thresholdTextureHandle, outputTextureHandle, rawDataTextureHandle;
 const GLenum inputTextureUnit = GL_TEXTURE0, thresholdTextureUnit = GL_TEXTURE1, outputTextureUnit = GL_TEXTURE2, rawDataTextureUnit = GL_TEXTURE3;
 int xMaxInstances, yMaxInstances, zMaxInstances, totalMaxInstances;
@@ -251,6 +254,25 @@ void error_callback(int error, const char* description)
 }
 
 int end(std::string message = "") {
+    GLuint textures[] = { inputTextureHandle, thresholdTextureHandle, outputTextureHandle, rawDataTextureHandle };
+    glDeleteTextures(sizeof(textures) / sizeof(textures[0]), &textures[0]);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    
+    GLuint buffers[] = { thresholdShaderBuffer, trackerShaderBuffer, computeShaderBuffer, gestureFoundShaderBuffer, gestureRuleShaderBuffer, vertex_buffer, element_buffer };
+    glDeleteBuffers(sizeof(buffers) / sizeof(buffers[0]), &buffers[0]);
+    
+    glDeleteVertexArrays(1, &vertex_array);
+
+    glDeleteProgram(hsvShader.getHandle());
+    glDeleteProgram(thresholdShader.getHandle());
+    glDeleteProgram(objectSearchShader.getHandle());
+    glDeleteProgram(detectGesturesShader.getHandle());
+    glDeleteProgram(displayShader.getHandle());
+    glDeleteProgram(yuy2Shader.getHandle());
+
     glfwDestroyWindow(window);
     glfwTerminate();
     std::cout << message << std::endl;
@@ -586,9 +608,6 @@ unsigned int* detectGesturesSetup(unsigned int numberOfGestures, std::vector<Ges
 }
 
 void displayOutputSetup() {
-    GLuint vertex_buffer, element_buffer;
-    GLint vpos_location, tex_location, texture0Height_location;
-    
     glGenVertexArrays(1, &vertex_array);
     glBindVertexArray(vertex_array);
 
@@ -621,14 +640,12 @@ void displayOutputSetup() {
     checkError("get vertex location");
 
     glVertexAttribPointer(vpos_location, 2, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), (void*)0);
-    glEnableVertexAttribArray(vpos_location);
     checkError("vertex attribute");
 
     tex_location = displayShader.attributeLocation("aTexCoord");
     checkError("get texture location");
 
     glVertexAttribPointer(tex_location, 2, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), (void*)(2 * sizeof(float)));
-    glEnableVertexAttribArray(tex_location);
     checkError("texture attribute");
 
     auto outputImageTextureLocation = displayShader.uniformLocation("outputImage");
@@ -645,7 +662,11 @@ void displayOutputSetup() {
 
 void displayOutput() {
     displayShader.use();
+    glEnableVertexAttribArray(vpos_location);
+    glEnableVertexAttribArray(tex_location);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
+    glDisableVertexAttribArray(vpos_location);
+    glDisableVertexAttribArray(tex_location);
     glfwSwapBuffers(window);
 }
 
