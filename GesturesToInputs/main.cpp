@@ -403,26 +403,45 @@ void convertToHSV() {
     glBindImageTexture(OUTPUT_IMAGE_UNIT, outputTextureHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 }
 
-void threshold(std::vector<ThresholdData> items) {
-    thresholdShader.compileCompute("Threshold.comp");
-    thresholdShader.setUniform("numberOfColours", unsigned int(items.size()));
-    thresholdShader.setUniform("thresholdTexture", THRESHOLD_IMAGE_UNIT);
+template<typename T>void createStorageBuffer(GLuint* bufferHandle, std::vector<T>* items, int binding) {
+    glGenBuffers(1, bufferHandle);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, *bufferHandle);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, *bufferHandle);
 
-    glGenBuffers(1, &thresholdShaderBuffer);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, thresholdShaderBuffer);
-
-    uint thresholdDataSize = sizeof(ThresholdData) * items.size();
-    ThresholdData* bufferItems;
-    bufferItems = (ThresholdData*)malloc(thresholdDataSize);
+    uint dataSize = sizeof(T) * items->size();
+    T* bufferItems;
+    bufferItems = (T*)malloc(dataSize);
     int i = 0;
-    for (auto& item : items) { bufferItems[i] = item; i++; }
-    glBufferData(GL_SHADER_STORAGE_BUFFER, thresholdDataSize, bufferItems, GL_STATIC_DRAW);
+    for (auto& item : *items) { bufferItems[i] = item; i++; }
+    glBufferData(GL_SHADER_STORAGE_BUFFER, dataSize, bufferItems, GL_STATIC_DRAW);
     free(bufferItems);
-    
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_THRESHOLD, thresholdShaderBuffer);
+
 }
 
-void searchForObjects(std::vector<TrackerData> trackers) {
+void createEmptyStorageBuffer(GLuint* bufferHandle, unsigned int dataSize, int binding) {
+    glGenBuffers(1, bufferHandle);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, *bufferHandle);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, *bufferHandle);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, dataSize, NULL, GL_STATIC_COPY);
+}
+
+unsigned int* createEmptyPersistantStorageBuffer(GLuint* bufferHandle, unsigned int dataSize, int binding) {
+    auto flags = GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT;
+    glGenBuffers(1, bufferHandle);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, *bufferHandle);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, *bufferHandle);
+    glBufferStorage(GL_SHADER_STORAGE_BUFFER, dataSize, NULL, flags);
+    return (unsigned int*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, dataSize, flags);
+}
+
+void threshold(std::vector<ThresholdData>* items) {
+    thresholdShader.compileCompute("Threshold.comp");
+    thresholdShader.setUniform("numberOfColours", unsigned int(items->size()));
+    thresholdShader.setUniform("thresholdTexture", THRESHOLD_IMAGE_UNIT);
+    createStorageBuffer(&thresholdShaderBuffer, items, SHADER_STORAGE_THRESHOLD);
+}
+
+void searchForObjects(std::vector<TrackerData>* trackers) {
     objectSearchShader.compileCompute("ObjectBoundingBoxSearch_Pass1.comp");
 
     objectSearchShader.setUniform("thresholdTexture", THRESHOLD_IMAGE_UNIT);
@@ -433,52 +452,14 @@ void searchForObjects(std::vector<TrackerData> trackers) {
     objectSearchShader.setUniform("threshold", unsigned int(500));
     objectSearchShader.setUniform("outputImage", OUTPUT_IMAGE_UNIT);
     
-    uint objectDataSize = sizeof(ObjectSearchData) * totalSamples;
-
-    glGenBuffers(1, &computeShaderBuffer);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, computeShaderBuffer);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, objectDataSize, NULL, GL_STATIC_COPY);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_OBJECT_SEARCH, computeShaderBuffer);
-
-
-    glGenBuffers(1, &trackerShaderBuffer);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, trackerShaderBuffer);
-
-    uint trackerDataSize = sizeof(TrackerData) * trackers.size();
-    auto bufferItems = (TrackerData*)malloc(trackerDataSize);
-    int i = 0;
-    for (auto& tracker : trackers) { bufferItems[i] = tracker; i++; }
-    glBufferData(GL_SHADER_STORAGE_BUFFER, trackerDataSize, bufferItems, GL_STATIC_DRAW);
-    free(bufferItems);
-
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_TRACKERS, trackerShaderBuffer);
+    createEmptyStorageBuffer(&computeShaderBuffer, sizeof(ObjectSearchData) * totalSamples, SHADER_STORAGE_OBJECT_SEARCH);
+    createStorageBuffer(&trackerShaderBuffer, trackers, SHADER_STORAGE_TRACKERS);
 }
 
 unsigned int* detectGesturesSetup(unsigned int numberOfGestures, std::vector<GestureRuleData>* rules) {
     detectGesturesShader.compileCompute("DetectGestures.comp");
-
-    glGenBuffers(1, &gestureFoundShaderBuffer);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, gestureFoundShaderBuffer);
-    auto flags = GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT;
-    glBufferStorage(GL_SHADER_STORAGE_BUFFER, numberOfGestures * sizeof(unsigned int), NULL, flags);
-    unsigned int* gestureFoundDataPointer;
-    gestureFoundDataPointer = (unsigned int*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, numberOfGestures * sizeof(unsigned int), flags);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_GESTURE, gestureFoundShaderBuffer);
-
-    glGenBuffers(1, &gestureRuleShaderBuffer);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, gestureRuleShaderBuffer);
-
-    uint rulesDataSize = sizeof(GestureRuleData) * rules->size();
-    auto bufferItems = (GestureRuleData*)malloc(rulesDataSize);
-    int i = 0;
-    for (auto& rule : *rules) { bufferItems[i] = rule; i++; }
-    glBufferData(GL_SHADER_STORAGE_BUFFER, rulesDataSize, bufferItems, GL_STATIC_DRAW);
-    free(bufferItems);
-
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_GESTURE_RULE, gestureRuleShaderBuffer);
-
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, trackerShaderBuffer);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_TRACKERS, trackerShaderBuffer);
+    auto gestureFoundDataPointer = createEmptyPersistantStorageBuffer(&gestureFoundShaderBuffer, numberOfGestures * sizeof(unsigned int), SHADER_STORAGE_GESTURE);
+    createStorageBuffer(&gestureRuleShaderBuffer, rules, SHADER_STORAGE_GESTURE_RULE);
     return gestureFoundDataPointer;
 }
 
@@ -494,30 +475,20 @@ void displayOutputSetup() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-    bool vertexShaderSuccess, fragmentShaderSuccess, shaderCompileSuccess;
-
-    vertexShaderSuccess = displayShader.addShader(GL_VERTEX_SHADER, "test.vert");
-
-    fragmentShaderSuccess = displayShader.addShader(GL_FRAGMENT_SHADER, "test.frag");
-
-    shaderCompileSuccess = displayShader.compile();
-
+    displayShader.addShader(GL_VERTEX_SHADER, "test.vert");
+    displayShader.addShader(GL_FRAGMENT_SHADER, "test.frag");
+    displayShader.compile();
     displayShader.use();
 
     vpos_location = displayShader.attributeLocation("aPosition");
-
     glVertexAttribPointer(vpos_location, 2, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), (void*)0);
 
     tex_location = displayShader.attributeLocation("aTexCoord");
-
     glVertexAttribPointer(tex_location, 2, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), (void*)(2 * sizeof(float)));
 
     displayShader.setUniform("outputImage", OUTPUT_IMAGE_UNIT);
 
-    int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
-
-    glViewport(0, 0, width, height);
+    glViewport(0, 0, sourceWidth, sourceHeight);
 }
 
 void displayOutput() {
@@ -563,8 +534,6 @@ int main(int argc, char** argv)
 
     if (useGPU) {
         MediaFoundationWebcam* webcam = new MediaFoundationWebcam();
-        PerformanceTimer timer;
-        timer.Start();
         std::thread t1(&MediaFoundationWebcam::CreateVideoCaptureDevice, webcam);
         t1.detach();
 
@@ -572,9 +541,7 @@ int main(int argc, char** argv)
         sourceWidth = webcam->getWidth(); sourceHeight = webcam->getHeight();
 
         int status = setup();
-        if (status != 0) {
-            return status;
-        }
+        if (status != 0) { return end(); }
 
         std::vector<ThresholdData> thresholdData;
         float low[4] = { 80, 111, 110, 255 };
@@ -602,8 +569,8 @@ int main(int argc, char** argv)
         bindInput();
         convertYUY2ToRGB();
         convertToHSV();
-        threshold(thresholdData);
-        searchForObjects(trackers);
+        threshold(&thresholdData);
+        searchForObjects(&trackers);
         unsigned int* gestureFoundDataPointer = detectGesturesSetup(gestureCount, rules);
         displayOutputSetup();
 
