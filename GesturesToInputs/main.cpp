@@ -245,7 +245,6 @@ int xMaxInstances, yMaxInstances, zMaxInstances, totalMaxInstances;
 
 GLuint thresholdShaderBuffer, trackerShaderBuffer, computeShaderBuffer, gestureFoundShaderBuffer, gestureRuleShaderBuffer;
 
-std::filesystem::path basePath;
 Shader hsvShader, thresholdShader, objectSearchShader, detectGesturesShader, displayShader, yuy2Shader;
 
 cv::Mat source;
@@ -411,7 +410,7 @@ void bindInput() {
 }
 
 void convertYUY2ToRGB() {
-    yuy2Shader.addShader(GL_COMPUTE_SHADER, (basePath / "shaders" / "Convert_YUY2.comp").string());
+    yuy2Shader.addShader(GL_COMPUTE_SHADER, "Convert_YUY2.comp");
     checkError("yuy2 shader");
     yuy2Shader.compile();
     checkError("yuy2 shader compile");
@@ -434,7 +433,7 @@ void convertYUY2ToRGB() {
 }
 
 void convertToHSV() {
-    hsvShader.addShader(GL_COMPUTE_SHADER, (basePath / "shaders" / "ConvertToHSV.comp").string());
+    hsvShader.addShader(GL_COMPUTE_SHADER, "ConvertToHSV.comp");
     checkError("hsv shader");
     hsvShader.compile();
     checkError("hsv shader compile");
@@ -481,7 +480,7 @@ void convertToHSV() {
 }
 
 void threshold(std::vector<ThresholdData> items) {
-    thresholdShader.addShader(GL_COMPUTE_SHADER, (basePath / "shaders" / "Threshold.comp").string());
+    thresholdShader.addShader(GL_COMPUTE_SHADER, "Threshold.comp");
     checkError("threshold shader");
     thresholdShader.compile();
     checkError("threshold shader compile");
@@ -513,7 +512,7 @@ void threshold(std::vector<ThresholdData> items) {
 }
 
 void searchForObjects(std::vector<TrackerData> trackers) {
-    objectSearchShader.addShader(GL_COMPUTE_SHADER, (basePath / "shaders" / "ObjectBoundingBoxSearch_Pass1.comp").string());
+    objectSearchShader.addShader(GL_COMPUTE_SHADER, "ObjectBoundingBoxSearch_Pass1.comp");
     checkError("object search shader");
     objectSearchShader.compile();
     checkError("object search shader compile");
@@ -573,7 +572,7 @@ void searchForObjects(std::vector<TrackerData> trackers) {
 }
 
 unsigned int* detectGesturesSetup(unsigned int numberOfGestures, std::vector<GestureRuleData>* rules) {
-    detectGesturesShader.addShader(GL_COMPUTE_SHADER, (basePath / "shaders" / "DetectGestures.comp").string());
+    detectGesturesShader.addShader(GL_COMPUTE_SHADER, "DetectGestures.comp");
     checkError("detect gestures shader");
     detectGesturesShader.compile();
     checkError("detect gestures shader compile");
@@ -625,12 +624,11 @@ void displayOutputSetup() {
     checkError("element buffer");
 
     bool vertexShaderSuccess, fragmentShaderSuccess, shaderCompileSuccess;
-    std::filesystem::path vertexPath = basePath / "shaders" / "test.vert", fragmentPath = basePath / "shaders" / "test.frag";
 
-    vertexShaderSuccess = displayShader.addShader(GL_VERTEX_SHADER, vertexPath.string());
+    vertexShaderSuccess = displayShader.addShader(GL_VERTEX_SHADER, "test.vert");
     checkError("vertex shader");
 
-    fragmentShaderSuccess = displayShader.addShader(GL_FRAGMENT_SHADER, fragmentPath.string());
+    fragmentShaderSuccess = displayShader.addShader(GL_FRAGMENT_SHADER, "test.frag");
     checkError("fragment shader");
 
     shaderCompileSuccess = displayShader.compile();
@@ -758,7 +756,7 @@ int main(int argc, char** argv)
 {
     bool useGPU = true;
     //doErrorCheck = true;
-    basePath = std::filesystem::path(argv[0]).parent_path();
+    Shader::setRoot(std::filesystem::path(argv[0]).parent_path() / "shaders");
 
     if (useGPU) {
         MediaFoundationWebcam* webcam = new MediaFoundationWebcam();

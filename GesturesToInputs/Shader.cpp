@@ -3,11 +3,18 @@
 #include <fstream>
 #include <sstream>
 
+std::filesystem::path Shader::root;
+
+void Shader::setRoot(std::filesystem::path rootPath)
+{
+    root = rootPath;
+}
+
 std::string Shader::getShaderContents(std::string shaderPath)
 {
     std::ifstream shaderFile;
     shaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-    shaderFile.open(shaderPath);
+    shaderFile.open((root / shaderPath).string());
     std::stringstream shaderStream;
     shaderStream << shaderFile.rdbuf();
     shaderFile.close();
