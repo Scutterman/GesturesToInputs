@@ -218,7 +218,6 @@ static const struct
     {  1.0f,  1.0f, 1.0f, 1.0f },
 };
 
-bool doErrorCheck = false;
 const unsigned int indices[] = { 0, 1, 2, 3, 0, 2 };
 const int INPUT_IMAGE_UNIT = 0;
 const int THRESHOLD_IMAGE_UNIT = 1;
@@ -294,28 +293,6 @@ static void MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severi
         type, severity, message);
 }
 
-void checkError(std::string stage) {
-    if (!doErrorCheck) { return; }
-    GLenum err;
-    while ((err = glGetError()) != GL_NO_ERROR)
-    {
-        opengl_has_errored = true;
-        std::string error;
-
-        switch (err) {
-        case GL_INVALID_OPERATION:      error = "INVALID_OPERATION";      break;
-        case GL_INVALID_ENUM:           error = "INVALID_ENUM";           break;
-        case GL_INVALID_VALUE:          error = "INVALID_VALUE";          break;
-        case GL_OUT_OF_MEMORY:          error = "OUT_OF_MEMORY";          break;
-        case GL_STACK_OVERFLOW:         error = "GL_STACK_OVERFLOW";      break;
-        case GL_STACK_UNDERFLOW:        error = "GL_STACK_UNDERFLOW";     break;
-        case GL_INVALID_FRAMEBUFFER_OPERATION:  error = "INVALID_FRAMEBUFFER_OPERATION";  break;
-        default: error = "No message programmed";
-        }
-        std::cout << "error at " << stage << ": " << err << "-" << error << '\n';
-    }
-}
-
 int setup() {
     // TODO:: If no GPU or opengl version < 4.3 then fall back to cpu method.
     // TODO:: Cpu method may be optimisable since we only need rough bounding box. Moments can certainly be removed, and perhaps more optimisaitons.
@@ -356,18 +333,15 @@ int setup() {
     glfwSwapInterval(0);
 
     glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-    checkError("clear colour");
 
     int work_group_size[3];
     glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &work_group_size[0]);
     glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &work_group_size[1]);
     glGetIntegeri_v(GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, &work_group_size[2]);
-    checkError("group size");
     xMaxInstances = work_group_size[0];
     yMaxInstances = work_group_size[1];
     zMaxInstances = work_group_size[2];
     glGetIntegerv(GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS, &totalMaxInstances);
-    checkError("total size");
 
     std::cout << std::endl << "(" << xMaxInstances << ", " << yMaxInstances << ", " << zMaxInstances << ") = " << totalMaxInstances << std::endl;
 
@@ -383,16 +357,13 @@ int setup() {
 void bindImageData(GLenum textureUnit, unsigned char *image, int format) {
     glActiveTexture(textureUnit);
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, sourceWidth, sourceHeight, format, GL_UNSIGNED_BYTE, image);
-    checkError("sending data");
 }
 
 void bindImageHandle(GLuint* handle, GLenum textureUnit, int format = GL_RGBA32F) {
     glActiveTexture(textureUnit);
     glGenTextures(1, handle);
     glBindTexture(GL_TEXTURE_2D, GLuint(*handle));
-    checkError("generating textures");
     glTexStorage2D(GL_TEXTURE_2D, 1, format, sourceWidth, sourceHeight);
-    checkError("texture storage");
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -400,101 +371,69 @@ void bindImageHandle(GLuint* handle, GLenum textureUnit, int format = GL_RGBA32F
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    checkError("texture options");
 }
 
 void bindInput() {
     bindImageHandle(&inputTextureHandle, inputTextureUnit);
     glBindImageTexture(INPUT_IMAGE_UNIT, inputTextureHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-    checkError("Bind input image");
 }
 
 void convertYUY2ToRGB() {
     yuy2Shader.addShader(GL_COMPUTE_SHADER, "Convert_YUY2.comp");
-    checkError("yuy2 shader");
     yuy2Shader.compile();
-    checkError("yuy2 shader compile");
     yuy2Shader.use();
 
     auto inputTextureLocation = yuy2Shader.uniformLocation("inputImage");
-    checkError("Get Input Texture Location");
     glUniform1i(inputTextureLocation, INPUT_IMAGE_UNIT);
-    checkError("Set Input Texture Location");
 
     auto rawDataTextureLocation = yuy2Shader.uniformLocation("rawData");
-    checkError("Get Raw Data Texture Location");
 
     glUniform1i(rawDataTextureLocation, RAW_DATA_IMAGE_UNIT);
-    checkError("Set Raw Data Texture Location");
     
     bindImageHandle(&rawDataTextureHandle, rawDataTextureUnit, GL_RG8UI);
     glBindImageTexture(RAW_DATA_IMAGE_UNIT, rawDataTextureHandle, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RG8UI);
-    checkError("Bind Raw Data Image");
 }
 
 void convertToHSV() {
     hsvShader.addShader(GL_COMPUTE_SHADER, "ConvertToHSV.comp");
-    checkError("hsv shader");
     hsvShader.compile();
-    checkError("hsv shader compile");
     hsvShader.use();
 
     auto inputTextureLocation = hsvShader.uniformLocation("inputImage");
-    checkError("Get Input Texture Location");
-    
+
     glUniform1i(inputTextureLocation, INPUT_IMAGE_UNIT);
-    checkError("Set Texture Location");
 
     auto thresholdTextureLocation = hsvShader.uniformLocation("thresholdTexture");
-    checkError("Get Threshold Texture Location");
-    
     bindImageHandle(&thresholdTextureHandle, thresholdTextureUnit);
     glBindImageTexture(THRESHOLD_IMAGE_UNIT, thresholdTextureHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-    checkError("Bind Threshold Image");
     glUniform1i(thresholdTextureLocation, THRESHOLD_IMAGE_UNIT);
-    checkError("Set Texture Location");
 
     auto outputImageTextureLocation = hsvShader.uniformLocation("outputImage");
-    checkError("Get Output Image Location");
 
     bindImageHandle(&outputTextureHandle, outputTextureUnit);
     glBindImageTexture(OUTPUT_IMAGE_UNIT, outputTextureHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-    checkError("Bind output image");
     glUniform1i(outputImageTextureLocation, OUTPUT_IMAGE_UNIT);
-    checkError("Set Texture Location");
 
     auto isMirroredLocation = hsvShader.uniformLocation("inputIsMirrored");
-    checkError("Get isMirrored Location");
     glUniform1ui(isMirroredLocation, 1);
-    checkError("Set isMirrored");
-    
+
     auto rgbCorrectionsLocation = hsvShader.uniformLocation("rgbCorrections");
-    checkError("Get rgbCorrections Location");
     glUniform3fv(rgbCorrectionsLocation, 1, new float[3]{ 0.0f, 0.05f, 0.0f });
-    checkError("Set rgbCorrections");
 
     auto lightenAmountLocation = hsvShader.uniformLocation("lightenAmount");
-    checkError("Get lightenAmount Location");
     glUniform1f(lightenAmountLocation, 0.5);
-    checkError("Set lightenAmount");
 }
 
 void threshold(std::vector<ThresholdData> items) {
     thresholdShader.addShader(GL_COMPUTE_SHADER, "Threshold.comp");
-    checkError("threshold shader");
     thresholdShader.compile();
-    checkError("threshold shader compile");
     thresholdShader.use();
     
     auto numberOfColoursLocation = thresholdShader.uniformLocation("numberOfColours");
-    checkError("Get Threshold number of colours Location");
     glUniform1ui(numberOfColoursLocation, items.size());
-    checkError("Set threshold number of colours Location");
 
     auto thresholdTextureLocation = thresholdShader.uniformLocation("thresholdTexture");
-    checkError("Get Threshold Texture Location");
     glUniform1i(thresholdTextureLocation, THRESHOLD_IMAGE_UNIT);
-    checkError("Set Texture Location");
 
     glGenBuffers(1, &thresholdShaderBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, thresholdShaderBuffer);
@@ -508,20 +447,15 @@ void threshold(std::vector<ThresholdData> items) {
     free(bufferItems);
     
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_THRESHOLD, thresholdShaderBuffer);
-    checkError("After Buffer");
 }
 
 void searchForObjects(std::vector<TrackerData> trackers) {
     objectSearchShader.addShader(GL_COMPUTE_SHADER, "ObjectBoundingBoxSearch_Pass1.comp");
-    checkError("object search shader");
     objectSearchShader.compile();
-    checkError("object search shader compile");
     objectSearchShader.use();
 
     auto objectTextureLocation = objectSearchShader.uniformLocation("thresholdTexture");
-    checkError("Get Threshold Texture Location");
     glUniform1i(objectTextureLocation, THRESHOLD_IMAGE_UNIT);
-    checkError("Set Threshold Texture Location");
 
     GLint samplePixelDimensions_location, sampleSize_location, passes_location, threshold_location;
     samplePixelDimensions_location = objectSearchShader.uniformLocation("samplePixelDimensions");
@@ -544,9 +478,7 @@ void searchForObjects(std::vector<TrackerData> trackers) {
     glUniform1ui(threshold_location, thresholdArea);
 
     auto outputImageTextureLocation = objectSearchShader.uniformLocation("outputImage");
-    checkError("Get Output Image Location");
     glUniform1i(outputImageTextureLocation, OUTPUT_IMAGE_UNIT);
-    checkError("Set Texture Location");
 
     uint objectDataSize = sizeof(ObjectSearchData) * totalSamples;
 
@@ -555,7 +487,6 @@ void searchForObjects(std::vector<TrackerData> trackers) {
     glBufferData(GL_SHADER_STORAGE_BUFFER, objectDataSize, NULL, GL_STATIC_COPY);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_OBJECT_SEARCH, computeShaderBuffer);
 
-    checkError("After Buffer");
 
     glGenBuffers(1, &trackerShaderBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, trackerShaderBuffer);
@@ -568,26 +499,21 @@ void searchForObjects(std::vector<TrackerData> trackers) {
     free(bufferItems);
 
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_TRACKERS, trackerShaderBuffer);
-    checkError("After Buffer");
 }
 
 unsigned int* detectGesturesSetup(unsigned int numberOfGestures, std::vector<GestureRuleData>* rules) {
     detectGesturesShader.addShader(GL_COMPUTE_SHADER, "DetectGestures.comp");
-    checkError("detect gestures shader");
     detectGesturesShader.compile();
-    checkError("detect gestures shader compile");
     detectGesturesShader.use();
 
     glGenBuffers(1, &gestureFoundShaderBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, gestureFoundShaderBuffer);
     auto flags = GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT;
     glBufferStorage(GL_SHADER_STORAGE_BUFFER, numberOfGestures * sizeof(unsigned int), NULL, flags);
-    checkError("After gestureFound buffer storage");
     unsigned int* gestureFoundDataPointer;
     gestureFoundDataPointer = (unsigned int*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, numberOfGestures * sizeof(unsigned int), flags);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_GESTURE, gestureFoundShaderBuffer);
 
-    checkError("After gestureFound buffer");
 
     glGenBuffers(1, &gestureRuleShaderBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, gestureRuleShaderBuffer);
@@ -601,11 +527,9 @@ unsigned int* detectGesturesSetup(unsigned int numberOfGestures, std::vector<Ges
 
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_GESTURE_RULE, gestureRuleShaderBuffer);
 
-    checkError("After gestureRule buffer");
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, trackerShaderBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_TRACKERS, trackerShaderBuffer);
-    checkError("After Buffer");
     return gestureFoundDataPointer;
 }
 
@@ -616,50 +540,37 @@ void displayOutputSetup() {
     glGenBuffers(1, &vertex_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    checkError("vertex buffer");
 
     glGenBuffers(1, &element_buffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_buffer);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-    checkError("element buffer");
 
     bool vertexShaderSuccess, fragmentShaderSuccess, shaderCompileSuccess;
 
     vertexShaderSuccess = displayShader.addShader(GL_VERTEX_SHADER, "test.vert");
-    checkError("vertex shader");
 
     fragmentShaderSuccess = displayShader.addShader(GL_FRAGMENT_SHADER, "test.frag");
-    checkError("fragment shader");
 
     shaderCompileSuccess = displayShader.compile();
-    checkError("program");
 
     displayShader.use();
-    checkError("use program 1");
 
     vpos_location = displayShader.attributeLocation("aPosition");
-    checkError("get vertex location");
 
     glVertexAttribPointer(vpos_location, 2, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), (void*)0);
-    checkError("vertex attribute");
 
     tex_location = displayShader.attributeLocation("aTexCoord");
-    checkError("get texture location");
 
     glVertexAttribPointer(tex_location, 2, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), (void*)(2 * sizeof(float)));
-    checkError("texture attribute");
 
     auto outputImageTextureLocation = displayShader.uniformLocation("outputImage");
-    checkError("Get Output Image Location");
     glUniform1i(outputImageTextureLocation, OUTPUT_IMAGE_UNIT);
-    checkError("Set Output Image Location");
 
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
 
     glViewport(0, 0, width, height);
-    checkError("viewport size");
-}
+    }
 
 void displayOutput() {
     displayShader.use();
@@ -673,10 +584,8 @@ void displayOutput() {
 
 void debugDisplayTexture(GLenum textureUnit, std::string windowName) {
     glActiveTexture(textureUnit);
-    checkError(windowName + " display texture bind");
     unsigned char* gl_texture_bytes = (unsigned char*)malloc(sizeof(unsigned char) * sourceWidth * sourceHeight * 3);
     glGetTexImage(GL_TEXTURE_2D, 0, GL_BGR, GL_UNSIGNED_BYTE, gl_texture_bytes);
-    checkError(windowName + " display texture get");
     cv::imshow(windowName, cv::Mat(sourceHeight, sourceWidth, CV_8UC3, gl_texture_bytes));
     free(gl_texture_bytes);
 }
@@ -726,10 +635,8 @@ void debugYUY2Bytes(unsigned char* gl_texture_bytes, std::string windowName) {
 
 void debugYUY2Texture() {
     glActiveTexture(rawDataTextureUnit);
-    checkError("raw image display texture bind");
     unsigned char* gl_texture_bytes = (unsigned char*)malloc(sizeof(unsigned char) * sourceWidth * sourceHeight * 2);
     glGetTexImage(GL_TEXTURE_2D, 0, GL_RG_INTEGER, GL_UNSIGNED_BYTE, gl_texture_bytes);
-    checkError("raw image display texture get");
     debugYUY2Bytes(gl_texture_bytes, "raw image");
     free(gl_texture_bytes);
 }
@@ -755,7 +662,6 @@ void getRulesFromGestures(std::vector<GestureInput>* gestures, std::map<std::str
 int main(int argc, char** argv)
 {
     bool useGPU = true;
-    //doErrorCheck = true;
     Shader::setRoot(std::filesystem::path(argv[0]).parent_path() / "shaders");
 
     if (useGPU) {
@@ -816,41 +722,29 @@ int main(int argc, char** argv)
             yuy2Shader.use();
             bindImageData(rawDataTextureUnit, bytes, GL_RG_INTEGER);
             glMemoryBarrier(GL_ALL_BARRIER_BITS);
-            checkError("Bind raw image data");
             glDispatchCompute(sourceWidth / 2, sourceHeight, 1);
-            checkError("After yuy2 compute");
             glMemoryBarrier(GL_ALL_BARRIER_BITS);
-            checkError("After yuy2 Barrier");
 
             hsvShader.use();
             // TODO:: Allow more formats. If YUY2 it can be converted, if it's a format GLTexSubImage2D knows about it can be uploaded directly
             //bindImageData(inputTextureUnit, source.ptr(), GL_BGR);
             //glMemoryBarrier(GL_ALL_BARRIER_BITS);
-            //checkError("Bind source image");
             glDispatchCompute(sourceWidth, sourceHeight, 1);
-            checkError("After hsv compute");
             glMemoryBarrier(GL_ALL_BARRIER_BITS);
-            checkError("After hsv Barrier");
 
             thresholdShader.use();
             glDispatchCompute(sourceWidth, sourceHeight, 1);
-            checkError("After threshold compute");
             glMemoryBarrier(GL_ALL_BARRIER_BITS);
-            checkError("After threshold Barrier");
 
             //debugDisplayTexture(thresholdTextureUnit, "threshold");
 
             objectSearchShader.use();
             glDispatchCompute(sampleColumns, sampleRows, trackers.size());
-            checkError("After detection compute");
             glMemoryBarrier(GL_ALL_BARRIER_BITS);
-            checkError("After detection Barrier");
 
             detectGesturesShader.use();
             glDispatchCompute(rules->size(), 1, 1);
-            checkError("After gesture detection compute");
             glMemoryBarrier(GL_ALL_BARRIER_BITS);
-            checkError("After gesture detection Barrier");
 
             memcpy(gestureData.data(), gestureFoundDataPointer, gestureCount * sizeof(unsigned int));
             std::cout << "Processed Frame: ";  perf.End();
