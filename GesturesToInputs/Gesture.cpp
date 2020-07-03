@@ -11,6 +11,12 @@
 #include "Tracker.h"
 
 namespace GesturesToInputs {
+    Gesture* Gesture::getInstance()
+    {
+        static Gesture instance;
+        return &instance;
+    }
+
     Gesture::Gesture() {
         startMouseThread();
         

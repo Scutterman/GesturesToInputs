@@ -12,7 +12,10 @@
 namespace GesturesToInputs {
     class Gesture {
     public:
-        Gesture();
+        static Gesture* getInstance();
+        Gesture(Gesture const&) = delete;
+        void operator=(Gesture const&) = delete;
+
         ~Gesture();
         void reset();
         void handleInput(GestureInput* input, bool gestureDetected);
@@ -25,6 +28,7 @@ namespace GesturesToInputs {
 
         int x = 0, y = 0;
 
+        Gesture();
         void startMouseThread();
         void log(std::string textToAdd);
         void sendInput(int dikKeyCode);
