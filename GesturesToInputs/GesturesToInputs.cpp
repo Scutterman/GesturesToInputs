@@ -6,10 +6,8 @@ namespace GesturesToInputs {
     GesturesToInputsProcessor::GesturesToInputsProcessor(std::map<std::string, Tracker*> trackers, std::vector<GestureInput>* gestures)
     {
         this->trackers = trackers;
-        gesture.setGestures(gestures);
+        gestureDetection->setGestures(gestures);
     }
-    // TODO:: GesturesToInputs class should have a list of gestures passed into it
-    // Configuration will be supplied by main()
     
     // TODO:: Every tracker currently needs to calculate its own grid
     // This should probably be handled by Gestures.
@@ -25,7 +23,7 @@ namespace GesturesToInputs {
             auto frame = cam.next();
             for (auto& tracker : trackers) { tracker.second->track(&frame.source); }
 
-            gesture.calculateInstructions(trackers);
+            gestureDetection->calculateInstructions(trackers);
 
             frame.drawGrid();
             

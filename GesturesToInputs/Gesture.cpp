@@ -14,7 +14,6 @@ namespace GesturesToInputs {
     Gesture::Gesture() {
         startMouseThread();
         
-        this->gestures = gestures;
         ip.type = INPUT_KEYBOARD;
         ip.ki.wScan = 0;
         ip.ki.time = 0;
@@ -24,11 +23,6 @@ namespace GesturesToInputs {
     Gesture::~Gesture()
     {
         mouseMovement.halt();
-    }
-
-    void Gesture::setGestures(std::list<GestureInput> gestures)
-    {
-        this->gestures = gestures;
     }
 
     void Gesture::startMouseThread()
@@ -42,34 +36,6 @@ namespace GesturesToInputs {
         text.setTo(0);
         textLine = 40;
         x = 0; y = 0;
-    }
-
-    void Gesture::calculateInstructions(std::map<std::string, Tracker*> trackers) {
-        reset();
-
-        for (auto& input : gestures) {
-            bool gestureDetected = true;
-            for (auto& rule : input.getRules()) {
-                bool rulePassed = false;
-                if (rule.isComparingTwoTrackers()) {
-                    // TODO:: check trackers exist in list
-                    rulePassed = rule.compare(trackers.find(rule.trackerName)->second, trackers.find(rule.comparisonTrackerName)->second);
-                }
-                else {
-                    // TODO:: check tracker exists in list
-                    rulePassed = rule.compare(trackers.find(rule.trackerName)->second);
-                }
-                
-                if (!rulePassed) {
-                    gestureDetected = false;
-                    break;
-                }
-            }
-
-            handleInput(&input, gestureDetected);
-        }
-
-        complete();
     }
 
     void Gesture::handleInput(GestureInput* input, bool gestureDetected)

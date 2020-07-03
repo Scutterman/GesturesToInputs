@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include "GestureDetection.h"
 #include "PerformanceTimer.h"
 #include "Tracker.h"
 #include "Webcam.h"
@@ -8,7 +9,7 @@ namespace GesturesToInputs {
     class GesturesToInputsProcessor {
     private:
         Webcam cam;
-        Gesture gesture;
+        GestureDetection* gestureDetection = new GestureDetection();
         PerformanceTimer perf;
         std::map<std::string, Tracker*> trackers;
     public:
