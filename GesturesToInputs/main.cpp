@@ -594,7 +594,6 @@ int main(int argc, char** argv)
 
         auto gestures = testGestures();
         unsigned int gestureCount = gestures.size();
-        std::vector<unsigned int> gestureData(gestureCount);
         std::map<std::string, unsigned int> namesToIndex = { {"Green", 0}, {"Red", 1} };
         auto rules = new std::vector<GestureRuleData>;
         getRulesFromGestures(&gestures, &namesToIndex, rules);
@@ -629,18 +628,12 @@ int main(int argc, char** argv)
             objectSearchShader.compute(sampleColumns, sampleRows, trackers.size());
             detectGesturesShader.compute(rules->size(), 1, 1);
 
-            memcpy(gestureData.data(), gestureFoundDataPointer, gestureDataLength);
             std::cout << "Processed Frame: ";  perf.End();
 
             perf.Start();
             gesture->reset();
-            unsigned int i = 0;
-            for (auto& g : gestureData) {
-                gesture->handleInput(&gestures.at(i), g == 1);
-                if (g == 1) {
-                    std::cout << gestures.at(i).getDebugMessage() << std::endl;
-                }
-                i++;
+            for (unsigned int i = 0; i < gestureCount; i++) {
+                gesture->handleInput(&gestures.at(i), gestureFoundDataPointer[i] == 1);
             }
             gesture->complete();
 
