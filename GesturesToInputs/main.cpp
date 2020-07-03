@@ -354,15 +354,10 @@ int setup() {
     return 0;
 }
 
-void bindImageData(GLenum textureUnit, unsigned char *image, int format) {
-    glActiveTexture(textureUnit);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, sourceWidth, sourceHeight, format, GL_UNSIGNED_BYTE, image);
-}
-
-void bindImageHandle(GLuint* handle, GLenum textureUnit, int format = GL_RGBA32F) {
+void bindImageHandle(GLuint* handle, GLenum textureUnit, int binding, int format = GL_RGBA32F, int access = GL_READ_WRITE) {
     glActiveTexture(textureUnit);
     glGenTextures(1, handle);
-    glBindTexture(GL_TEXTURE_2D, GLuint(*handle));
+    glBindTexture(GL_TEXTURE_2D, *handle);
     glTexStorage2D(GL_TEXTURE_2D, 1, format, sourceWidth, sourceHeight);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -371,19 +366,14 @@ void bindImageHandle(GLuint* handle, GLenum textureUnit, int format = GL_RGBA32F
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-}
-
-void bindInput() {
-    bindImageHandle(&inputTextureHandle, inputTextureUnit);
-    glBindImageTexture(INPUT_IMAGE_UNIT, inputTextureHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+    glBindImageTexture(binding, *handle, 0, GL_FALSE, 0, access, format);
 }
 
 void convertYUY2ToRGB() {
     yuy2Shader.compileCompute("Convert_YUY2.comp", sourceWidth / 2, sourceHeight, 1);
     yuy2Shader.setUniform("inputImage", INPUT_IMAGE_UNIT);
     yuy2Shader.setUniform("rawData", RAW_DATA_IMAGE_UNIT);
-    bindImageHandle(&rawDataTextureHandle, rawDataTextureUnit, GL_RG8UI);
-    glBindImageTexture(RAW_DATA_IMAGE_UNIT, rawDataTextureHandle, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RG8UI);
+    bindImageHandle(&rawDataTextureHandle, rawDataTextureUnit, RAW_DATA_IMAGE_UNIT, GL_RG8UI, GL_READ_ONLY);
 }
 
 void convertToHSV() {
@@ -396,11 +386,8 @@ void convertToHSV() {
     hsvShader.setUniform3("rgbCorrections", new float[3]{ 0.0f, 0.05f, 0.0f });
     hsvShader.setUniform("lightenAmount", 0.5f);
 
-    bindImageHandle(&thresholdTextureHandle, thresholdTextureUnit);
-    glBindImageTexture(THRESHOLD_IMAGE_UNIT, thresholdTextureHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-
-    bindImageHandle(&outputTextureHandle, outputTextureUnit);
-    glBindImageTexture(OUTPUT_IMAGE_UNIT, outputTextureHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+    bindImageHandle(&thresholdTextureHandle, thresholdTextureUnit, THRESHOLD_IMAGE_UNIT);
+    bindImageHandle(&outputTextureHandle, outputTextureUnit, OUTPUT_IMAGE_UNIT);
 }
 
 template<typename T>void createStorageBuffer(GLuint* bufferHandle, std::vector<T>* items, int binding) {
@@ -558,7 +545,7 @@ int main(int argc, char** argv)
         auto gestures = testGestures();
 
         PerformanceTimer perf;
-        bindInput();
+        bindImageHandle(&inputTextureHandle, inputTextureUnit, INPUT_IMAGE_UNIT);
         convertYUY2ToRGB();
         convertToHSV();
         threshold(getThresholdData(redTracker, greenTracker));
@@ -567,16 +554,14 @@ int main(int argc, char** argv)
         displayOutputSetup();
 
         // TODO:: Allow more formats. If YUY2 it can be converted, if it's a format GLTexSubImage2D knows about it can be uploaded directly
-        //bindImageData(inputTextureUnit, source.ptr(), GL_BGR);
-        //glMemoryBarrier(GL_ALL_BARRIER_BITS);
-        auto gesture = Gesture::getInstance();
         while (!glfwWindowShouldClose(window) && !opengl_has_errored)
         {
             webcam->wait();
 
             perf.Start();
             auto bytes = webcam->getData();
-            bindImageData(rawDataTextureUnit, bytes, GL_RG_INTEGER);
+            glActiveTexture(rawDataTextureUnit);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, sourceWidth, sourceHeight, GL_RG_INTEGER, GL_UNSIGNED_BYTE, bytes);
             glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
             yuy2Shader.compute();
