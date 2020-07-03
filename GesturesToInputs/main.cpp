@@ -830,7 +830,10 @@ int main(int argc, char** argv)
             glMemoryBarrier(GL_ALL_BARRIER_BITS);
             checkError("After gesture detection Barrier");
 
-            glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+            auto sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+            glClientWaitSync(sync, GL_SYNC_FLUSH_COMMANDS_BIT, 30000);
+            glDeleteSync(sync);
+
             memcpy(gestureData.data(), gestureFoundDataPointer, gestureCount * sizeof(unsigned int));
 
             unsigned int i = 0;
