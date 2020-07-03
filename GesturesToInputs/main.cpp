@@ -379,7 +379,7 @@ void bindInput() {
 }
 
 void convertYUY2ToRGB() {
-    yuy2Shader.compileCompute("Convert_YUY2.comp");
+    yuy2Shader.compileCompute("Convert_YUY2.comp", sourceWidth / 2, sourceHeight, 1);
     yuy2Shader.setUniform("inputImage", INPUT_IMAGE_UNIT);
     yuy2Shader.setUniform("rawData", RAW_DATA_IMAGE_UNIT);
     bindImageHandle(&rawDataTextureHandle, rawDataTextureUnit, GL_RG8UI);
@@ -387,7 +387,7 @@ void convertYUY2ToRGB() {
 }
 
 void convertToHSV() {
-    hsvShader.compileCompute("ConvertToHSV.comp");
+    hsvShader.compileCompute("ConvertToHSV.comp", sourceWidth, sourceHeight, 1);
 
     hsvShader.setUniform("inputImage", INPUT_IMAGE_UNIT);
     hsvShader.setUniform("thresholdTexture", THRESHOLD_IMAGE_UNIT);
@@ -435,14 +435,14 @@ unsigned int* createEmptyPersistantStorageBuffer(GLuint* bufferHandle, unsigned 
 }
 
 void threshold(std::vector<ThresholdData>* items) {
-    thresholdShader.compileCompute("Threshold.comp");
+    thresholdShader.compileCompute("Threshold.comp", sourceWidth, sourceHeight, 1);
     thresholdShader.setUniform("numberOfColours", unsigned int(items->size()));
     thresholdShader.setUniform("thresholdTexture", THRESHOLD_IMAGE_UNIT);
     createStorageBuffer(&thresholdShaderBuffer, items, SHADER_STORAGE_THRESHOLD);
 }
 
 void searchForObjects(std::vector<TrackerData>* trackers) {
-    objectSearchShader.compileCompute("ObjectBoundingBoxSearch_Pass1.comp");
+    objectSearchShader.compileCompute("ObjectBoundingBoxSearch_Pass1.comp", sampleColumns, sampleRows, trackers->size());
 
     objectSearchShader.setUniform("thresholdTexture", THRESHOLD_IMAGE_UNIT);
 
@@ -457,7 +457,7 @@ void searchForObjects(std::vector<TrackerData>* trackers) {
 }
 
 unsigned int* detectGesturesSetup(unsigned int numberOfGestures, std::vector<GestureRuleData>* rules) {
-    detectGesturesShader.compileCompute("DetectGestures.comp");
+    detectGesturesShader.compileCompute("DetectGestures.comp", rules->size(), 1, 1);
     auto gestureFoundDataPointer = createEmptyPersistantStorageBuffer(&gestureFoundShaderBuffer, numberOfGestures * sizeof(unsigned int), SHADER_STORAGE_GESTURE);
     createStorageBuffer(&gestureRuleShaderBuffer, rules, SHADER_STORAGE_GESTURE_RULE);
     return gestureFoundDataPointer;
@@ -576,12 +576,12 @@ int main(int argc, char** argv)
             bindImageData(rawDataTextureUnit, bytes, GL_RG_INTEGER);
             glMemoryBarrier(GL_ALL_BARRIER_BITS);
 
-            yuy2Shader.compute(sourceWidth / 2, sourceHeight, 1);
-            hsvShader.compute(sourceWidth, sourceHeight, 1);
-            thresholdShader.compute(sourceWidth, sourceHeight, 1);
+            yuy2Shader.compute();
+            hsvShader.compute();
+            thresholdShader.compute();
             //debugDisplayTexture(thresholdTextureUnit, "threshold");
-            objectSearchShader.compute(sampleColumns, sampleRows, trackers.size());
-            detectGesturesShader.compute(rules->size(), 1, 1);
+            objectSearchShader.compute();
+            detectGesturesShader.compute();
 
             std::cout << "Processed Frame: ";  perf.End();
 

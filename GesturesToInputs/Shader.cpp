@@ -10,8 +10,9 @@ void Shader::setRoot(std::filesystem::path rootPath)
     root = rootPath;
 }
 
-void Shader::compileCompute(std::string fileName)
+void Shader::compileCompute(std::string fileName, unsigned int x, unsigned int y, unsigned int z)
 {
+    computeX = x; computeY = y; computeZ = z;
     addShader(GL_COMPUTE_SHADER, fileName);
     compile();
     use();
@@ -119,9 +120,9 @@ void Shader::setUniform3(const GLchar* name, float value[3])
     glUniform3fv(uniformLocation(name), 1, value);
 }
 
-void Shader::compute(unsigned int x, unsigned int y, unsigned int z)
+void Shader::compute()
 {
     use();
-    glDispatchCompute(x, y, z);
+    glDispatchCompute(computeX, computeY, computeZ);
     glMemoryBarrier(GL_ALL_BARRIER_BITS);
 }
