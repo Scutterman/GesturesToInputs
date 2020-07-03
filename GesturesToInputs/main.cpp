@@ -538,57 +538,6 @@ void debugDisplayTexture(GLenum textureUnit, std::string windowName) {
     free(gl_texture_bytes);
 }
 
-const double cMultiplier = 1.164383;
-const double erMultiplier = 1.596027;
-const double dgMultiplier = 0.391762;
-const double egMultiplier = 0.812968;
-const double dbMultiplier = 2.017232;
-
-int clip(int in) {
-    return in < 0 ? 0 : in > 255 ? 255 : in;
-}
-
-void debugYUY2Bytes(unsigned char* gl_texture_bytes, std::string windowName) {
-    cv::Mat cvMat = cv::Mat::zeros(cv::Size(sourceWidth, sourceHeight), CV_8UC3);
-    auto p = cvMat.data;
-    unsigned int destinationIndex = 0;
-
-    // YUY2 to RGB conversion from information at [https://docs.microsoft.com/en-us/previous-versions/aa904813(v=vs.80)]
-    for (unsigned int yCoord = 0; yCoord < sourceHeight; yCoord++) {
-        for (unsigned int xCoord = 0; xCoord < sourceWidth; xCoord += 2) {
-            unsigned int sourceIndex = (xCoord + (yCoord * sourceWidth)) * 2;
-            unsigned char y1 = gl_texture_bytes[sourceIndex], u = gl_texture_bytes[sourceIndex + 1], y2 = gl_texture_bytes[sourceIndex + 2], v = gl_texture_bytes[sourceIndex + 3];
-            int c = y1 - 16, d = u - 128, e = v - 128, f = y2 - 16;
-
-            int r1 = clip(round((c * cMultiplier) + (e * erMultiplier)));
-            int g1 = clip(round((c * cMultiplier) - (d * dgMultiplier) - (e * egMultiplier)));
-            int b1 = clip(round((c * cMultiplier) + d * dbMultiplier));
-            int r2 = clip(round((f * cMultiplier) + (e * erMultiplier)));
-            int g2 = clip(round((f * cMultiplier) - (d * dgMultiplier) - (e * egMultiplier)));
-            int b2 = clip(round((f * cMultiplier) + d * dbMultiplier));
-
-            // BGR
-            p[destinationIndex + 0] = b1;
-            p[destinationIndex + 1] = g1;
-            p[destinationIndex + 2] = r1;
-            p[destinationIndex + 3] = b2;
-            p[destinationIndex + 4] = g2;
-            p[destinationIndex + 5] = r2;
-            destinationIndex += 6;
-        }
-    }
-
-    cv::imshow(windowName, cvMat);
-}
-
-void debugYUY2Texture() {
-    glActiveTexture(rawDataTextureUnit);
-    unsigned char* gl_texture_bytes = (unsigned char*)malloc(sizeof(unsigned char) * sourceWidth * sourceHeight * 2);
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_RG_INTEGER, GL_UNSIGNED_BYTE, gl_texture_bytes);
-    debugYUY2Bytes(gl_texture_bytes, "raw image");
-    free(gl_texture_bytes);
-}
-
 void getRulesFromGestures(std::vector<GestureInput>* gestures, std::map<std::string, unsigned int>* trackerNameIndexMap, std::vector<GestureRuleData>* out) {
     unsigned int gestureIndex = 0;
     for (auto& gesture : *gestures) {
