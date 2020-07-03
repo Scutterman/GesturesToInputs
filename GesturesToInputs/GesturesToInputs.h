@@ -3,12 +3,10 @@
 #include "GestureDetection.h"
 #include "PerformanceTimer.h"
 #include "Tracker.h"
-#include "Webcam.h"
 
 namespace GesturesToInputs {
     class GesturesToInputsProcessor {
-    private:
-        Webcam cam;
+    protected:
         GestureDetection* gestureDetection = new GestureDetection();
         PerformanceTimer perf;
         std::map<std::string, Tracker*> trackers;
@@ -17,6 +15,6 @@ namespace GesturesToInputs {
         int webcamIndex;
         bool webcamMirrored = true;
         GesturesToInputsProcessor(std::map<std::string, Tracker*> trackers, std::vector<GestureInput>* gestures);
-        void run();
+        virtual void run() = 0;
     };
 }

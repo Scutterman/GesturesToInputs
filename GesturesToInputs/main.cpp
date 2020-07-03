@@ -11,7 +11,7 @@
 #include <vector>
 
 #include "Gesture.h"
-#include "GesturesToInputs.h"
+#include "GesturesToInputsProcessor_CPU.h"
 #include "MediaFoundationWebcam.h"
 #include "Shader.h"
 
@@ -907,7 +907,7 @@ int main(int argc, char** argv)
 
             auto gestures = justCause2Gestures();
 
-            auto processor = GesturesToInputsProcessor(trackers, &gestures);
+            auto processor = GesturesToInputsProcessor_CPU(trackers, &gestures);
             processor.webcamIndex = 0;
             processor.webcamMirrored = true;
             processor.run();
