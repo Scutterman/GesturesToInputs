@@ -128,13 +128,14 @@ namespace GesturesToInputs {
             cv::Mat imageWithThreshold;
             inRange(imageAsHSV, values.low.toScalar(), values.high.toScalar(), imageWithThreshold);
 
+            auto structureElement = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5));
             //morphological opening (removes small objects from the foreground)
-            erode(imageWithThreshold, imageWithThreshold, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5)));
-            dilate(imageWithThreshold, imageWithThreshold, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5)));
+            erode(imageWithThreshold, imageWithThreshold, structureElement);
+            dilate(imageWithThreshold, imageWithThreshold, structureElement);
 
             //morphological closing (removes small holes from the foreground)
-            dilate(imageWithThreshold, imageWithThreshold, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5)));
-            erode(imageWithThreshold, imageWithThreshold, cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5)));
+            dilate(imageWithThreshold, imageWithThreshold, structureElement);
+            erode(imageWithThreshold, imageWithThreshold, structureElement);
             *threshold += imageWithThreshold;
         }
 
