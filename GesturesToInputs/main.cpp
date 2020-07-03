@@ -10,6 +10,7 @@
 #include <thread>
 #include <vector>
 
+#include "Gesture.h"
 #include "GesturesToInputs.h"
 #include "MediaFoundationWebcam.h"
 #include "Shader.h"
@@ -854,16 +855,22 @@ int main(int argc, char** argv)
             checkError("After gesture detection Barrier");
 
             memcpy(gestureData.data(), gestureFoundDataPointer, gestureCount * sizeof(unsigned int));
+            std::cout << "Processed Frame: ";  perf.End();
 
+            perf.Start();
+            auto gesture = Gesture::getInstance();
+            gesture->reset();
             unsigned int i = 0;
             for (auto& g : gestureData) {
+                gesture->handleInput(&gestures.at(i), g == 1);
                 if (g == 1) {
                     std::cout << gestures.at(i).getDebugMessage() << std::endl;
                 }
                 i++;
             }
+            gesture->complete();
 
-            std::cout << "Processed Frame: ";  perf.End(); std::cout << std::endl;
+            std::cout << "Processed Gestures: ";  perf.End(); std::cout << std::endl;
 
             perf.Start();
             displayOutput();
