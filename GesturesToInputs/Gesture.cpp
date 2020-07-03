@@ -36,11 +36,16 @@ namespace GesturesToInputs {
         std::thread t1(&ContinuousMouseMovement::run, &mouseMovement);
         t1.detach();
     }
-    
-    void Gesture::calculateInstructions(std::map<std::string, Tracker*> trackers) {
+
+    void GesturesToInputs::Gesture::reset()
+    {
         text.setTo(0);
         textLine = 40;
-        int x = 0, y = 0;
+        x = 0; y = 0;
+    }
+
+    void Gesture::calculateInstructions(std::map<std::string, Tracker*> trackers) {
+        reset();
 
         for (auto& input : gestures) {
             bool gestureDetected = true;
@@ -61,56 +66,66 @@ namespace GesturesToInputs {
                 }
             }
 
-            if (gestureDetected) {
-                switch (input.getInputType()) {
-                case GESTURE_INPUT_TYPE::KEYBOARD:
-                    if (!input.active) {
-                        sendInput(input.getValue());
-                    }
-                    break;
-                case GESTURE_INPUT_TYPE::MOUSE_MOVE:
-                {
-                    int direction = input.getValue();
-                    int gestureX = direction % 2;
-                    if (gestureX != 0) { x = gestureX; }
-                    int gestureY = direction / 2;
-                    if (gestureY != 0) { y = gestureY; }
-                    break;
-                }
-                case GESTURE_INPUT_TYPE::MOUSE_BUTTON:
-                    if (!input.active) {
-                        sendMouseButton(input.getValue());
-                    }
-                    break;
-                }
-
-                input.active = true;
-                log(input.getDebugMessage());
-            }
-            else {
-                switch (input.getInputType()) {
-                case GESTURE_INPUT_TYPE::KEYBOARD:
-                    if (input.active) {
-                        cancelInput(input.getValue());
-                    }
-                    break;
-                case GESTURE_INPUT_TYPE::MOUSE_BUTTON:
-                    if (input.active) {
-                        cancelMouseButton(input.getValue());
-                    }
-                    break;
-                }
-
-                input.active = false;
-            }
+            handleInput(&input, gestureDetected);
         }
 
+        complete();
+    }
+
+    void Gesture::handleInput(GestureInput* input, bool gestureDetected)
+    {
+        if (gestureDetected) {
+            switch (input->getInputType()) {
+            case GESTURE_INPUT_TYPE::KEYBOARD:
+                if (!input->active) {
+                    sendInput(input->getValue());
+                }
+                break;
+            case GESTURE_INPUT_TYPE::MOUSE_MOVE:
+            {
+                int direction = input->getValue();
+                int gestureX = direction % 2;
+                if (gestureX != 0) { x = gestureX; }
+                int gestureY = direction / 2;
+                if (gestureY != 0) { y = gestureY; }
+                break;
+            }
+            case GESTURE_INPUT_TYPE::MOUSE_BUTTON:
+                if (!input->active) {
+                    sendMouseButton(input->getValue());
+                }
+                break;
+            }
+
+            input->active = true;
+            log(input->getDebugMessage());
+        }
+        else {
+            switch (input->getInputType()) {
+            case GESTURE_INPUT_TYPE::KEYBOARD:
+                if (input->active) {
+                    cancelInput(input->getValue());
+                }
+                break;
+            case GESTURE_INPUT_TYPE::MOUSE_BUTTON:
+                if (input->active) {
+                    cancelMouseButton(input->getValue());
+                }
+                break;
+            }
+
+            input->active = false;
+        }
+    }
+
+    void GesturesToInputs::Gesture::complete()
+    {
         mouseMovement.setX(x);
         mouseMovement.setY(y);
 
         cv::imshow("Text", text);
     }
-    
+
     void Gesture::log(std::string textToAdd) {
         cv::putText(text, textToAdd, cv::Point(10, textLine), cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(128));
         textLine += 40;

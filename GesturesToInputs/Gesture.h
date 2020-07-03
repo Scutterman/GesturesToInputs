@@ -16,12 +16,17 @@ namespace GesturesToInputs {
         ~Gesture();
         void setGestures(std::list<GestureInput> gestures);
         void calculateInstructions(std::map<std::string, Tracker*> trackers);
+        void reset();
+        void handleInput(GestureInput* input, bool gestureDetected);
+        void complete();
     private:
         ContinuousMouseMovement mouseMovement;
         std::list<GestureInput> gestures;
         cv::Mat text = cv::Mat(500, 500, CV_8UC1);
         int textLine = 40;
         INPUT ip;
+
+        int x = 0, y = 0;
 
         void startMouseThread();
         void log(std::string textToAdd);
