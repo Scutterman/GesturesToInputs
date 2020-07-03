@@ -892,8 +892,8 @@ int main(int argc, char** argv)
             auto frame = cam.next();
             sourceWidth = frame.source.cols; sourceHeight = frame.source.rows;
 
-            auto redTrackerValues = std::vector<TrackerValues> { TrackerValues(0, 57, 71, 109, 35, 60), TrackerValues(167, 179, 0, 255, 0, 255) };
-            auto greenTrackerValues = std::vector<TrackerValues> { TrackerValues(80, 95, 75, 213, 39, 171) };
+            auto redTrackerValues = std::vector<TrackerValues> { TrackerValues(0, 10, 145, 215, 90, 240), TrackerValues(165, 179, 0, 255, 0, 255) };
+            auto greenTrackerValues = std::vector<TrackerValues> { TrackerValues(80, 95, 111, 255, 90, 255) };
         
             auto redTracker = new Tracker("Red", redTrackerValues, cv::Scalar(0, 0, 255));
             auto greenTracker = new Tracker("Green", greenTrackerValues, cv::Scalar(0, 255, 0));
