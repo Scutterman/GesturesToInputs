@@ -2,6 +2,9 @@
 #include <string>
 #include "Tracker.h"
 
+// TODO:: Split data and logic.
+// OpenGL can use the data but doesn't need the logic or the reliance on the Tracker class
+
 namespace GesturesToInputs {
     enum class GESTURE_RULE_TYPE { ORIENTATION, HORIZONTAL_COMPARE, VERTICAL_COMPARE };
     enum class GESTURE_RULE_COMPARISON_OPERATION { LESS_THAN = -1, EQUAL = 0, MORE_THAN = 1 };

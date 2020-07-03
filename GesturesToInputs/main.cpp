@@ -891,10 +891,6 @@ int main(int argc, char** argv)
     }
     else {
         try {
-            Webcam cam;
-            auto frame = cam.next();
-            sourceWidth = frame.source.cols; sourceHeight = frame.source.rows;
-
             auto redTrackerValues = std::vector<TrackerValues> { TrackerValues(0, 10, 145, 215, 90, 240), TrackerValues(165, 179, 0, 255, 0, 255) };
             auto greenTrackerValues = std::vector<TrackerValues> { TrackerValues(80, 95, 111, 255, 90, 255) };
         

@@ -5,7 +5,6 @@
 
 #include <opencv2/core/types.hpp>
 
-#include "Tracker.h"
 #include "GestureInput.h"
 #include "ContinuousMouseMovement.h"
 

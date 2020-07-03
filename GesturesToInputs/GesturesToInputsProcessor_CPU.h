@@ -8,11 +8,12 @@ namespace GesturesToInputs {
     {
     private:
         Webcam cam;
+        std::map<std::string, Tracker*> trackers;
     public:
         void run();
         GesturesToInputsProcessor_CPU(
             std::map<std::string, Tracker*> trackers,
             std::vector<GestureInput>* gestures
-        ) : GesturesToInputsProcessor{ trackers, gestures } {}
+        ) : GesturesToInputsProcessor{ gestures }, trackers{ trackers } {}
     };
 }
