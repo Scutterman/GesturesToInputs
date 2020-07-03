@@ -12,13 +12,13 @@
       <Filter>CPU</Filter>
     </ClCompile>
     <ClCompile Include="TrackerValues.cpp">
-      <Filter>Trackers</Filter>
+      <Filter>CPU\Trackers</Filter>
     </ClCompile>
     <ClCompile Include="Tracker.cpp">
-      <Filter>Trackers</Filter>
+      <Filter>CPU\Trackers</Filter>
     </ClCompile>
     <ClCompile Include="ColourValues.cpp">
-      <Filter>Trackers</Filter>
+      <Filter>CPU\Trackers</Filter>
     </ClCompile>
     <ClCompile Include="Shader.cpp">
       <Filter>OpenGL</Filter>
@@ -69,13 +69,13 @@
       <Filter>CPU</Filter>
     </ClInclude>
     <ClInclude Include="TrackerValues.h">
-      <Filter>Trackers</Filter>
+      <Filter>CPU\Trackers</Filter>
     </ClInclude>
     <ClInclude Include="Tracker.h">
-      <Filter>Trackers</Filter>
+      <Filter>CPU\Trackers</Filter>
     </ClInclude>
     <ClInclude Include="ColourValues.h">
-      <Filter>Trackers</Filter>
+      <Filter>CPU\Trackers</Filter>
     </ClInclude>
     <ClInclude Include="Shader.h">
       <Filter>OpenGL</Filter>
@@ -131,25 +131,25 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\ObjectBoundingBoxSearch_Pass1.comp">
-      <Filter>shaders</Filter>
+      <Filter>OpenGL\shaders</Filter>
     </None>
     <None Include="shaders\test.frag">
-      <Filter>shaders</Filter>
+      <Filter>OpenGL\shaders</Filter>
     </None>
     <None Include="shaders\test.vert">
-      <Filter>shaders</Filter>
+      <Filter>OpenGL\shaders</Filter>
     </None>
     <None Include="shaders\Threshold.comp">
-      <Filter>shaders</Filter>
+      <Filter>OpenGL\shaders</Filter>
     </None>
     <None Include="shaders\ConvertToHSV.comp">
-      <Filter>shaders</Filter>
+      <Filter>OpenGL\shaders</Filter>
     </None>
     <None Include="shaders\Convert_YUY2.comp">
-      <Filter>shaders</Filter>
+      <Filter>OpenGL\shaders</Filter>
     </None>
     <None Include="shaders\DetectGestures.comp">
-      <Filter>shaders</Filter>
+      <Filter>OpenGL\shaders</Filter>
     </None>
     <None Include="glfw\lib-vc2019\glfw3.dll">
       <Filter>OpenGL\glfw</Filter>
@@ -159,10 +159,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="shaders">
-      <UniqueIdentifier>{b203a952-2539-4e4e-b482-d1e97f6d5015}</UniqueIdentifier>
-      <Extensions>vert;frag</Extensions>
-    </Filter>
     <Filter Include="CPU">
       <UniqueIdentifier>{5629b6ce-1a55-4a9f-b999-a81c329a95a2}</UniqueIdentifier>
     </Filter>
@@ -178,11 +174,15 @@
     <Filter Include="Gestures">
       <UniqueIdentifier>{be687972-3d8e-4b9f-b767-e33fafd23be8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Trackers">
-      <UniqueIdentifier>{5d5e018e-8af0-4e07-a589-c1e1617b35d7}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Util">
       <UniqueIdentifier>{902831ab-6b7e-496d-8cda-8310ddcff1c3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CPU\Trackers">
+      <UniqueIdentifier>{5d5e018e-8af0-4e07-a589-c1e1617b35d7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="OpenGL\shaders">
+      <UniqueIdentifier>{b203a952-2539-4e4e-b482-d1e97f6d5015}</UniqueIdentifier>
+      <Extensions>vert;frag</Extensions>
     </Filter>
   </ItemGroup>
 </Project>
