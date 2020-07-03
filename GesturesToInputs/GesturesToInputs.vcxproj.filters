@@ -47,7 +47,7 @@
     <ClCompile Include="PerformanceTimer.cpp">
       <Filter>Util</Filter>
     </ClCompile>
-    <ClCompile Include="GesturesToInputs.cpp">
+    <ClCompile Include="GesturesToInputsProcessor.cpp">
       <Filter>Gestures</Filter>
     </ClCompile>
   </ItemGroup>
@@ -110,7 +110,7 @@
     <ClInclude Include="PerformanceTimer.h">
       <Filter>Util</Filter>
     </ClInclude>
-    <ClInclude Include="GesturesToInputs.h">
+    <ClInclude Include="GesturesToInputsProcessor.h">
       <Filter>Gestures</Filter>
     </ClInclude>
   </ItemGroup>

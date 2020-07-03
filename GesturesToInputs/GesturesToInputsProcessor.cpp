@@ -1,4 +1,4 @@
-#include "GesturesToInputs.h"
+#include "GesturesToInputsProcessor.h"
 
 namespace GesturesToInputs {
     GesturesToInputsProcessor::GesturesToInputsProcessor(std::map<std::string, Tracker*> trackers, std::vector<GestureInput>* gestures)

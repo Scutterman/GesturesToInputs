@@ -1,5 +1,5 @@
 #pragma once
-#include "GesturesToInputs.h"
+#include "GesturesToInputsProcessor.h"
 #include <opencv2\highgui.hpp>
 #include "Webcam.h"
 

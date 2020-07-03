@@ -107,7 +107,7 @@
     <ClInclude Include="TrackerValues.h" />
     <ClInclude Include="Webcam.h" />
     <ClInclude Include="WebcamFrame.h" />
-    <ClInclude Include="GesturesToInputs.h" />
+    <ClInclude Include="GesturesToInputsProcessor.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
@@ -127,7 +127,7 @@
     <ClCompile Include="TrackerValues.cpp" />
     <ClCompile Include="WebcamFrame.cpp" />
     <ClCompile Include="Gesture.cpp" />
-    <ClCompile Include="GesturesToInputs.cpp" />
+    <ClCompile Include="GesturesToInputsProcessor.cpp" />
     <ClCompile Include="Tracker.cpp" />
     <ClCompile Include="Webcam.cpp" />
   </ItemGroup>
