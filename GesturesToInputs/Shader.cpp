@@ -10,6 +10,13 @@ void Shader::setRoot(std::filesystem::path rootPath)
     root = rootPath;
 }
 
+void Shader::compileCompute(std::string fileName)
+{
+    addShader(GL_COMPUTE_SHADER, fileName);
+    compile();
+    use();
+}
+
 std::string Shader::getShaderContents(std::string shaderPath)
 {
     std::ifstream shaderFile;
@@ -80,4 +87,34 @@ int Shader::attributeLocation(const GLchar* name)
 int Shader::uniformLocation(const GLchar* name)
 {
     return glGetUniformLocation(programHandle, name);
+}
+
+void Shader::setUniform(const GLchar* name, int value)
+{
+    use();
+    glUniform1i(uniformLocation(name), value);
+}
+
+void Shader::setUniform(const GLchar* name, unsigned int value)
+{
+    use();
+    glUniform1ui(uniformLocation(name), value);
+}
+
+void Shader::setUniform(const GLchar* name, float value)
+{
+    use();
+    glUniform1f(uniformLocation(name), value);
+}
+
+void Shader::setUniform2(const GLchar* name, unsigned int value[2])
+{
+    use();
+    glUniform2uiv(uniformLocation(name), 1, value);
+}
+
+void Shader::setUniform3(const GLchar* name, float value[3])
+{
+    use();
+    glUniform3fv(uniformLocation(name), 1, value);
 }

@@ -247,7 +247,7 @@ GLuint thresholdShaderBuffer, trackerShaderBuffer, computeShaderBuffer, gestureF
 Shader hsvShader, thresholdShader, objectSearchShader, detectGesturesShader, displayShader, yuy2Shader;
 
 cv::Mat source;
-int sourceWidth, sourceHeight;
+unsigned int sourceWidth, sourceHeight;
 
 void error_callback(int error, const char* description)
 {
@@ -379,61 +379,34 @@ void bindInput() {
 }
 
 void convertYUY2ToRGB() {
-    yuy2Shader.addShader(GL_COMPUTE_SHADER, "Convert_YUY2.comp");
-    yuy2Shader.compile();
-    yuy2Shader.use();
-
-    auto inputTextureLocation = yuy2Shader.uniformLocation("inputImage");
-    glUniform1i(inputTextureLocation, INPUT_IMAGE_UNIT);
-
-    auto rawDataTextureLocation = yuy2Shader.uniformLocation("rawData");
-
-    glUniform1i(rawDataTextureLocation, RAW_DATA_IMAGE_UNIT);
-    
+    yuy2Shader.compileCompute("Convert_YUY2.comp");
+    yuy2Shader.setUniform("inputImage", INPUT_IMAGE_UNIT);
+    yuy2Shader.setUniform("rawData", RAW_DATA_IMAGE_UNIT);
     bindImageHandle(&rawDataTextureHandle, rawDataTextureUnit, GL_RG8UI);
     glBindImageTexture(RAW_DATA_IMAGE_UNIT, rawDataTextureHandle, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RG8UI);
 }
 
 void convertToHSV() {
-    hsvShader.addShader(GL_COMPUTE_SHADER, "ConvertToHSV.comp");
-    hsvShader.compile();
-    hsvShader.use();
+    hsvShader.compileCompute("ConvertToHSV.comp");
 
-    auto inputTextureLocation = hsvShader.uniformLocation("inputImage");
+    hsvShader.setUniform("inputImage", INPUT_IMAGE_UNIT);
+    hsvShader.setUniform("thresholdTexture", THRESHOLD_IMAGE_UNIT);
+    hsvShader.setUniform("outputImage", OUTPUT_IMAGE_UNIT);
+    hsvShader.setUniform("inputIsMirrored", unsigned int(1));
+    hsvShader.setUniform3("rgbCorrections", new float[3]{ 0.0f, 0.05f, 0.0f });
+    hsvShader.setUniform("lightenAmount", 0.5f);
 
-    glUniform1i(inputTextureLocation, INPUT_IMAGE_UNIT);
-
-    auto thresholdTextureLocation = hsvShader.uniformLocation("thresholdTexture");
     bindImageHandle(&thresholdTextureHandle, thresholdTextureUnit);
     glBindImageTexture(THRESHOLD_IMAGE_UNIT, thresholdTextureHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-    glUniform1i(thresholdTextureLocation, THRESHOLD_IMAGE_UNIT);
-
-    auto outputImageTextureLocation = hsvShader.uniformLocation("outputImage");
 
     bindImageHandle(&outputTextureHandle, outputTextureUnit);
     glBindImageTexture(OUTPUT_IMAGE_UNIT, outputTextureHandle, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
-    glUniform1i(outputImageTextureLocation, OUTPUT_IMAGE_UNIT);
-
-    auto isMirroredLocation = hsvShader.uniformLocation("inputIsMirrored");
-    glUniform1ui(isMirroredLocation, 1);
-
-    auto rgbCorrectionsLocation = hsvShader.uniformLocation("rgbCorrections");
-    glUniform3fv(rgbCorrectionsLocation, 1, new float[3]{ 0.0f, 0.05f, 0.0f });
-
-    auto lightenAmountLocation = hsvShader.uniformLocation("lightenAmount");
-    glUniform1f(lightenAmountLocation, 0.5);
 }
 
 void threshold(std::vector<ThresholdData> items) {
-    thresholdShader.addShader(GL_COMPUTE_SHADER, "Threshold.comp");
-    thresholdShader.compile();
-    thresholdShader.use();
-    
-    auto numberOfColoursLocation = thresholdShader.uniformLocation("numberOfColours");
-    glUniform1ui(numberOfColoursLocation, items.size());
-
-    auto thresholdTextureLocation = thresholdShader.uniformLocation("thresholdTexture");
-    glUniform1i(thresholdTextureLocation, THRESHOLD_IMAGE_UNIT);
+    thresholdShader.compileCompute("Threshold.comp");
+    thresholdShader.setUniform("numberOfColours", unsigned int(items.size()));
+    thresholdShader.setUniform("thresholdTexture", THRESHOLD_IMAGE_UNIT);
 
     glGenBuffers(1, &thresholdShaderBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, thresholdShaderBuffer);
@@ -450,36 +423,16 @@ void threshold(std::vector<ThresholdData> items) {
 }
 
 void searchForObjects(std::vector<TrackerData> trackers) {
-    objectSearchShader.addShader(GL_COMPUTE_SHADER, "ObjectBoundingBoxSearch_Pass1.comp");
-    objectSearchShader.compile();
-    objectSearchShader.use();
+    objectSearchShader.compileCompute("ObjectBoundingBoxSearch_Pass1.comp");
 
-    auto objectTextureLocation = objectSearchShader.uniformLocation("thresholdTexture");
-    glUniform1i(objectTextureLocation, THRESHOLD_IMAGE_UNIT);
+    objectSearchShader.setUniform("thresholdTexture", THRESHOLD_IMAGE_UNIT);
 
-    GLint samplePixelDimensions_location, sampleSize_location, passes_location, threshold_location;
-    samplePixelDimensions_location = objectSearchShader.uniformLocation("samplePixelDimensions");
-    sampleSize_location = objectSearchShader.uniformLocation("sampleSize");
-    passes_location = objectSearchShader.uniformLocation("numberOfPasses");
-    threshold_location = objectSearchShader.uniformLocation("threshold");
-
-    int samplePixelDimensions[] = { sourceWidth / sampleColumns, sourceHeight / sampleRows };
-    glUniform2iv(samplePixelDimensions_location, 1, samplePixelDimensions);
-
-    int sampleSize[2];
-    sampleSize[0] = sampleColumns;
-    sampleSize[1] = sampleRows;
-    glUniform2iv(sampleSize_location, 1, sampleSize);
-
-    unsigned int numberOfPasses = 100;
-    glUniform1ui(passes_location, numberOfPasses);
-
-    unsigned int thresholdArea = 500;
-    glUniform1ui(threshold_location, thresholdArea);
-
-    auto outputImageTextureLocation = objectSearchShader.uniformLocation("outputImage");
-    glUniform1i(outputImageTextureLocation, OUTPUT_IMAGE_UNIT);
-
+    objectSearchShader.setUniform2("samplePixelDimensions", new unsigned int[2] { sourceWidth / sampleColumns, sourceHeight / sampleRows });
+    objectSearchShader.setUniform2("sampleSize", new unsigned int [2] { sampleColumns, sampleRows });
+    objectSearchShader.setUniform("numberOfPasses", unsigned int(100));
+    objectSearchShader.setUniform("threshold", unsigned int(500));
+    objectSearchShader.setUniform("outputImage", OUTPUT_IMAGE_UNIT);
+    
     uint objectDataSize = sizeof(ObjectSearchData) * totalSamples;
 
     glGenBuffers(1, &computeShaderBuffer);
@@ -502,9 +455,7 @@ void searchForObjects(std::vector<TrackerData> trackers) {
 }
 
 unsigned int* detectGesturesSetup(unsigned int numberOfGestures, std::vector<GestureRuleData>* rules) {
-    detectGesturesShader.addShader(GL_COMPUTE_SHADER, "DetectGestures.comp");
-    detectGesturesShader.compile();
-    detectGesturesShader.use();
+    detectGesturesShader.compileCompute("DetectGestures.comp");
 
     glGenBuffers(1, &gestureFoundShaderBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, gestureFoundShaderBuffer);
@@ -513,7 +464,6 @@ unsigned int* detectGesturesSetup(unsigned int numberOfGestures, std::vector<Ges
     unsigned int* gestureFoundDataPointer;
     gestureFoundDataPointer = (unsigned int*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, numberOfGestures * sizeof(unsigned int), flags);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_GESTURE, gestureFoundShaderBuffer);
-
 
     glGenBuffers(1, &gestureRuleShaderBuffer);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, gestureRuleShaderBuffer);
@@ -526,7 +476,6 @@ unsigned int* detectGesturesSetup(unsigned int numberOfGestures, std::vector<Ges
     free(bufferItems);
 
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_GESTURE_RULE, gestureRuleShaderBuffer);
-
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, trackerShaderBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, SHADER_STORAGE_TRACKERS, trackerShaderBuffer);
@@ -563,14 +512,13 @@ void displayOutputSetup() {
 
     glVertexAttribPointer(tex_location, 2, GL_FLOAT, GL_FALSE, sizeof(vertices[0]), (void*)(2 * sizeof(float)));
 
-    auto outputImageTextureLocation = displayShader.uniformLocation("outputImage");
-    glUniform1i(outputImageTextureLocation, OUTPUT_IMAGE_UNIT);
+    displayShader.setUniform("outputImage", OUTPUT_IMAGE_UNIT);
 
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
 
     glViewport(0, 0, width, height);
-    }
+}
 
 void displayOutput() {
     displayShader.use();

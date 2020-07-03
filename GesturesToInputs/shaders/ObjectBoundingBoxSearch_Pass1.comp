@@ -27,8 +27,8 @@ layout(local_size_x=1, local_size_y=1, local_size_z=1) in;
 
 uniform layout(binding=1, rgba32f) image2D thresholdTexture;
 uniform layout(binding=2, rgba32f) image2D outputImage;
-uniform ivec2 samplePixelDimensions; // width and height of each sample in pixels - larger sample size is faster but less accurate
-uniform ivec2 sampleSize; // number of horizontal and vertical samples in the image
+uniform uvec2 samplePixelDimensions; // width and height of each sample in pixels - larger sample size is faster but less accurate
+uniform uvec2 sampleSize; // number of horizontal and vertical samples in the image
 uniform uint numberOfPasses; // Higher number of passes = higher chance at successfully working out the bounding box but higher processing time. May be possible to best-guess on CPU based on number of sample rows and columns
 uniform uint threshold; // If a bounding box contains fewer than this many pixels, the object is discounted. Higher = less work for the next stage but may discount valid markers.
 
@@ -103,17 +103,17 @@ void main()
             atomicBoundingBoxUpdate(sampleIndex, leftIndex);
         }
 
-        int topIndex = int(sampleIndex) - sampleSize.x;
+        int topIndex = int(sampleIndex) - int(sampleSize.x);
         if (hasSufficientMatchingPixels && topIndex >= 0 && samples[topIndex].objectTrackerIndex == tracker) {
             atomicBoundingBoxUpdate(sampleIndex, topIndex);
         }
 
-        int topLeftIndex = (int(sampleIndex) - sampleSize.x) - 1;
+        int topLeftIndex = (int(sampleIndex) - int(sampleSize.x)) - 1;
         if (hasSufficientMatchingPixels && topLeftIndex >= furthestTopLeft && samples[topLeftIndex].objectTrackerIndex == tracker) {
             atomicBoundingBoxUpdate(sampleIndex, topLeftIndex);
         }
 
-        int bottomLeftIndex = (int(sampleIndex) + sampleSize.x) - 1;
+        int bottomLeftIndex = (int(sampleIndex) + int(sampleSize.x)) - 1;
         if (hasSufficientMatchingPixels && bottomLeftIndex >= furthestBottomLeft &&
             samples[bottomLeftIndex].objectTrackerIndex == tracker
         ) {
