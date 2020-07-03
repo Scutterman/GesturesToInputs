@@ -1,5 +1,5 @@
 #pragma once
-#include "Gesture.h"
+#include <vector>
 #include "PerformanceTimer.h"
 #include "Tracker.h"
 #include "Webcam.h"
@@ -15,7 +15,7 @@ namespace GesturesToInputs {
         const int ERROR_NO_WEBCAM = 200;
         int webcamIndex;
         bool webcamMirrored = true;
-        GesturesToInputsProcessor(std::map<std::string, Tracker*> trackers, std::list<GestureInput> gestures);
+        GesturesToInputsProcessor(std::map<std::string, Tracker*> trackers, std::vector<GestureInput>* gestures);
         void run();
     };
 }

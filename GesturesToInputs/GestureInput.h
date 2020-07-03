@@ -1,5 +1,5 @@
 #pragma once
-#include <list>
+#include <vector>
 #include "GestureRule.h"
 
 namespace GesturesToInputs {
@@ -9,15 +9,15 @@ namespace GesturesToInputs {
     class GestureInput
     {
     private:
-        std::list<GestureRule> rules;
+        std::vector<GestureRule> rules;
         int value;
         GESTURE_INPUT_TYPE inputType;
         std::string debugMessage;
     public:
-        std::list<GestureRule> getRules();
+        std::vector<GestureRule> getRules();
         int getValue();
         bool active = false;
-        GestureInput(std::list<GestureRule> rules, int keyScanCode, std::string debugMessageIfPressed = "", GESTURE_INPUT_TYPE inputType = GESTURE_INPUT_TYPE::KEYBOARD);
+        GestureInput(std::vector<GestureRule> rules, int keyScanCode, std::string debugMessageIfPressed = "", GESTURE_INPUT_TYPE inputType = GESTURE_INPUT_TYPE::KEYBOARD);
         std::string getDebugMessage();
         GESTURE_INPUT_TYPE getInputType();
     };

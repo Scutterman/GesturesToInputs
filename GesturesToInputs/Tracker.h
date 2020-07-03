@@ -1,5 +1,5 @@
 #pragma once
-#include <list>
+#include <vector>
 #include <opencv2/core/mat.hpp>
 #include "TrackerValues.h"
 
@@ -14,7 +14,7 @@ namespace GesturesToInputs {
         const int maxSaturation = 255;
         const int maxValue = 255;
 
-        std::list<TrackerValues> trackedColours;
+        std::vector<TrackerValues> trackedColours;
         int lastX = -1, lastY = -1;
         MARKER_ORIENTATION orientation;
         VERTICAL_POSITION lastVerticalPosition;
@@ -39,7 +39,7 @@ namespace GesturesToInputs {
     public:
         void isolateColours(cv::Mat* frame, cv::Mat* threshold);
         cv::Mat lines;
-        Tracker(std::string trackerName, std::list<TrackerValues> trackedColours,  cv::Scalar lineColour, bool drawTrackingLine = false);
+        Tracker(std::string trackerName, std::vector<TrackerValues> trackedColours,  cv::Scalar lineColour, bool drawTrackingLine = false);
 
         void track(cv::Mat* frame);
         MARKER_ORIENTATION getOrientation();

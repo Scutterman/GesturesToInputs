@@ -5,7 +5,7 @@
 #include <opencv2/imgproc.hpp>
 
 namespace GesturesToInputs {
-    Tracker::Tracker(std::string trackerName, std::list<TrackerValues> trackedColours, cv::Scalar lineColour, bool drawTrackingLine) {
+    Tracker::Tracker(std::string trackerName, std::vector<TrackerValues> trackedColours, cv::Scalar lineColour, bool drawTrackingLine) {
         this->lineColour = lineColour;
         this->drawTrackingLine = drawTrackingLine;
         name = trackerName;

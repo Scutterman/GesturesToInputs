@@ -3,7 +3,7 @@
 #include <opencv2/highgui.hpp>
 
 namespace GesturesToInputs {
-    GesturesToInputsProcessor::GesturesToInputsProcessor(std::map<std::string, Tracker*> trackers, std::list<GestureInput> gestures)
+    GesturesToInputsProcessor::GesturesToInputsProcessor(std::map<std::string, Tracker*> trackers, std::vector<GestureInput>* gestures)
     {
         this->trackers = trackers;
         gesture.setGestures(gestures);

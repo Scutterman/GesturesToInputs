@@ -1,12 +1,12 @@
 #pragma once
-#include <list>
+#include <vector>
 #include "glad/glad.h"
 #include <string>
 
 class Shader
 {
 private:
-    std::list<GLuint> shaderHandles;
+    std::vector<GLuint> shaderHandles;
     GLuint programHandle;
     std::string getShaderContents(std::string shaderPath);
 public:
