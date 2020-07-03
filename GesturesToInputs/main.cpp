@@ -509,7 +509,8 @@ void debugDisplayTexture(GLenum textureUnit, std::string windowName) {
     free(gl_texture_bytes);
 }
 
-void getRulesFromGestures(std::vector<GestureInput>* gestures, std::map<std::string, unsigned int>* trackerNameIndexMap, std::vector<GestureRuleData>* out) {
+std::vector<GestureRuleData>* getRulesFromGestures(std::vector<GestureInput>* gestures, std::map<std::string, unsigned int>* trackerNameIndexMap) {
+    auto rules = new std::vector<GestureRuleData>;
     unsigned int gestureIndex = 0;
     for (auto& gesture : *gestures) {
         for (auto& rule : gesture.getRules()) {
@@ -521,10 +522,19 @@ void getRulesFromGestures(std::vector<GestureInput>* gestures, std::map<std::str
             ruleData.compareTwoTrackers = rule.isComparingTwoTrackers() ? 1 : 0;
             ruleData.trackerIndex = trackerNameIndexMap->at(rule.trackerName);
             ruleData.comparisonTrackerIndex = rule.isComparingTwoTrackers() ? trackerNameIndexMap->at(rule.comparisonTrackerName) : 0;
-            out->push_back(ruleData);
+            rules->push_back(ruleData);
         }
         gestureIndex++;
     }
+    return rules;
+}
+
+std::vector<ThresholdData>* getThresholdData(float greenTracker[4], float redTracker[4]) {
+    auto thresholdData = new std::vector<ThresholdData>;
+    thresholdData->push_back(ThresholdData(new float[4]{ 80, 111, 110, 255 }, new float[4]{ 95, 255, 255, 255 }, greenTracker));
+    thresholdData->push_back(ThresholdData(new float[4]{ 167, 159, 45, 255 }, new float[4]{ 179, 240, 246, 255 }, redTracker));
+    thresholdData->push_back(ThresholdData(new float[4]{ 0, 104, 151, 255 }, new float[4]{ 10, 255, 255, 255 }, redTracker));
+    return thresholdData;
 }
 
 int main(int argc, char** argv)
@@ -543,24 +553,17 @@ int main(int argc, char** argv)
         int status = setup();
         if (status != 0) { return end(); }
 
-        std::vector<ThresholdData> thresholdData;
         float greenTracker[4] = { 87, 183, 183, 255 }; float redTracker[4] = { 174, 179, 205, 255 };
-        thresholdData.push_back(ThresholdData(new float[4] { 80, 111, 110, 255 }, new float[4]{ 95, 255, 255, 255 }, greenTracker));
-        thresholdData.push_back(ThresholdData(new float[4]{ 167, 159, 45, 255 }, new float[4]{ 179, 240, 246, 255 }, redTracker));
-        thresholdData.push_back(ThresholdData(new float[4]{ 0, 104, 151, 255 }, new float[4]{ 10, 255, 255, 255 }, redTracker));
-        std::vector<TrackerData> trackers = { TrackerData(greenTracker), TrackerData(redTracker) };
-
+        auto gesture = Gesture::getInstance();
         auto gestures = testGestures();
-        auto rules = new std::vector<GestureRuleData>;
-        getRulesFromGestures(&gestures, new std::map<std::string, unsigned int>{ {"Green", 0}, {"Red", 1} }, rules);
 
         PerformanceTimer perf;
         bindInput();
         convertYUY2ToRGB();
         convertToHSV();
-        threshold(&thresholdData);
-        searchForObjects(&trackers);
-        unsigned int* gestureFoundDataPointer = detectGesturesSetup(gestures.size(), rules);
+        threshold(getThresholdData(redTracker, greenTracker));
+        searchForObjects(new std::vector<TrackerData>{ TrackerData(greenTracker), TrackerData(redTracker) });
+        auto gestureFoundDataPointer = detectGesturesSetup(gestures.size(), getRulesFromGestures(&gestures, new std::map<std::string, unsigned int>{ {"Green", 0}, {"Red", 1} }));
         displayOutputSetup();
 
         // TODO:: Allow more formats. If YUY2 it can be converted, if it's a format GLTexSubImage2D knows about it can be uploaded directly
