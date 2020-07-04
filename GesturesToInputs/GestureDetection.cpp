@@ -7,6 +7,11 @@ namespace GesturesToInputs {
         this->gestures = gestures;
     }
 
+    std::vector<GestureInput>* GestureDetection::getGestures()
+    {
+        return gestures;
+    }
+
     void GestureDetection::calculateInstructions(std::map<std::string, Tracker*> trackers) {
         auto gesture = Gesture::getInstance();
         gesture->reset();

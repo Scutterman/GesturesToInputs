@@ -94,6 +94,7 @@
     <ClInclude Include="GestureDetection.h" />
     <ClInclude Include="GestureInput.h" />
     <ClInclude Include="GestureRule.h" />
+    <ClInclude Include="GesturesToInputsPorcessor_OpenGL.h" />
     <ClInclude Include="GesturesToInputsProcessor_CPU.h" />
     <ClInclude Include="glad\glad.h" />
     <ClInclude Include="glad\khrplatform.h" />
@@ -103,6 +104,7 @@
     <ClInclude Include="MediaFoundationWebcam.h" />
     <ClInclude Include="PerformanceTimer.h" />
     <ClInclude Include="Shader.h" />
+    <ClInclude Include="structures.h" />
     <ClInclude Include="Tracker.h" />
     <ClInclude Include="TrackerValues.h" />
     <ClInclude Include="Webcam.h" />
@@ -118,6 +120,7 @@
     <ClCompile Include="GestureDetection.cpp" />
     <ClCompile Include="GestureInput.cpp" />
     <ClCompile Include="GestureRule.cpp" />
+    <ClCompile Include="GesturesToInputsPorcessor_OpenGL.cpp" />
     <ClCompile Include="GesturesToInputsProcessor_CPU.cpp" />
     <ClCompile Include="glad\glad.c" />
     <ClCompile Include="main.cpp" />

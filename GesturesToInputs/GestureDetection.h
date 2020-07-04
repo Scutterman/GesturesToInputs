@@ -12,6 +12,7 @@ namespace GesturesToInputs {
         std::vector<GestureInput>* gestures;
     public:
         void setGestures(std::vector<GestureInput>* gestures);
+        std::vector<GestureInput>* getGestures();
         void calculateInstructions(std::map<std::string, Tracker*> trackers);
     };
 }
