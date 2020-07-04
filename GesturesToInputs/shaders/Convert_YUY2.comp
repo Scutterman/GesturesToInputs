@@ -1,0 +1,42 @@
+#version 430 core
+
+layout(local_size_x=1, local_size_y=1, local_size_z=1) in;
+
+uniform layout(binding=5,rg8ui) uimage2D rawData;
+uniform layout(binding=0,rgba32f) image2D inputImage;
+
+const double cMultiplier = 1.164383;
+const double erMultiplier = 1.596027;
+const double dgMultiplier = 0.391762;
+const double egMultiplier = 0.812968;
+const double dbMultiplier = 2.017232;
+
+float normalizeColour(double num) {
+    int num2 = int(round(num));
+    uint num3 = uint(num < 0 ? 0 : num > 255 ? 255: num);
+    return float(num / 255);
+}
+
+vec4 normalizeAll(double r, double g, double b) {
+    return vec4(normalizeColour(r), normalizeColour(g), normalizeColour(b), 1);
+}
+
+// YUY2 to RGB conversion from information at [https://docs.microsoft.com/en-us/previous-versions/aa904813(v=vs.80)]
+void main()
+{
+    uint x1 = gl_WorkGroupID.x * 2;
+    uint x2 = x1 + 1;
+    uint y = gl_WorkGroupID.y;
+
+    uvec4 Y1U = imageLoad(rawData, ivec2(x1, y));
+    uvec4 Y2V = imageLoad(rawData, ivec2(x2, y));
+    int c = int(Y1U.r) - 16, d = int(Y1U.g) - 128, e = int(Y2V.g) - 128, f = int(Y2V.r) - 16;
+    double r1 = (c * cMultiplier)                        + (e * erMultiplier);
+    double g1 = (c * cMultiplier)  - (d * dgMultiplier)  - (e * egMultiplier);
+    double b1 = (c * cMultiplier)  + d * dbMultiplier                        ;
+    double r2 = (f * cMultiplier)                        + (e * erMultiplier);
+    double g2 = (f * cMultiplier)  - (d * dgMultiplier)  - (e * egMultiplier);
+    double b2 = (f * cMultiplier)  + d * dbMultiplier                        ;
+    imageStore(inputImage, ivec2(x1, y), normalizeAll(r1, g1, b1));
+    imageStore(inputImage, ivec2(x2, y), normalizeAll(r2, g2, b2));
+}

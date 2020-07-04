@@ -1,0 +1,85 @@
+#version 430 core
+
+layout(local_size_x=1, local_size_y=1, local_size_z=1) in;
+
+struct TrackerData {
+    vec4 colour;
+    uint area;
+    uint horizontalPosition;
+    uint verticalPosition;
+    uint orientation;
+    uint isVisibleInFrame;
+};
+
+struct GestureRuleData {
+    uint gestureIndex;
+    uint type;
+    int operation;
+    uint expectedValue;
+    uint compareTwoTrackers;
+    uint trackerIndex;
+    uint comparisonTrackerIndex;
+    uint padding;
+};
+
+layout(std430, binding=6) buffer trackerData {
+    TrackerData trackers[];
+};
+
+layout(std430, binding=7) buffer gestureFoundData {
+    uint gestureFound[];     // at each index a value of 0 = no match, 1 = match, 2 = awaiting value
+};
+
+layout(std430, binding=8) buffer gestureRuleData {
+    GestureRuleData rules[];
+};
+
+void main() {
+    GestureRuleData rule = rules[gl_WorkGroupID.x];
+    uint gestureIndex = rule.gestureIndex;
+    gestureFound[gestureIndex] = 2;
+    
+    memoryBarrier();
+    
+    uint trackerLength = trackers.length();
+    uint t1Index = rule.trackerIndex;
+    uint t2Index = rule.comparisonTrackerIndex;
+    
+    bool useBoth = rule.compareTwoTrackers == 1;
+    bool trackersOkay = t1Index <= trackerLength && (useBoth == false || t2Index <= trackerLength);
+
+    TrackerData dummy = TrackerData(vec4(0,0,0,0),0,0,0,0,0);
+    TrackerData t1 = dummy;
+    if (trackersOkay) {
+        t1 = trackers[t1Index];
+    }
+
+    TrackerData t2 = dummy;
+    if (trackersOkay && useBoth) {
+        t2 = trackers[t2Index];
+    }
+
+    uint actualValue =
+        rule.type == 0 ? t1.orientation :
+        rule.type == 1 ? t1.horizontalPosition : t1.verticalPosition;
+
+    uint expectedValue = useBoth == false ? rule.expectedValue :
+        rule.type == 0 ? t2.orientation :
+        rule.type == 1 ? t2.horizontalPosition : t2.verticalPosition;
+
+    int relativity = actualValue == expectedValue ? 0 : actualValue < expectedValue ? -1 : 1;
+
+    bool detected =
+        trackersOkay &&
+        t1.isVisibleInFrame == 1 && (useBoth == false || t2.isVisibleInFrame == 1) &&
+        relativity == rule.operation;
+
+    /*
+    - If the first gesture to finish processing is detected, atomicMin will set gestureFound[gestureIndex] from 2 to 1
+    - atomicMin for all other gestures detected before a failed detection will keep gestureFound[gestureIndex] at 1
+    - If a gesture is not detected, atomicMin will set gestureFound[gestureIndex] from either 2 or 1 to 0
+    - For all gestures after a failure, atomicMin will keep gestureFound[gestureIndex] at 0
+    */
+    uint foundValue = detected ? 1 : 0;
+    atomicMin(gestureFound[gestureIndex], foundValue);
+}

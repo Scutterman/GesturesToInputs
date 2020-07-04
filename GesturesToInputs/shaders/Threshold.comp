@@ -1,0 +1,105 @@
+#version 430 core
+
+layout(local_size_x=1, local_size_y=1, local_size_z=1) in;
+
+struct ThresholdData {
+    vec4 lowColour;
+    vec4 highColour;
+    vec4 trackerColour;
+};
+
+layout(std430, binding=3) buffer data {
+    ThresholdData thresholds[];
+};
+
+uniform layout(binding=1,rgba32f) image2D thresholdTexture;
+uniform uint numberOfColours;
+
+void dilate(ivec2 coords, vec4 trackerColour, uvec2 imageDimensions) {
+    vec4 pixelColour = imageLoad(thresholdTexture, coords);
+    vec4 empty = vec4(0,0,0,0);
+
+    uint trackerColourCount = 0;
+    uint ownColourCount = 0;
+    uint emptyColourCount = 0;
+    
+    for (int y = -1; y <= 1; y++) {
+        for (int x = -1; x <= 1; x++) {
+            ivec2 targetCoords = ivec2(coords.x + x, coords.y + y);
+            bool targetPixelCanBeSeen = (x != 0 || y != 0) && targetCoords.x >=0 && targetCoords.x < imageDimensions.x && targetCoords.y >= 0 && targetCoords.y < imageDimensions.y;
+
+            vec4 targetPixel = targetPixelCanBeSeen ? imageLoad(thresholdTexture, targetCoords) : empty;
+            trackerColourCount = targetPixelCanBeSeen && all(equal(targetPixel, trackerColour)) ? trackerColourCount + 1 : trackerColourCount;
+            ownColourCount = targetPixelCanBeSeen && all(equal(targetPixel, pixelColour)) ? ownColourCount + 1 : ownColourCount;
+            emptyColourCount = targetPixelCanBeSeen && all(equal(targetPixel, empty)) ? emptyColourCount + 1 : emptyColourCount;
+        }
+    }
+    
+    pixelColour = trackerColourCount >= ownColourCount && trackerColourCount >= emptyColourCount
+        ? trackerColour
+        : ownColourCount >= trackerColourCount && ownColourCount >= emptyColourCount
+            ? pixelColour
+            : empty;
+    
+    memoryBarrier();    // Ensure all pixels have completed the operation, else they will pick up this new value instead of the actual value this operation
+    imageStore(thresholdTexture, coords, pixelColour);
+    memoryBarrier();    // Ensure colour has saved
+}
+
+void erode(ivec2 coords, vec4 trackerColour, uvec2 imageDimensions) {
+    vec4 pixelColour = imageLoad(thresholdTexture, coords);
+    vec4 empty = vec4(0,0,0,0);
+
+    uint emptyColourCount = 0;
+    
+    for (int y = -1; y <= 1; y++) {
+        for (int x = -1; x <= 1; x++) {
+            ivec2 targetCoords = ivec2(coords.x + x, coords.y + y);
+            bool targetPixelCanBeSeen = targetCoords.x >=0 && targetCoords.x < imageDimensions.x && targetCoords.y >= 0 && targetCoords.y < imageDimensions.y;
+
+            vec4 targetPixel = targetPixelCanBeSeen ? imageLoad(thresholdTexture, targetCoords) : empty;
+            emptyColourCount = targetPixelCanBeSeen && all(equal(targetPixel, empty)) ? emptyColourCount + 1 : emptyColourCount;
+        }
+    }
+    
+    pixelColour = emptyColourCount >= 4 ? empty : pixelColour;
+    
+    memoryBarrier();    // Ensure all pixels have completed the operation, else they will pick up this new value instead of the actual value this operation
+    imageStore(thresholdTexture, coords, pixelColour);
+    memoryBarrier();    // Ensure colour has saved
+}
+
+void main() {
+    ivec2 coords = ivec2(gl_WorkGroupID.xy);
+    vec4 targetColour = vec4(0,0,0,0);
+    vec4 sourcePixel = imageLoad(thresholdTexture, coords);
+    for (uint index = 0; index < numberOfColours; index++) {
+        vec4 lowColour = thresholds[index].lowColour;
+        vec4 highColour = thresholds[index].highColour;
+        if (
+            sourcePixel.x >= lowColour.x / 179 && sourcePixel.x <= highColour.x  / 179 &&
+            sourcePixel.y >= lowColour.y / 255 && sourcePixel.y <= highColour.y / 255 &&
+            sourcePixel.z >= lowColour.z / 255 && sourcePixel.z <= highColour.z / 255
+        ) {
+            vec4 colour = thresholds[index].trackerColour;
+            targetColour = vec4(colour.x / 179, colour.y / 255, colour.z / 255, 1);
+            break;
+        }
+    }
+    
+    imageStore(thresholdTexture, coords, targetColour);
+
+    memoryBarrier();
+
+    uvec2 imageDimensions = imageSize(thresholdTexture);
+    for (uint index = 0; index < numberOfColours; index++) {
+        vec4 trackerColour = thresholds[index].trackerColour;
+        // morphological opening
+        erode(coords, trackerColour, imageDimensions);
+        dilate(coords, trackerColour, imageDimensions);
+
+        // morphological closing
+        dilate(coords, trackerColour, imageDimensions);
+        erode(coords, trackerColour, imageDimensions);
+    }
+}

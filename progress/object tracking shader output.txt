@@ -1,0 +1,128 @@
+0 - is part of object? 1
+0,47 to 1,48 (1 pixels)
+1 - is part of object? 1
+1,47 to 2,48 (1 pixels)
+2 - is part of object? 1
+2,47 to 3,48 (1 pixels)
+3 - is part of object? 1
+3,47 to 4,48 (1 pixels)
+4 - is part of object? 1
+4,47 to 5,48 (1 pixels)
+5 - is part of object? 1
+5,47 to 6,48 (1 pixels)
+6 - is part of object? 1
+6,47 to 7,48 (1 pixels)
+7 - is part of object? 1
+7,47 to 8,48 (1 pixels)
+8 - is part of object? 1
+8,47 to 9,48 (1 pixels)
+9 - is part of object? 1
+9,47 to 10,48 (1 pixels)
+10 - is part of object? 1
+10,46 to 11,47 (1 pixels)
+11 - is part of object? 1
+11,47 to 12,48 (1 pixels)
+12 - is part of object? 1
+12,47 to 13,48 (1 pixels)
+13 - is part of object? 1
+13,47 to 14,48 (1 pixels)
+14 - is part of object? 1
+14,47 to 15,48 (1 pixels)
+15 - is part of object? 1
+15,47 to 16,48 (1 pixels)
+16 - is part of object? 1
+16,47 to 17,48 (1 pixels)
+17 - is part of object? 1
+17,47 to 18,48 (1 pixels)
+18 - is part of object? 1
+18,47 to 19,48 (1 pixels)
+19 - is part of object? 1
+19,47 to 20,48 (1 pixels)
+20 - is part of object? 1
+20,47 to 21,48 (1 pixels)
+21 - is part of object? 1
+21,47 to 22,48 (1 pixels)
+22 - is part of object? 1
+22,47 to 23,48 (1 pixels)
+23 - is part of object? 1
+23,47 to 24,48 (1 pixels)
+24 - is part of object? 1
+24,47 to 25,48 (1 pixels)
+25 - is part of object? 1
+25,47 to 26,48 (1 pixels)
+26 - is part of object? 1
+26,47 to 27,48 (1 pixels)
+27 - is part of object? 1
+27,47 to 28,48 (1 pixels)
+28 - is part of object? 1
+28,47 to 29,48 (1 pixels)
+29 - is part of object? 1
+29,47 to 30,48 (1 pixels)
+30 - is part of object? 1
+30,47 to 31,48 (1 pixels)
+31 - is part of object? 1
+31,47 to 32,48 (1 pixels)
+32 - is part of object? 1
+32,47 to 33,48 (1 pixels)
+33 - is part of object? 1
+33,47 to 34,48 (1 pixels)
+34 - is part of object? 1
+34,47 to 35,48 (1 pixels)
+35 - is part of object? 1
+35,47 to 36,48 (1 pixels)
+36 - is part of object? 1
+36,47 to 37,48 (1 pixels)
+37 - is part of object? 1
+37,47 to 38,48 (1 pixels)
+38 - is part of object? 1
+38,47 to 39,48 (1 pixels)
+39 - is part of object? 1
+39,47 to 40,48 (1 pixels)
+40 - is part of object? 1
+40,47 to 41,48 (1 pixels)
+41 - is part of object? 1
+41,47 to 42,48 (1 pixels)
+42 - is part of object? 1
+42,47 to 43,48 (1 pixels)
+43 - is part of object? 1
+43,47 to 44,48 (1 pixels)
+44 - is part of object? 1
+44,47 to 45,48 (1 pixels)
+45 - is part of object? 1
+45,47 to 46,48 (1 pixels)
+46 - is part of object? 1
+46,47 to 47,48 (1 pixels)
+47 - is part of object? 1
+47,47 to 48,48 (1 pixels)
+48 - is part of object? 1
+48,47 to 49,48 (1 pixels)
+49 - is part of object? 1
+49,47 to 50,48 (1 pixels)
+50 - is part of object? 1
+50,46 to 51,47 (1 pixels)
+51 - is part of object? 1
+51,46 to 52,47 (1 pixels)
+52 - is part of object? 1
+52,47 to 53,48 (1 pixels)
+53 - is part of object? 1
+53,47 to 54,48 (1 pixels)
+54 - is part of object? 1
+54,46 to 55,47 (1 pixels)
+55 - is part of object? 1
+55,47 to 56,48 (1 pixels)
+56 - is part of object? 1
+56,46 to 57,47 (1 pixels)
+57 - is part of object? 1
+57,46 to 58,47 (1 pixels)
+58 - is part of object? 1
+58,46 to 59,47 (1 pixels)
+59 - is part of object? 1
+59,46 to 60,47 (1 pixels)
+60 - is part of object? 1
+60,46 to 61,47 (1 pixels)
+61 - is part of object? 1
+61,47 to 62,48 (1 pixels)
+62 - is part of object? 1
+62,46 to 63,47 (1 pixels)
+63 - is part of object? 1
+63,46 to 64,47 (1 pixels)

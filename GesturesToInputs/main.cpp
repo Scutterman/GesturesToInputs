@@ -1,41 +1,52 @@
 #include "main.h"
 
+#include <dinput.h>
+#include <filesystem>
 #include <iostream>
+#include <thread>
+#include <vector>
 
-#include "GesturesToInputs.h"
+#include "structures.h"
+#include "Gesture.h"
+#include "GesturesToInputsProcessor_CPU.h"
+#include "GesturesToInputsPorcessor_OpenGL.h"
+#include "MediaFoundationWebcam.h"
+#include "Shader.h"
+
+#include <opencv2/highgui.hpp>
 
 using namespace GesturesToInputs;
 
-std::list<GestureInput> dragonGameGestures() {
-    auto boostRules = std::list<GestureRule>{
-        GestureRule(GESTURE_RULE_TYPE::HORIZONTAL_COMPARE, "Red", (int)HORIZONTAL_POSITION::CENTRE),
-        GestureRule(GESTURE_RULE_TYPE::HORIZONTAL_COMPARE, "Green", (int)HORIZONTAL_POSITION::CENTRE)
+std::vector<GestureInput> dragonGameGestures() {
+    auto boostRules = std::vector<GestureRule>{
+        GestureRule(GESTURE_RULE_TYPE::HORIZONTAL_COMPARE, "Red", (unsigned int)HORIZONTAL_POSITION::CENTRE),
+        GestureRule(GESTURE_RULE_TYPE::HORIZONTAL_COMPARE, "Green", (unsigned int)HORIZONTAL_POSITION::CENTRE)
     };
 
-    auto flySlowlyRules = std::list<GestureRule>{
-        GestureRule(GESTURE_RULE_TYPE::HORIZONTAL_COMPARE, "Red", (int)HORIZONTAL_POSITION::FAR_LEFT),
-        GestureRule(GESTURE_RULE_TYPE::HORIZONTAL_COMPARE, "Green", (int)HORIZONTAL_POSITION::FAR_RIGHT)
+    auto flySlowlyRules = std::vector<GestureRule>{
+        GestureRule(GESTURE_RULE_TYPE::HORIZONTAL_COMPARE, "Red", (unsigned int)HORIZONTAL_POSITION::FAR_LEFT),
+        GestureRule(GESTURE_RULE_TYPE::HORIZONTAL_COMPARE, "Green", (unsigned int)HORIZONTAL_POSITION::FAR_RIGHT)
     };
 
-    auto upRules = std::list<GestureRule>{
-        GestureRule(GESTURE_RULE_TYPE::VERTICAL_COMPARE, "Red", (int)VERTICAL_POSITION::TOP),
-        GestureRule(GESTURE_RULE_TYPE::VERTICAL_COMPARE, "Green", (int)VERTICAL_POSITION::TOP)
+    auto upRules = std::vector<GestureRule>{
+        GestureRule(GESTURE_RULE_TYPE::VERTICAL_COMPARE, "Red", (unsigned int)VERTICAL_POSITION::TOP),
+        GestureRule(GESTURE_RULE_TYPE::VERTICAL_COMPARE, "Green", (unsigned int)VERTICAL_POSITION::TOP)
     };
 
-    auto tiltLeftRules = std::list<GestureRule>{
+    auto tiltLeftRules = std::vector<GestureRule>{
         GestureRule(GESTURE_RULE_TYPE::VERTICAL_COMPARE, "Red", GESTURE_RULE_COMPARISON_OPERATION::LESS_THAN, "Green")
     };
 
-    auto downRules = std::list<GestureRule>{
-        GestureRule(GESTURE_RULE_TYPE::VERTICAL_COMPARE, "Red", (int)VERTICAL_POSITION::BOTTOM),
-        GestureRule(GESTURE_RULE_TYPE::VERTICAL_COMPARE, "Green", (int)VERTICAL_POSITION::BOTTOM)
+    auto downRules = std::vector<GestureRule>{
+        GestureRule(GESTURE_RULE_TYPE::VERTICAL_COMPARE, "Red", (unsigned int)VERTICAL_POSITION::BOTTOM),
+        GestureRule(GESTURE_RULE_TYPE::VERTICAL_COMPARE, "Green", (unsigned int)VERTICAL_POSITION::BOTTOM)
     };
 
-    auto tiltRightRules = std::list<GestureRule>{
+    auto tiltRightRules = std::vector<GestureRule>{
         GestureRule(GESTURE_RULE_TYPE::VERTICAL_COMPARE, "Red", GESTURE_RULE_COMPARISON_OPERATION::MORE_THAN, "Green")
     };
 
-    return std::list<GestureInput>{
+    return std::vector<GestureInput>{
         GestureInput(boostRules, DIK_F, "BOOST"),
         GestureInput(flySlowlyRules, DIK_SPACE, "SLOW DOWN"),
         GestureInput(upRules, DIK_W, "FLY UP"),
@@ -45,68 +56,68 @@ std::list<GestureInput> dragonGameGestures() {
     };
 }
 
-std::list<GestureInput> justCause2Gestures() {
-    auto grappleRules = std::list<GestureRule>{
-        GestureRule(GESTURE_RULE_TYPE::ORIENTATION, "Green", (int)MARKER_ORIENTATION::LANDSCAPE),
-        GestureRule(GESTURE_RULE_TYPE::HORIZONTAL_COMPARE, "Green", (int)HORIZONTAL_POSITION::CENTRE)
+std::vector<GestureInput> justCause2Gestures() {
+    auto grappleRules = std::vector<GestureRule>{
+        GestureRule(GESTURE_RULE_TYPE::ORIENTATION, "Green", (unsigned int)MARKER_ORIENTATION::LANDSCAPE),
+        GestureRule(GESTURE_RULE_TYPE::HORIZONTAL_COMPARE, "Green", (unsigned int)HORIZONTAL_POSITION::CENTRE)
     };
 
-    auto jumpRules = std::list<GestureRule>{
-        GestureRule(GESTURE_RULE_TYPE::ORIENTATION, "Red", (int)MARKER_ORIENTATION::LANDSCAPE),
-        GestureRule(GESTURE_RULE_TYPE::HORIZONTAL_COMPARE, "Red", (int)HORIZONTAL_POSITION::CENTRE)
+    auto jumpRules = std::vector<GestureRule>{
+        GestureRule(GESTURE_RULE_TYPE::ORIENTATION, "Red", (unsigned int)MARKER_ORIENTATION::LANDSCAPE),
+        GestureRule(GESTURE_RULE_TYPE::HORIZONTAL_COMPARE, "Red", (unsigned int)HORIZONTAL_POSITION::CENTRE)
     };
 
-    auto primaryWeaponRules = std::list<GestureRule>{
-        GestureRule(GESTURE_RULE_TYPE::ORIENTATION, "Red", (int)MARKER_ORIENTATION::LANDSCAPE),
-        GestureRule(GESTURE_RULE_TYPE::HORIZONTAL_COMPARE, "Red", (int)HORIZONTAL_POSITION::FAR_LEFT)
+    auto primaryWeaponRules = std::vector<GestureRule>{
+        GestureRule(GESTURE_RULE_TYPE::ORIENTATION, "Red", (unsigned int)MARKER_ORIENTATION::LANDSCAPE),
+        GestureRule(GESTURE_RULE_TYPE::HORIZONTAL_COMPARE, "Red", (unsigned int)HORIZONTAL_POSITION::FAR_LEFT)
     };
     
-    auto secondaryWeaponRules = std::list<GestureRule>{
-        GestureRule(GESTURE_RULE_TYPE::ORIENTATION, "Green", (int)MARKER_ORIENTATION::LANDSCAPE),
-        GestureRule(GESTURE_RULE_TYPE::HORIZONTAL_COMPARE, "Green", (int)HORIZONTAL_POSITION::FAR_RIGHT)
+    auto secondaryWeaponRules = std::vector<GestureRule>{
+        GestureRule(GESTURE_RULE_TYPE::ORIENTATION, "Green", (unsigned int)MARKER_ORIENTATION::LANDSCAPE),
+        GestureRule(GESTURE_RULE_TYPE::HORIZONTAL_COMPARE, "Green", (unsigned int)HORIZONTAL_POSITION::FAR_RIGHT)
     };
 
-    auto forwardRules = std::list<GestureRule>{
-        GestureRule(GESTURE_RULE_TYPE::ORIENTATION, "Red", (int)MARKER_ORIENTATION::PORTRAIT),
+    auto forwardRules = std::vector<GestureRule>{
+        GestureRule(GESTURE_RULE_TYPE::ORIENTATION, "Red", (unsigned int)MARKER_ORIENTATION::PORTRAIT),
         GestureRule(GESTURE_RULE_TYPE::VERTICAL_COMPARE, "Red", (int)VERTICAL_POSITION::TOP)
     };
 
-    auto leftRules = std::list<GestureRule>{
-        GestureRule(GESTURE_RULE_TYPE::ORIENTATION, "Red", (int)MARKER_ORIENTATION::PORTRAIT),
-        GestureRule(GESTURE_RULE_TYPE::HORIZONTAL_COMPARE, "Red", (int)HORIZONTAL_POSITION::FAR_LEFT)
+    auto leftRules = std::vector<GestureRule>{
+        GestureRule(GESTURE_RULE_TYPE::ORIENTATION, "Red", (unsigned int)MARKER_ORIENTATION::PORTRAIT),
+        GestureRule(GESTURE_RULE_TYPE::HORIZONTAL_COMPARE, "Red", (unsigned int)HORIZONTAL_POSITION::FAR_LEFT)
     };
 
-    auto backwardRules = std::list<GestureRule>{
-        GestureRule(GESTURE_RULE_TYPE::ORIENTATION, "Red", (int)MARKER_ORIENTATION::PORTRAIT),
-        GestureRule(GESTURE_RULE_TYPE::VERTICAL_COMPARE, "Red", (int)VERTICAL_POSITION::BOTTOM),
+    auto backwardRules = std::vector<GestureRule>{
+        GestureRule(GESTURE_RULE_TYPE::ORIENTATION, "Red", (unsigned int)MARKER_ORIENTATION::PORTRAIT),
+        GestureRule(GESTURE_RULE_TYPE::VERTICAL_COMPARE, "Red", (unsigned int)VERTICAL_POSITION::BOTTOM),
     };
 
-    auto rightRules = std::list<GestureRule>{
-        GestureRule(GESTURE_RULE_TYPE::ORIENTATION, "Red", (int)MARKER_ORIENTATION::PORTRAIT),
-        GestureRule(GESTURE_RULE_TYPE::HORIZONTAL_COMPARE, "Red", (int)HORIZONTAL_POSITION::CENTRE)
+    auto rightRules = std::vector<GestureRule>{
+        GestureRule(GESTURE_RULE_TYPE::ORIENTATION, "Red", (unsigned int)MARKER_ORIENTATION::PORTRAIT),
+        GestureRule(GESTURE_RULE_TYPE::HORIZONTAL_COMPARE, "Red", (unsigned int)HORIZONTAL_POSITION::CENTRE)
     };
 
-    auto lookUpRules = std::list<GestureRule>{
-        GestureRule(GESTURE_RULE_TYPE::ORIENTATION, "Green", (int)MARKER_ORIENTATION::PORTRAIT),
-        GestureRule(GESTURE_RULE_TYPE::VERTICAL_COMPARE, "Green", (int)VERTICAL_POSITION::TOP)
+    auto lookUpRules = std::vector<GestureRule>{
+        GestureRule(GESTURE_RULE_TYPE::ORIENTATION, "Green", (unsigned int)MARKER_ORIENTATION::PORTRAIT),
+        GestureRule(GESTURE_RULE_TYPE::VERTICAL_COMPARE, "Green", (unsigned int)VERTICAL_POSITION::TOP)
     };
 
-    auto lookLeftRules = std::list<GestureRule>{
-        GestureRule(GESTURE_RULE_TYPE::ORIENTATION, "Green", (int)MARKER_ORIENTATION::PORTRAIT),
-        GestureRule(GESTURE_RULE_TYPE::HORIZONTAL_COMPARE, "Green", (int)HORIZONTAL_POSITION::CENTRE)
+    auto lookLeftRules = std::vector<GestureRule>{
+        GestureRule(GESTURE_RULE_TYPE::ORIENTATION, "Green", (unsigned int)MARKER_ORIENTATION::PORTRAIT),
+        GestureRule(GESTURE_RULE_TYPE::HORIZONTAL_COMPARE, "Green", (unsigned int)HORIZONTAL_POSITION::CENTRE)
     };
 
-    auto lookDownRules = std::list<GestureRule>{
-        GestureRule(GESTURE_RULE_TYPE::ORIENTATION, "Green", (int)MARKER_ORIENTATION::PORTRAIT),
-        GestureRule(GESTURE_RULE_TYPE::VERTICAL_COMPARE, "Green", (int)VERTICAL_POSITION::BOTTOM),
+    auto lookDownRules = std::vector<GestureRule>{
+        GestureRule(GESTURE_RULE_TYPE::ORIENTATION, "Green", (unsigned int)MARKER_ORIENTATION::PORTRAIT),
+        GestureRule(GESTURE_RULE_TYPE::VERTICAL_COMPARE, "Green", (unsigned int)VERTICAL_POSITION::BOTTOM),
     };
 
-    auto lookRightRules = std::list<GestureRule>{
-        GestureRule(GESTURE_RULE_TYPE::ORIENTATION, "Green", (int)MARKER_ORIENTATION::PORTRAIT),
-        GestureRule(GESTURE_RULE_TYPE::HORIZONTAL_COMPARE, "Green", (int)HORIZONTAL_POSITION::FAR_RIGHT)
+    auto lookRightRules = std::vector<GestureRule>{
+        GestureRule(GESTURE_RULE_TYPE::ORIENTATION, "Green", (unsigned int)MARKER_ORIENTATION::PORTRAIT),
+        GestureRule(GESTURE_RULE_TYPE::HORIZONTAL_COMPARE, "Green", (unsigned int)HORIZONTAL_POSITION::FAR_RIGHT)
     };
 
-    return std::list<GestureInput>{
+    return std::vector<GestureInput>{
         GestureInput(grappleRules, DIK_F, "GRAPPLE"),
         GestureInput(jumpRules, DIK_SPACE, "JUMP"),
         GestureInput(primaryWeaponRules, MOUSEEVENTF_LEFTDOWN, "FIRE 1", GESTURE_INPUT_TYPE::MOUSE_BUTTON),
@@ -122,25 +133,100 @@ std::list<GestureInput> justCause2Gestures() {
     };
 }
 
+std::vector<GestureInput> testGestures() {
+    return std::vector<GestureInput>{
+        GestureInput(std::vector<GestureRule>{
+            GestureRule(GESTURE_RULE_TYPE::VERTICAL_COMPARE, "Green", uint(VERTICAL_POSITION::BOTTOM)),
+        }, DIK_G, "GREEN"),
+        GestureInput(std::vector<GestureRule>{
+            GestureRule(GESTURE_RULE_TYPE::VERTICAL_COMPARE, "Red", uint(VERTICAL_POSITION::BOTTOM)),
+        }, DIK_R, "RED")
+    };
+}
+
+std::vector<GestureRuleData>* getRulesFromGestures(std::vector<GestureInput>* gestures, std::map<std::string, unsigned int>* trackerNameIndexMap) {
+    auto rules = new std::vector<GestureRuleData>;
+    unsigned int gestureIndex = 0;
+    for (auto& gesture : *gestures) {
+        for (auto& rule : gesture.getRules()) {
+            GestureRuleData ruleData;
+            ruleData.gestureIndex = gestureIndex;
+            ruleData.type = unsigned int(rule.getType());
+            ruleData.operation = int(rule.getOperation());
+            ruleData.expectedValue = rule.getExpectedValue();
+            ruleData.compareTwoTrackers = rule.isComparingTwoTrackers() ? 1 : 0;
+            ruleData.trackerIndex = trackerNameIndexMap->at(rule.trackerName);
+            ruleData.comparisonTrackerIndex = rule.isComparingTwoTrackers() ? trackerNameIndexMap->at(rule.comparisonTrackerName) : 0;
+            rules->push_back(ruleData);
+        }
+        gestureIndex++;
+    }
+    return rules;
+}
+
+std::vector<ThresholdData>* getThresholdData(float greenTracker[4], float redTracker[4]) {
+    auto thresholdData = new std::vector<ThresholdData>;
+    thresholdData->push_back(ThresholdData(new float[4]{ 80, 111, 110, 255 }, new float[4]{ 95, 255, 255, 255 }, greenTracker));
+    thresholdData->push_back(ThresholdData(new float[4]{ 167, 159, 45, 255 }, new float[4]{ 179, 240, 246, 255 }, redTracker));
+    thresholdData->push_back(ThresholdData(new float[4]{ 0, 104, 151, 255 }, new float[4]{ 10, 255, 255, 255 }, redTracker));
+    return thresholdData;
+}
+
 int main(int argc, char** argv)
 {
-    try {
-        auto redTrackerValues = std::list<TrackerValues> { TrackerValues(169, 10, 104, 255, 151, 255) };
-        auto greenTrackerValues = std::list<TrackerValues> { TrackerValues(80, 95, 111, 255, 110, 255) };
-        
-        std::map<std::string, Tracker> trackers = {
-            { "Red", Tracker("Red", redTrackerValues, cv::Scalar(0, 0, 255)) },
-            { "Green", Tracker("Green", greenTrackerValues, cv::Scalar(0, 255, 0)) }
-        };
+    // TODO:: If no GPU or opengl version < 4.3 then fall back to cpu method.
+    // TODO:: Cpu method may be optimisable since we only need rough bounding box. Moments can certainly be removed, and perhaps more optimisaitons.
 
-        auto processor = GesturesToInputsProcessor(trackers, justCause2Gestures());
-        processor.webcamIndex = 0;
-        processor.webcamMirrored = true;
-        processor.run();
+    bool useGPU = true;
+
+    if (useGPU) {
+        try {
+            Shader::setRoot(std::filesystem::path(argv[0]).parent_path() / "shaders");
+            auto gestures = testGestures();
+            float greenTracker[4] = { 87, 183, 183, 255 }; float redTracker[4] = { 174, 179, 205, 255 };
+            
+            MediaFoundationWebcam* webcam = new MediaFoundationWebcam();
+            std::thread t1(&MediaFoundationWebcam::CreateVideoCaptureDevice, webcam);
+            t1.detach();
+
+            webcam->wait();
+            auto openGlProcessor = new GesturesToInputsPorcessor_OpenGL(
+                webcam,
+                getThresholdData(greenTracker, redTracker),
+                new std::vector<TrackerData>{ TrackerData(greenTracker), TrackerData(redTracker) },
+                getRulesFromGestures(&gestures, new std::map<std::string, unsigned int>{ {"Green", 0}, {"Red", 1} }),
+                &gestures
+            );
+
+            openGlProcessor->run();
+        }
+        catch (std::string e) {
+            std::cout << "An exception occurred: " << e << std::endl;
+        }
     }
-    catch (int e) {
-        std::cout << "An exception occurred. Exception Nr. " << e << '\n';
-    }
+    else {
+        try {
+            auto redTrackerValues = std::vector<TrackerValues> { TrackerValues(0, 10, 145, 215, 90, 240), TrackerValues(165, 179, 0, 255, 0, 255) };
+            auto greenTrackerValues = std::vector<TrackerValues> { TrackerValues(80, 95, 111, 255, 90, 255) };
+        
+            auto redTracker = new Tracker("Red", redTrackerValues, cv::Scalar(0, 0, 255));
+            auto greenTracker = new Tracker("Green", greenTrackerValues, cv::Scalar(0, 255, 0));
+            std::map<std::string, Tracker*> trackers = {
+                { "Red",  redTracker },
+                { "Green", greenTracker }
+            };
+
+            auto gestures = justCause2Gestures();
+
+            auto processor = GesturesToInputsProcessor_CPU(trackers, &gestures);
+            processor.webcamIndex = 0;
+            processor.webcamMirrored = true;
+            processor.run();
+        }
+        catch (int e) {
+            std::cout << "An exception occurred. Exception Nr. " << e << std::endl;;
+        }
     
-    return 0;
+        return 0;
+    }
 }

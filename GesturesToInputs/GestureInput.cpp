@@ -1,7 +1,7 @@
 #include "GestureInput.h"
 
 namespace GesturesToInputs {
-    GestureInput::GestureInput(std::list<GestureRule> rules, int keyScanCode, std::string debugMessageIfPressed, GESTURE_INPUT_TYPE inputType)
+    GestureInput::GestureInput(std::vector<GestureRule> rules, int keyScanCode, std::string debugMessageIfPressed, GESTURE_INPUT_TYPE inputType)
     {
         this->rules = rules;
         value = keyScanCode;
@@ -9,7 +9,7 @@ namespace GesturesToInputs {
         this->inputType = inputType;
     }
 
-    std::list<GestureRule> GestureInput::getRules()
+    std::vector<GestureRule> GestureInput::getRules()
     {
         return rules;
     }

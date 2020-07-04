@@ -2,6 +2,9 @@
 #include <string>
 #include "Tracker.h"
 
+// TODO:: Split data and logic.
+// OpenGL can use the data but doesn't need the logic or the reliance on the Tracker class
+
 namespace GesturesToInputs {
     enum class GESTURE_RULE_TYPE { ORIENTATION, HORIZONTAL_COMPARE, VERTICAL_COMPARE };
     enum class GESTURE_RULE_COMPARISON_OPERATION { LESS_THAN = -1, EQUAL = 0, MORE_THAN = 1 };
@@ -10,16 +13,20 @@ namespace GesturesToInputs {
     private:
         GESTURE_RULE_TYPE type;
         GESTURE_RULE_COMPARISON_OPERATION operation;
-        int expectedValue;
-        bool compare(int trackerValue);
+        unsigned int expectedValue;
+        bool compare(unsigned int trackerValue);
         bool _isComparingTwoTrackers = false;
     public:
         std::string trackerName;
         std::string comparisonTrackerName;
-        GestureRule(GESTURE_RULE_TYPE type, std::string trackerName, int expectedValue, GESTURE_RULE_COMPARISON_OPERATION operation = GESTURE_RULE_COMPARISON_OPERATION::EQUAL);
+        GestureRule(GESTURE_RULE_TYPE type, std::string trackerName, unsigned int expectedValue, GESTURE_RULE_COMPARISON_OPERATION operation = GESTURE_RULE_COMPARISON_OPERATION::EQUAL);
         GestureRule(GESTURE_RULE_TYPE type, std::string trackerName, GESTURE_RULE_COMPARISON_OPERATION operation, std::string comparisonTrackerName);
-        bool compare(Tracker tracker);
-        bool compare(Tracker tracker, Tracker trackerToCompare);
+        bool compare(Tracker* tracker);
+        bool compare(Tracker* tracker, Tracker* trackerToCompare);
         bool isComparingTwoTrackers();
+
+        GESTURE_RULE_TYPE getType();
+        GESTURE_RULE_COMPARISON_OPERATION getOperation();
+        unsigned int getExpectedValue();
     };
 }

@@ -17,6 +17,7 @@
     <RootNamespace>GesturesToInputs</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>GesturesToInputs</ProjectName>
+    <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -58,10 +59,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(OPENCV_DIR)\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>shlwapi.lib;mf.lib;mfuuid.lib;mfplat.lib;evr.lib;mfreadwrite.lib;opencv_world430d.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -72,27 +76,40 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(OPENCV_DIR)\..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>shlwapi.lib;mfuuid.lib;evr.lib;mf.lib;mfplat.lib;mfreadwrite.lib;opencv_world430.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="ColourValues.h" />
     <ClInclude Include="ContinuousMouseMovement.h" />
     <ClInclude Include="Gesture.h" />
+    <ClInclude Include="GestureDetection.h" />
     <ClInclude Include="GestureInput.h" />
     <ClInclude Include="GestureRule.h" />
+    <ClInclude Include="GesturesToInputsPorcessor_OpenGL.h" />
+    <ClInclude Include="GesturesToInputsProcessor_CPU.h" />
+    <ClInclude Include="glad\glad.h" />
+    <ClInclude Include="glad\khrplatform.h" />
+    <ClInclude Include="glfw\include\GLFW\glfw3.h" />
+    <ClInclude Include="glfw\include\GLFW\glfw3native.h" />
     <ClInclude Include="main.h" />
+    <ClInclude Include="MediaFoundationWebcam.h" />
     <ClInclude Include="PerformanceTimer.h" />
+    <ClInclude Include="Shader.h" />
+    <ClInclude Include="structures.h" />
     <ClInclude Include="Tracker.h" />
     <ClInclude Include="TrackerValues.h" />
     <ClInclude Include="Webcam.h" />
     <ClInclude Include="WebcamFrame.h" />
-    <ClInclude Include="GesturesToInputs.h" />
+    <ClInclude Include="GesturesToInputsProcessor.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
@@ -100,14 +117,20 @@
   <ItemGroup>
     <ClCompile Include="ColourValues.cpp" />
     <ClCompile Include="ContinuousMouseMovement.cpp" />
+    <ClCompile Include="GestureDetection.cpp" />
     <ClCompile Include="GestureInput.cpp" />
     <ClCompile Include="GestureRule.cpp" />
+    <ClCompile Include="GesturesToInputsPorcessor_OpenGL.cpp" />
+    <ClCompile Include="GesturesToInputsProcessor_CPU.cpp" />
+    <ClCompile Include="glad\glad.c" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MediaFoundationWebcam.cpp" />
     <ClCompile Include="PerformanceTimer.cpp" />
+    <ClCompile Include="Shader.cpp" />
     <ClCompile Include="TrackerValues.cpp" />
     <ClCompile Include="WebcamFrame.cpp" />
     <ClCompile Include="Gesture.cpp" />
-    <ClCompile Include="GesturesToInputs.cpp" />
+    <ClCompile Include="GesturesToInputsProcessor.cpp" />
     <ClCompile Include="Tracker.cpp" />
     <ClCompile Include="Webcam.cpp" />
   </ItemGroup>
@@ -117,6 +140,51 @@
   <ItemGroup>
     <Image Include="GesturesToInputs.ico" />
     <Image Include="small.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="glfw\lib-vc2019\glfw3.dll" />
+    <None Include="glfw\LICENSE.md" />
+    <None Include="shaders\Convert_YUY2.comp" />
+    <None Include="shaders\DetectGestures.comp" />
+    <None Include="shaders\ObjectBoundingBoxSearch_Pass1.comp" />
+    <None Include="shaders\test.frag" />
+    <None Include="shaders\test.vert" />
+    <None Include="shaders\ConvertToHSV.comp" />
+    <None Include="shaders\Threshold.comp" />
+    <Content Include="glad\glad.h">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="glad\glad.c">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="glad\khrplatform.h">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="shaders\test.frag">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="shaders\test.vert">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="shaders\ObjectBoundingBoxSearch_Pass1.comp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="shaders\ConvertToHSV.comp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="shaders\Threshold.comp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="shaders\Convert_YUY2.comp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="shaders\DetectGestures.comp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="glfw\lib-vc2019\glfw3.lib" />
+    <Library Include="glfw\lib-vc2019\glfw3dll.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

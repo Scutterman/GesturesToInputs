@@ -1,0 +1,193 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="glad\glad.c">
+      <Filter>OpenGL\glad</Filter>
+    </ClCompile>
+    <ClCompile Include="WebcamFrame.cpp">
+      <Filter>CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="Webcam.cpp">
+      <Filter>CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="TrackerValues.cpp">
+      <Filter>CPU\Trackers</Filter>
+    </ClCompile>
+    <ClCompile Include="Tracker.cpp">
+      <Filter>CPU\Trackers</Filter>
+    </ClCompile>
+    <ClCompile Include="ColourValues.cpp">
+      <Filter>CPU\Trackers</Filter>
+    </ClCompile>
+    <ClCompile Include="Shader.cpp">
+      <Filter>OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="MediaFoundationWebcam.cpp">
+      <Filter>OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="GesturesToInputsProcessor_CPU.cpp">
+      <Filter>CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="ContinuousMouseMovement.cpp">
+      <Filter>Gestures</Filter>
+    </ClCompile>
+    <ClCompile Include="Gesture.cpp">
+      <Filter>Gestures</Filter>
+    </ClCompile>
+    <ClCompile Include="GestureDetection.cpp">
+      <Filter>CPU</Filter>
+    </ClCompile>
+    <ClCompile Include="GestureInput.cpp">
+      <Filter>Gestures</Filter>
+    </ClCompile>
+    <ClCompile Include="GestureRule.cpp">
+      <Filter>Gestures</Filter>
+    </ClCompile>
+    <ClCompile Include="PerformanceTimer.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include="GesturesToInputsProcessor.cpp">
+      <Filter>Gestures</Filter>
+    </ClCompile>
+    <ClCompile Include="GesturesToInputsPorcessor_OpenGL.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="main.h" />
+    <ClInclude Include="framework.h" />
+    <ClInclude Include="Resource.h" />
+    <ClInclude Include="targetver.h" />
+    <ClInclude Include="glad\glad.h">
+      <Filter>OpenGL\glad</Filter>
+    </ClInclude>
+    <ClInclude Include="glad\khrplatform.h">
+      <Filter>OpenGL\glad</Filter>
+    </ClInclude>
+    <ClInclude Include="WebcamFrame.h">
+      <Filter>CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Webcam.h">
+      <Filter>CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="TrackerValues.h">
+      <Filter>CPU\Trackers</Filter>
+    </ClInclude>
+    <ClInclude Include="Tracker.h">
+      <Filter>CPU\Trackers</Filter>
+    </ClInclude>
+    <ClInclude Include="ColourValues.h">
+      <Filter>CPU\Trackers</Filter>
+    </ClInclude>
+    <ClInclude Include="Shader.h">
+      <Filter>OpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="MediaFoundationWebcam.h">
+      <Filter>OpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="glfw\include\GLFW\glfw3.h">
+      <Filter>OpenGL\glfw</Filter>
+    </ClInclude>
+    <ClInclude Include="glfw\include\GLFW\glfw3native.h">
+      <Filter>OpenGL\glfw</Filter>
+    </ClInclude>
+    <ClInclude Include="GesturesToInputsProcessor_CPU.h">
+      <Filter>CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="ContinuousMouseMovement.h">
+      <Filter>Gestures</Filter>
+    </ClInclude>
+    <ClInclude Include="Gesture.h">
+      <Filter>Gestures</Filter>
+    </ClInclude>
+    <ClInclude Include="GestureDetection.h">
+      <Filter>CPU</Filter>
+    </ClInclude>
+    <ClInclude Include="GestureInput.h">
+      <Filter>Gestures</Filter>
+    </ClInclude>
+    <ClInclude Include="GestureRule.h">
+      <Filter>Gestures</Filter>
+    </ClInclude>
+    <ClInclude Include="PerformanceTimer.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include="GesturesToInputsProcessor.h">
+      <Filter>Gestures</Filter>
+    </ClInclude>
+    <ClInclude Include="GesturesToInputsPorcessor_OpenGL.h" />
+    <ClInclude Include="structures.h">
+      <Filter>OpenGL</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="glfw\lib-vc2019\glfw3.lib">
+      <Filter>OpenGL\glfw</Filter>
+    </Library>
+    <Library Include="glfw\lib-vc2019\glfw3dll.lib">
+      <Filter>OpenGL\glfw</Filter>
+    </Library>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="GesturesToInputs.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="GesturesToInputs.ico" />
+    <Image Include="small.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders\ObjectBoundingBoxSearch_Pass1.comp">
+      <Filter>OpenGL\shaders</Filter>
+    </None>
+    <None Include="shaders\test.frag">
+      <Filter>OpenGL\shaders</Filter>
+    </None>
+    <None Include="shaders\test.vert">
+      <Filter>OpenGL\shaders</Filter>
+    </None>
+    <None Include="shaders\Threshold.comp">
+      <Filter>OpenGL\shaders</Filter>
+    </None>
+    <None Include="shaders\ConvertToHSV.comp">
+      <Filter>OpenGL\shaders</Filter>
+    </None>
+    <None Include="shaders\Convert_YUY2.comp">
+      <Filter>OpenGL\shaders</Filter>
+    </None>
+    <None Include="shaders\DetectGestures.comp">
+      <Filter>OpenGL\shaders</Filter>
+    </None>
+    <None Include="glfw\lib-vc2019\glfw3.dll">
+      <Filter>OpenGL\glfw</Filter>
+    </None>
+    <None Include="glfw\LICENSE.md">
+      <Filter>OpenGL\glfw</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CPU">
+      <UniqueIdentifier>{5629b6ce-1a55-4a9f-b999-a81c329a95a2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="OpenGL">
+      <UniqueIdentifier>{78551a87-995b-490c-a180-f73e1fe25f49}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="OpenGL\glad">
+      <UniqueIdentifier>{e3ead592-58fe-4b28-97fe-81841e0d8ac4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="OpenGL\glfw">
+      <UniqueIdentifier>{0e4cd3b1-414c-4480-a733-29f007f56954}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Gestures">
+      <UniqueIdentifier>{be687972-3d8e-4b9f-b767-e33fafd23be8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Util">
+      <UniqueIdentifier>{902831ab-6b7e-496d-8cda-8310ddcff1c3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="CPU\Trackers">
+      <UniqueIdentifier>{5d5e018e-8af0-4e07-a589-c1e1617b35d7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="OpenGL\shaders">
+      <UniqueIdentifier>{b203a952-2539-4e4e-b482-d1e97f6d5015}</UniqueIdentifier>
+      <Extensions>vert;frag</Extensions>
+    </Filter>
+  </ItemGroup>
+</Project>
