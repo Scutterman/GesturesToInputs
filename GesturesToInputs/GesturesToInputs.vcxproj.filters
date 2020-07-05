@@ -50,7 +50,9 @@
     <ClCompile Include="GesturesToInputsProcessor.cpp">
       <Filter>Gestures</Filter>
     </ClCompile>
-    <ClCompile Include="GesturesToInputsPorcessor_OpenGL.cpp" />
+    <ClCompile Include="GesturesToInputsPorcessor_OpenGL.cpp">
+      <Filter>OpenGL</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="main.h" />
@@ -114,8 +116,10 @@
     <ClInclude Include="GesturesToInputsProcessor.h">
       <Filter>Gestures</Filter>
     </ClInclude>
-    <ClInclude Include="GesturesToInputsPorcessor_OpenGL.h" />
     <ClInclude Include="structures.h">
+      <Filter>OpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="GesturesToInputsPorcessor_OpenGL.h">
       <Filter>OpenGL</Filter>
     </ClInclude>
   </ItemGroup>
