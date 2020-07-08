@@ -70,7 +70,7 @@ namespace GesturesToInputs {
         glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_HIGH, 0, NULL, GL_TRUE);
         glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_MEDIUM, 0, NULL, GL_TRUE);
 
-        glfwSwapInterval(0);
+        glfwSwapInterval(1);
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
