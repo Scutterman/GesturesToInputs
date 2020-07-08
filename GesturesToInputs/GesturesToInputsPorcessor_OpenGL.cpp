@@ -70,7 +70,7 @@ namespace GesturesToInputs {
         glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_HIGH, 0, NULL, GL_TRUE);
         glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_MEDIUM, 0, NULL, GL_TRUE);
 
-        glfwSwapInterval(0);
+        glfwSwapInterval(1);
 
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
@@ -134,7 +134,7 @@ namespace GesturesToInputs {
         while (!glfwWindowShouldClose(window) && !opengl_has_errored)
         {
             webcam->wait();
-
+            std::cout << "DEAD TIME "; perf.End();
             perf.Start();
             auto bytes = webcam->getData();
             glActiveTexture(rawDataTextureUnit);
@@ -148,20 +148,18 @@ namespace GesturesToInputs {
             objectSearchShader.compute();
             detectGesturesShader.compute();
 
-            std::cout << "Processed Frame: ";  perf.End();
-
-            perf.Start();
             gesture->reset();
             for (unsigned int i = 0; i < gestureDetection->getGestures()->size(); i++) {
                 gesture->handleInput(&gestureDetection->getGestures()->at(i), gestureFoundDataPointer[i] == 1);
             }
             gesture->complete();
 
-            std::cout << "Processed Gestures: ";  perf.End(); std::cout << std::endl;
+            std::cout << "Processed: ";  perf.End(); std::cout << std::endl;
 
             perf.Start();
             displayOutput();
             std::cout << "Output displayed in "; perf.End();
+            perf.Start();
             std::cout << std::endl << std::endl << std::endl;
 
             glfwPollEvents();
@@ -189,8 +187,9 @@ namespace GesturesToInputs {
         hsvShader.setUniform("thresholdTexture", THRESHOLD_IMAGE_UNIT);
         hsvShader.setUniform("outputImage", OUTPUT_IMAGE_UNIT);
         hsvShader.setUniform("inputIsMirrored", unsigned int(1));
-        hsvShader.setUniform3("rgbCorrections", new float[3]{ 0.0f, 0.05f, 0.0f });
-        hsvShader.setUniform("lightenAmount", 0.5f);
+        hsvShader.setUniform3("rgbCorrections", new float[3]{ 0.0f, -0.1f, 0.0f });
+        hsvShader.setUniform("averageSaturationTarget", 0.176f);
+        hsvShader.setUniform("averageValueTarget", 0.137f);
 
         bindImageHandle(&thresholdTextureHandle, thresholdTextureUnit, THRESHOLD_IMAGE_UNIT);
         bindImageHandle(&outputTextureHandle, outputTextureUnit, OUTPUT_IMAGE_UNIT);
