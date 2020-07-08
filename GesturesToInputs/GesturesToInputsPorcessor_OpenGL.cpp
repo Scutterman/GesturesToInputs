@@ -188,6 +188,8 @@ namespace GesturesToInputs {
         hsvShader.setUniform("outputImage", OUTPUT_IMAGE_UNIT);
         hsvShader.setUniform("inputIsMirrored", unsigned int(1));
         hsvShader.setUniform3("rgbCorrections", new float[3]{ 0.0f, -0.1f, 0.0f });
+        hsvShader.setUniform("averageSaturationTarget", 0.176f);
+        hsvShader.setUniform("averageValueTarget", 0.137f);
 
         bindImageHandle(&thresholdTextureHandle, thresholdTextureUnit, THRESHOLD_IMAGE_UNIT);
         bindImageHandle(&outputTextureHandle, outputTextureUnit, OUTPUT_IMAGE_UNIT);

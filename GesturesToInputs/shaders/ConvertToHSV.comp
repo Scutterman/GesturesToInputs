@@ -8,7 +8,11 @@ uniform layout(binding=2,rgba32f) image2D outputImage;
 
 uniform uint inputIsMirrored;
 uniform vec3 rgbCorrections;
-uniform float lightenAmount;
+uniform float averageSaturationTarget;
+uniform float averageValueTarget;
+
+shared float currentAverageSaturation;
+shared float currentAverageValue;
 
 vec3 rgb2hsv(vec3 rgb)
 {
@@ -29,15 +33,31 @@ vec3 hsv2rgb(vec3 hsv)
 
 void main()
 {
+    if (gl_WorkGroupID.x == 0 && gl_WorkGroupID.y == 0 && gl_WorkGroupID.z == 0) {
+        currentAverageSaturation = 0;
+        currentAverageValue = 0;
+    }
+    memoryBarrier();
+
     ivec2 coords = ivec2(gl_WorkGroupID.xy);
     vec4 rgb = imageLoad(inputImage, coords);
     rgb.r += clamp(rgb.r + rgbCorrections.r, 0.0f, 1.0f);
     rgb.g += clamp(rgb.g + rgbCorrections.g, 0.0f, 1.0f);
     rgb.b += clamp(rgb.b + rgbCorrections.b, 0.0f, 1.0f);
     vec3 hsv = rgb2hsv(rgb.xyz);
-    hsv.z -= lightenAmount;
-    hsv.z += lightenAmount;
 
+    currentAverageSaturation += hsv.y;
+    currentAverageValue += hsv.z;
+    memoryBarrier();
+    barrier();
+
+    vec2 size = imageSize(inputImage);
+    float normalizedCurrentAverageSaturation = currentAverageSaturation / (size.x * size.y);
+    float normalizedCurrentAverageValue = currentAverageValue / (size.x * size.y);
+
+    hsv.y = clamp(hsv.y + ((averageSaturationTarget - normalizedCurrentAverageSaturation)), 0.0f, 1.0f);
+    hsv.z = clamp(hsv.z + ((averageValueTarget - normalizedCurrentAverageValue)), 0.0f, 1.0f);
+    
     memoryBarrier();
     ivec2 outputCoords = inputIsMirrored == 0 ? coords : ivec2(imageSize(inputImage).x - coords.x, coords.y);
     imageStore(thresholdTexture, outputCoords, vec4(hsv, 1));
