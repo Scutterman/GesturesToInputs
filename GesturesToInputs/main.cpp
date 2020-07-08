@@ -166,9 +166,9 @@ std::vector<GestureRuleData>* getRulesFromGestures(std::vector<GestureInput>* ge
 
 std::vector<ThresholdData>* getThresholdData(float greenTracker[4], float redTracker[4]) {
     auto thresholdData = new std::vector<ThresholdData>;
-    thresholdData->push_back(ThresholdData(new float[4]{ 80, 111, 110, 255 }, new float[4]{ 95, 255, 255, 255 }, greenTracker));
-    thresholdData->push_back(ThresholdData(new float[4]{ 167, 159, 45, 255 }, new float[4]{ 179, 240, 246, 255 }, redTracker));
-    thresholdData->push_back(ThresholdData(new float[4]{ 0, 104, 151, 255 }, new float[4]{ 10, 255, 255, 255 }, redTracker));
+    thresholdData->push_back(ThresholdData(new float[4]{ 80, 111, 90, 255 }, new float[4]{ 95, 255, 255, 255 }, greenTracker));
+    thresholdData->push_back(ThresholdData(new float[4]{ 167, 0, 0, 255 }, new float[4]{ 179, 255, 255, 255 }, redTracker));
+    thresholdData->push_back(ThresholdData(new float[4]{ 0, 145, 90, 255 }, new float[4]{ 10, 215, 240, 255 }, redTracker));
     return thresholdData;
 }
 
