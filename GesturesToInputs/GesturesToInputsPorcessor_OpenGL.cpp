@@ -134,7 +134,7 @@ namespace GesturesToInputs {
         while (!glfwWindowShouldClose(window) && !opengl_has_errored)
         {
             webcam->wait();
-
+            std::cout << "DEAD TIME "; perf.End();
             perf.Start();
             auto bytes = webcam->getData();
             glActiveTexture(rawDataTextureUnit);
@@ -148,20 +148,18 @@ namespace GesturesToInputs {
             objectSearchShader.compute();
             detectGesturesShader.compute();
 
-            std::cout << "Processed Frame: ";  perf.End();
-
-            perf.Start();
             gesture->reset();
             for (unsigned int i = 0; i < gestureDetection->getGestures()->size(); i++) {
                 gesture->handleInput(&gestureDetection->getGestures()->at(i), gestureFoundDataPointer[i] == 1);
             }
             gesture->complete();
 
-            std::cout << "Processed Gestures: ";  perf.End(); std::cout << std::endl;
+            std::cout << "Processed: ";  perf.End(); std::cout << std::endl;
 
             perf.Start();
             displayOutput();
             std::cout << "Output displayed in "; perf.End();
+            perf.Start();
             std::cout << std::endl << std::endl << std::endl;
 
             glfwPollEvents();

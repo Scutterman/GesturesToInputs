@@ -25,7 +25,6 @@ namespace GesturesToInputs {
         std::mutex cv_m;
         std::condition_variable cv;
 
-        PerformanceTimer timer;
         CRITICAL_SECTION critsec;
         long refCount = 0;
 

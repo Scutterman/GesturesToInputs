@@ -168,7 +168,6 @@ namespace GesturesToInputs {
 
         if (setMediaType)
         {
-            timer.Start();
             hr = reader->ReadSample((DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM, 0, NULL, NULL, NULL, NULL);
         }
         else
@@ -341,7 +340,6 @@ namespace GesturesToInputs {
                 readFromBuffer1 = !readFromBuffer1;
                 {
                     framesCollected++;
-                    std::cout << "DEAD TIME: "; timer.End();
                     std::lock_guard<std::mutex> lck(cv_m);
                     hasNewFrame = true;
                 }
@@ -350,7 +348,6 @@ namespace GesturesToInputs {
         }
         
         if (SUCCEEDED(hr)) {
-            timer.Start();
             hr = reader->ReadSample((DWORD)MF_SOURCE_READER_FIRST_VIDEO_STREAM, 0, NULL, NULL, NULL, NULL);
         }
         
