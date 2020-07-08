@@ -31,9 +31,9 @@ void main()
 {
     ivec2 coords = ivec2(gl_WorkGroupID.xy);
     vec4 rgb = imageLoad(inputImage, coords);
-    rgb.r -= rgbCorrections.r;
-    rgb.g -= rgbCorrections.g;
-    rgb.b -= rgbCorrections.b;
+    rgb.r += clamp(rgb.r + rgbCorrections.r, 0.0f, 1.0f);
+    rgb.g += clamp(rgb.g + rgbCorrections.g, 0.0f, 1.0f);
+    rgb.b += clamp(rgb.b + rgbCorrections.b, 0.0f, 1.0f);
     vec3 hsv = rgb2hsv(rgb.xyz);
     hsv.z -= lightenAmount;
     hsv.z += lightenAmount;
