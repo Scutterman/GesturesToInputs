@@ -3,6 +3,7 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/core/types.hpp>
 #include <opencv2/imgproc.hpp>
+#include <iostream>
 
 namespace GesturesToInputs {
     Tracker::Tracker(std::string trackerName, std::vector<TrackerValues> trackedColours, cv::Scalar lineColour, bool drawTrackingLine) {
@@ -120,9 +121,39 @@ namespace GesturesToInputs {
         }
     }
 
+    void logImageAverages(cv::Mat* I) {
+        int channels = I->channels();
+
+        int nRows = I->rows;
+        int nCols = I->cols;
+
+        if (I->isContinuous())
+        {
+            nCols *= nRows;
+            nRows = 1;
+        }
+
+        int i, j, saturationSum = 0, valueSum = 0;
+        uchar* p;
+        for (i = 0; i < nRows; ++i)
+        {
+            p = I->ptr<uchar>(i);
+            for (j = 0; j < nCols; j += channels)
+            {
+                saturationSum += p[j + 1];
+                valueSum += p[j + 2];
+            }
+        }
+
+        std::cout << "SATURATION: " << (saturationSum / (nCols * nRows)) << std::endl;
+        std::cout << "VALUE: " << (valueSum / (nCols * nRows)) << std::endl;
+    }
+
     void Tracker::isolateColours(cv::Mat* frame, cv::Mat* threshold) {
         cv::Mat imageAsHSV;
         cv::cvtColor(*frame, imageAsHSV, cv::COLOR_BGR2HSV);
+
+        logImageAverages(&imageAsHSV);
 
         for (auto& values : trackedColours) {
             cv::Mat imageWithThreshold;
