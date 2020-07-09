@@ -182,7 +182,7 @@ int main(int argc, char** argv)
     if (useGPU) {
         try {
             Shader::setRoot(std::filesystem::path(argv[0]).parent_path() / "shaders");
-            auto gestures = testGestures();
+            auto gestures = justCause2Gestures();
             float greenTracker[4] = { 87, 183, 183, 255 }; float redTracker[4] = { 174, 179, 205, 255 };
             
             MediaFoundationWebcam* webcam = new MediaFoundationWebcam();
